@@ -395,10 +395,6 @@
   animation: sparkle 2s ease-in-out infinite;
 }
 
-.animate-shooting-star {
-  animation: shooting-star 3s linear infinite;
-}
-
 .animate-constellation {
   animation: constellation 4s ease-in-out infinite;
 }

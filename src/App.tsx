@@ -1,19 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, Target, Moon, Sun, Menu, X, Lightbulb } from 'lucide-react';
+import { BarChart3, Target, Moon, Sun, Menu, X, Lightbulb, User } from 'lucide-react';
 import Dashboard from './components/Dashboard';
+import { LoginPage } from './components/LoginPage';
+import { SignupPage } from './components/SignupPage';
+import { FAQPage } from './components/FAQPage';
+import { supabase, getCurrentUser } from './lib/supabase';
 
 import { CompetitorComparison } from './components/CompetitorComparison';
 import { AIOverviewAnalyzer } from './components/AIOverviewAnalyzer';
 import { PricingPage } from './components/PricingPage';
-
-
-
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check authentication status on app load
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        setIsLoggedIn(!!user);
+      } catch (error) {
+        console.error('Auth check error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session?.user);
+      if (session?.user) {
+        setCurrentPage('dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const scrollToAnalyzer = () => {
     const element = document.getElementById('ai-overview-analyzer');
@@ -29,17 +57,10 @@ function App() {
     }
   };
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setCurrentPage('dashboard');
-  };
-
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentPage('home');
   };
-
-
 
   useEffect(() => {
     if (isDarkMode) {
@@ -68,7 +89,74 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
+  // Show loading spinner while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background-color flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-cta"></div>
+      </div>
+    );
+  }
 
+  // Show Dashboard if logged in
+  if (isLoggedIn) {
+    return <Dashboard onLogout={handleLogout} />;
+  }
+
+  // Show Login/Signup pages
+  if (currentPage === 'login') {
+    return (
+      <LoginPage
+        onBack={() => setCurrentPage('home')}
+        onLogin={() => {
+          setIsLoggedIn(true);
+          setCurrentPage('dashboard');
+        }}
+        onSwitchToSignup={() => setCurrentPage('signup')}
+      />
+    );
+  }
+
+  if (currentPage === 'signup') {
+    return (
+      <SignupPage
+        onBack={() => setCurrentPage('home')}
+        onSignup={() => {
+          setIsLoggedIn(true);
+          setCurrentPage('dashboard');
+        }}
+        onSwitchToLogin={() => setCurrentPage('login')}
+      />
+    );
+  }
+
+  // Show FAQ page
+  if (currentPage === 'faq') {
+    return (
+      <div>
+        {/* Navigation Bar for FAQ */}
+        <nav className="bg-navbar-bg/95 backdrop-blur-md border-b border-border-color text-text-primary py-4 px-6 fixed top-0 left-0 right-0 z-50 transition-all duration-200">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary-cta rounded-lg flex items-center justify-center animate-gentle-glow">
+                <span className="text-white font-bold text-lg">R</span>
+              </div>
+              <span className="text-xl font-bold text-text-primary">
+                RANK<span className="text-primary-cta">ORA</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="bg-primary-cta hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+            >
+              Back to Home
+            </button>
+          </div>
+        </nav>
+        <FAQPage />
+      </div>
+    );
+  }
 
   const renderHomePage = () => (
     <div className="min-h-screen bg-section-bg transition-colors duration-300 relative overflow-hidden">
@@ -111,10 +199,6 @@ function App() {
         <div className="absolute top-1/3 right-10 w-2 h-2 bg-purple-400/40 rounded-full animate-constellation" style={{animationDelay: '1.5s'}}></div>
         <div className="absolute bottom-1/3 left-1/4 w-1 h-1 bg-pink-400/50 rounded-full animate-twinkle" style={{animationDelay: '2.8s'}}></div>
         <div className="absolute top-3/4 right-1/3 w-3 h-3 bg-indigo-400/35 rounded-full animate-cosmic-drift" style={{animationDelay: '0.5s'}}></div>
-        
-        {/* Shooting Stars */}
-        <div className="absolute top-16 left-0 w-1 h-20 bg-gradient-to-b from-white/60 to-transparent animate-shooting-star opacity-70" style={{animationDelay: '3s'}}></div>
-        <div className="absolute top-40 left-1/2 w-1 h-16 bg-gradient-to-b from-primary-cta/60 to-transparent animate-shooting-star opacity-50" style={{animationDelay: '7s'}}></div>
         
         {/* Constellation Groups */}
         <div className="absolute top-24 right-1/4">
@@ -242,19 +326,12 @@ function App() {
                   </div>
   );
 
-
-
   const renderFeaturesPage = () => (
     <>
       <AIOverviewAnalyzer />
       <CompetitorComparison />
     </>
   );
-
-  // Show Dashboard if logged in and on dashboard page
-  if (isLoggedIn && currentPage === 'dashboard') {
-    return <Dashboard onLogout={handleLogout} />;
-  }
 
   return (
     <div className="min-h-screen">
@@ -303,7 +380,12 @@ function App() {
             >
               Pricing
             </button>
-            <button className="hover:text-primary-cta transition-colors font-medium text-text-secondary">FAQ</button>
+            <button 
+              onClick={() => setCurrentPage('faq')}
+              className={`hover:text-primary-cta transition-colors font-medium ${currentPage === 'faq' ? 'text-primary-cta' : 'text-text-secondary'}`}
+            >
+              FAQ
+            </button>
           </div>
 
           {/* Right Side */}
@@ -319,29 +401,18 @@ function App() {
                 <Moon className="w-5 h-5 text-text-secondary" />
               )}
             </button>
-            {!isLoggedIn ? (
-              <>
-                <button 
-                  onClick={handleLogin}
-                  className="text-text-secondary hover:text-text-primary px-3 py-2 rounded-lg transition-colors font-medium"
-                >
-                  Log In
-                </button>
-                <button 
-                  onClick={handleLogin}
-                  className="bg-primary-cta hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                >
-                  Sign Up
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setCurrentPage('dashboard')}
-                className="bg-primary-cta hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-              >
-                Dashboard
-              </button>
-            )}
+            <button 
+              onClick={() => setCurrentPage('login')}
+              className="text-text-secondary hover:text-text-primary px-3 py-2 rounded-lg transition-colors font-medium"
+            >
+              Log In
+            </button>
+            <button 
+              onClick={() => setCurrentPage('signup')}
+              className="bg-primary-cta hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+            >
+              Sign Up
+            </button>
                       </div>
 
           {/* Mobile Menu Button */}
@@ -401,7 +472,15 @@ function App() {
               >
                 Pricing
               </button>
-              <button className="text-left hover:text-green-400 transition-colors">FAQ</button>
+              <button 
+                onClick={() => {
+                  setCurrentPage('faq');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-left hover:text-green-400 transition-colors ${currentPage === 'faq' ? 'text-green-400' : ''}`}
+              >
+                FAQ
+              </button>
               <div className="flex items-center space-x-4 pt-4 border-t border-gray-700">
                 <button
                   onClick={toggleDarkMode}
@@ -415,14 +494,20 @@ function App() {
                 </button>
                 <button
                   onClick={() => {
-                    setCurrentPage('home');
+                    setCurrentPage('login');
                     setIsMobileMenuOpen(false);
                   }}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Log In
                 </button>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <button 
+                  onClick={() => {
+                    setCurrentPage('signup');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
                   Sign Up Free
                 </button>
               </div>
