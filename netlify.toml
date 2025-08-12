@@ -1,0 +1,67 @@
+# Netlify configuration for React SPA
+[build]
+  # Directory where build artifacts are placed
+  publish = "dist"
+  
+  # Command to build the site
+  command = "npm run build"
+
+# SPA redirect rules for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables
+[build.environment]
+  # Node version
+  NODE_VERSION = "18"
+  
+# Cache settings for better performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Enable GZIP compression
+    Content-Encoding = "gzip"
+    
+    # Cache static assets for 1 year
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    # Don't cache HTML files
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    # Cache JavaScript files for 1 year
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    # Cache CSS files for 1 year
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Basic security headers
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # Content Security Policy (adjust as needed for your specific requirements)
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://*.paypal.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://www.paypal.com https://*.paypal.com; frame-src 'self' https://www.paypal.com https://*.paypal.com"
+
+# Form handling for contact forms (if needed)
+[[plugins]]
+  package = "@netlify/plugin-sitemap"
+
+# Functions directory (if using Netlify Functions)
+[functions]
+  directory = "netlify/functions"
