@@ -265,8 +265,20 @@ function App() {
     );
   }
 
-  // Show Dashboard if logged in and on dashboard page
-  if (isLoggedIn && currentPage === 'dashboard') {
+  // 🎯 SMART LOGIC: Logged in users ALWAYS get Dashboard (except specific pages)
+  if (isLoggedIn) {
+    // Allow admin page for owners
+    if (currentPage === 'admin' && showOwnerAccess) {
+      return <AdminPanel onBack={() => setCurrentPage('dashboard')} />;
+    }
+    
+    // For ANY logged in user → Force Dashboard
+    if (currentPage !== 'dashboard') {
+      console.log('🔄 Logged in user detected, forcing Dashboard');
+      setCurrentPage('dashboard');
+      window.history.replaceState({}, document.title, '/dashboard');
+    }
+    
     return (
       <Dashboard 
         onLogout={handleLogout}
@@ -276,20 +288,7 @@ function App() {
     );
   }
 
-  // CRITICAL: Force dashboard for logged in users on /dashboard URL
-  if (isLoggedIn && window.location.pathname === '/dashboard' && currentPage !== 'dashboard') {
-    setCurrentPage('dashboard');
-    return (
-      <div className="min-h-screen bg-primary flex items-center justify-center">
-        <div className="loading-spinner w-12 h-12" />
-      </div>
-    );
-  }
 
-  // Show Admin Panel if logged in and owner
-  if (isLoggedIn && currentPage === 'admin') {
-    return <AdminPanel onBack={() => setCurrentPage('dashboard')} />;
-  }
 
   // Show Privacy Policy page
   if (currentPage === 'privacy') {
