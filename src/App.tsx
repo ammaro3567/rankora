@@ -4,8 +4,8 @@ import { SignupPage } from './components/SignupPage';
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { EmailVerification } from './components/EmailVerification';
-import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { TermsOfService } from './components/TermsOfService';
+import { PrivacyPage } from './components/PrivacyPage';
+import { TermsPage } from './components/TermsPage';
 import { PricingPage } from './components/PricingPage';
 import { AdminPanel } from './components/AdminPanel';
 import { authService, profileService } from './lib/supabase';
@@ -340,10 +340,10 @@ function App() {
         )
 
       case 'privacy':
-        return <PrivacyPolicy onBack={() => navigateTo('home')} />
+        return <PrivacyPage onBack={() => navigateTo('home')} />
 
       case 'terms':
-        return <TermsOfService onBack={() => navigateTo('home')} />
+        return <TermsPage onBack={() => navigateTo('home')} />
 
       default:
         navigateTo('home')
