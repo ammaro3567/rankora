@@ -160,6 +160,9 @@ function App() {
 
     checkAuth();
 
+    // Safety timeout: stop loading if anything stalls
+    const fallback = setTimeout(() => setIsLoading(false), 4000);
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -213,7 +216,10 @@ function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(fallback);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Handle success page routing
