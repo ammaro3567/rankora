@@ -25,7 +25,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run generate-sitemap",
+    "build": "vite build && npm run copy-manifest && npm run generate-sitemap",
+    "copy-manifest": "cp public/site.webmanifest dist/ || copy public\\site.webmanifest dist\\",
     "build:prod": "npm run type-check && npm run lint && vite build --mode production",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
