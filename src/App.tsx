@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { LoginPage } from './components/LoginPage';
 import { SignupPage } from './components/SignupPage';
@@ -18,6 +18,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showOwnerAccess, setShowOwnerAccess] = useState(false);
+  const hasRedirectedRef = useRef(false);
 
   // Check authentication status on app load
   useEffect(() => {
@@ -193,14 +194,13 @@ function App() {
         // Check if user is owner for admin access
         const ownerStatus = await isOwner();
         setShowOwnerAccess(ownerStatus);
-        
-        // Smart routing based on current path
-        const currentPath = window.location.pathname;
-        if (currentPath === '/' || currentPath === '/home' || currentPath === '/login' || currentPath === '/signup') {
+
+        // Ensure single redirect and end loading
+        if (!hasRedirectedRef.current) {
+          hasRedirectedRef.current = true;
           window.history.replaceState({}, document.title, '/dashboard');
           setCurrentPage('dashboard');
-        } else if (currentPath === '/dashboard') {
-          setCurrentPage('dashboard');
+          setIsLoading(false);
         }
       } else {
         setIsLoggedIn(false);
@@ -213,6 +213,7 @@ function App() {
           window.history.replaceState({}, document.title, '/');
           setCurrentPage('home');
         }
+        setIsLoading(false);
       }
     });
 

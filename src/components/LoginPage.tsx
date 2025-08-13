@@ -21,17 +21,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLogin, onSwitchT
     setIsLoading(true);
     setError(null);
 
+    // Safety timeout to prevent endless loading in edge cases
+    const safetyTimeout = setTimeout(() => setIsLoading(false), 10000);
+
     try {
-      const { data, error } = await signIn(email, password);
-      
+      const { data, error } = await signIn(email.trim(), password);
+
       if (error) {
-        setError(error.message);
-      } else if (data.user) {
-        onLogin();
+        setError(error.message || 'Failed to sign in. Please try again.');
+        return;
       }
+
+      if (data?.user) {
+        onLogin();
+        return;
+      }
+
+      // No error and no user – show a deterministic message
+      setError('Invalid email or password.');
     } catch (err) {
       setError('An unexpected error occurred');
     } finally {
+      clearTimeout(safetyTimeout);
       setIsLoading(false);
     }
   };
@@ -92,9 +103,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLogin, onSwitchT
                 <input
                   type="email"
                   id="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input-primary pl-12"
+                  className="input-primary pl-12 h-12"
                   placeholder="Enter your email address"
                   required
                 />
@@ -111,9 +123,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLogin, onSwitchT
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-primary pl-12 pr-12"
+                  className="input-primary pl-12 pr-12 h-12"
                   placeholder="Enter your password"
                   required
                 />
