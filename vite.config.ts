@@ -1,9 +1,28 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'public/site.webmanifest',
+          dest: ''
+        },
+        {
+          src: 'public/_redirects',
+          dest: ''
+        },
+        {
+          src: 'public/*.png',
+          dest: ''
+        }
+      ]
+    })
+  ],
   base: '/',
   
   // Build optimizations for production
@@ -15,6 +34,9 @@ export default defineConfig({
     assetsInlineLimit: 4096,
     copyPublicDir: true,
     rollupOptions: {
+      input: {
+        main: 'index.html'
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
@@ -23,7 +45,16 @@ export default defineConfig({
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
+        assetFileNames: (assetInfo) => {
+          // Keep specific files in root
+          if (assetInfo.name === 'site.webmanifest' || 
+              assetInfo.name === '_redirects' ||
+              assetInfo.name?.includes('favicon') ||
+              assetInfo.name?.includes('apple-touch-icon')) {
+            return '[name][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
       },
     },
     chunkSizeWarningLimit: 1000,
