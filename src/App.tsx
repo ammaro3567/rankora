@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { SignupPage } from './components/SignupPage';
-import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { EmailVerification } from './components/EmailVerification';
 import { PrivacyPage } from './components/PrivacyPage';
@@ -111,15 +110,16 @@ function App() {
           console.log('🔒 Protected route - redirecting to login')
           navigateTo('login', true)
         } else if (path === '/') {
-          // Root path goes to home (landing page)
-          navigateTo('home', false)
+          // 🚨 NO LANDING PAGE! Root goes directly to login
+          console.log('🔥 Root access - redirecting to login (NO HOME PAGE)')
+          navigateTo('login', true)
         } else if (['/login', '/signup', '/pricing', '/privacy', '/terms', '/verify-email'].includes(path)) {
           // Public pages - navigate without URL update
           const page = path.substring(1)
           navigateTo(page, false)
         } else {
-          // Unknown routes go to home
-          navigateTo('home', true)
+          // Unknown routes go to login
+          navigateTo('login', true)
         }
       }
       
@@ -302,19 +302,10 @@ function App() {
 
     // Non-authenticated user pages
     switch (state.currentPage) {
-      case 'home':
-    return (
-          <LandingPage
-            onLogin={() => navigateTo('login')}
-            onSignup={() => navigateTo('signup')}
-            onPricing={() => navigateTo('pricing')}
-          />
-        )
-
       case 'login':
     return (
       <LoginPage
-            onBack={() => navigateTo('home')}
+            onBack={() => navigateTo('login')}
             onLogin={handleLogin}
             onSwitchToSignup={() => navigateTo('signup')}
             onGoogleLogin={handleGoogleAuth}
@@ -324,7 +315,7 @@ function App() {
       case 'signup':
     return (
       <SignupPage
-            onBack={() => navigateTo('home')}
+            onBack={() => navigateTo('login')}
             onSignup={handleSignup}
             onSwitchToLogin={() => navigateTo('login')}
             onGoogleSignup={handleGoogleAuth}
@@ -334,7 +325,7 @@ function App() {
       case 'verify-email':
         return (
           <EmailVerification
-            onBack={() => navigateTo('home')}
+            onBack={() => navigateTo('login')}
             userEmail={state.currentUser?.email}
           />
         )
@@ -342,19 +333,19 @@ function App() {
       case 'pricing':
         return (
           <PricingPage
-            onBack={() => navigateTo('home')}
+            onBack={() => navigateTo('login')}
             onLogin={() => navigateTo('login')}
           />
         )
 
       case 'privacy':
-        return <PrivacyPage onBack={() => navigateTo('home')} />
+        return <PrivacyPage onBack={() => navigateTo('login')} />
 
       case 'terms':
-        return <TermsPage onBack={() => navigateTo('home')} />
+        return <TermsPage onBack={() => navigateTo('login')} />
 
       default:
-        navigateTo('home')
+        navigateTo('login')
         return <LoadingOverlay />
     }
   }
