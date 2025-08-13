@@ -281,6 +281,7 @@ function App() {
           onLogout={handleLogout}
           showAdminAccess={showOwnerAccess}
           onOpenAdmin={() => setCurrentPage('admin')}
+          isLoggedIn={isLoggedIn}
         />
       );
     }

@@ -25,6 +25,7 @@ interface SidebarProps {
   onToggle: () => void;
   showAdminAccess?: boolean;
   onOpenAdmin?: () => void;
+  isLoggedIn?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -34,26 +35,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen, 
   onToggle,
   showAdminAccess,
-  onOpenAdmin
+  onOpenAdmin,
+  isLoggedIn
 }) => {
   const [userEmail, setUserEmail] = useState<string>('Guest');
   const [planLabel, setPlanLabel] = useState<string>('Free Plan');
 
   useEffect(() => {
     const init = async () => {
-      const user = await getCurrentUser();
-      if (user?.email) setUserEmail(user.email);
-      try {
-        const sub = await getUserSubscription();
-        if (sub?.subscription_status === 'active') {
-          setPlanLabel('Paid Plan');
+      // 🎯 Only fetch user if logged in (according to App state)
+      if (isLoggedIn) {
+        const user = await getCurrentUser();
+        if (user?.email) {
+          setUserEmail(user.email);
         } else {
-          setPlanLabel('Free Plan');
+          // Fallback - wait a bit and try again
+          setTimeout(async () => {
+            const retryUser = await getCurrentUser();
+            if (retryUser?.email) setUserEmail(retryUser.email);
+          }, 1000);
         }
-      } catch {}
+        
+        try {
+          const sub = await getUserSubscription();
+          if (sub?.subscription_status === 'active') {
+            setPlanLabel('Paid Plan');
+          } else {
+            setPlanLabel('Free Plan');
+          }
+        } catch {}
+      } else {
+        setUserEmail('Guest');
+        setPlanLabel('Free Plan');
+      }
     };
     init();
-  }, []);
+  }, [isLoggedIn]);
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: Home },
     { id: 'analyzer', label: 'AI Analyzer', icon: BarChart3 },
