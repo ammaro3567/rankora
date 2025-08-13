@@ -47,7 +47,7 @@ function App() {
               const ownerStatus = await isOwner();
               setShowOwnerAccess(ownerStatus);
               // Clean up URL
-              window.history.replaceState({}, document.title, '/');
+              window.history.replaceState({}, document.title, 'https://rankora.online/');
             }
             setIsLoading(false);
           }, 1000);

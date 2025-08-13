@@ -23,7 +23,7 @@ export const signUp = async (email: string, password: string, fullName?: string)
     email,
     password,
     options: {
-      emailRedirectTo: `${window.location.origin}/verify-email`,
+      emailRedirectTo: `https://rankora.online/verify-email`,
       data: {
         full_name: fullName || '',
       }
@@ -60,7 +60,7 @@ export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/#/auth/callback`,
+      redirectTo: `https://rankora.online/#/auth/callback`,
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',

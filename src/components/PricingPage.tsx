@@ -231,7 +231,14 @@ export const PricingPage: React.FC = () => {
 
       {/* PayPal Modal */}
       {showModal && selectedProduct && (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 modal-backdrop flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowModal(false);
+            }
+          }}
+        >
           <div className="card p-8 max-w-md mx-4 relative">
             <button
               onClick={() => setShowModal(false)}
