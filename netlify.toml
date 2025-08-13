@@ -21,9 +21,6 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    # Enable GZIP compression
-    Content-Encoding = "gzip"
-    
     # Cache static assets for 1 year
     Cache-Control = "public, max-age=31536000, immutable"
 
