@@ -323,6 +323,45 @@ export const usageService = {
       console.error('💥 Error linking analysis to project:', error)
       throw error
     }
+  },
+
+  async saveUserComparison(comparisonData: any) {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log('⚔️ Saving competitor comparison...')
+
+    try {
+      const { data, error } = await supabase
+        .from('competitor_comparisons')
+        .insert({
+          user_id: session.user.id,
+          user_url: comparisonData.userUrl,
+          competitor_url: comparisonData.competitorUrl,
+          user_content: comparisonData.userContent || '',
+          competitor_content: comparisonData.competitorContent || '',
+          user_score: comparisonData.userScore || 0,
+          competitor_score: comparisonData.competitorScore || 0,
+          comparison_results: comparisonData,
+          recommendations: comparisonData.recommendations || [],
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Failed to save comparison:', error.message)
+        throw error
+      }
+
+      console.log('✅ Comparison saved successfully:', data.id)
+      return data
+    } catch (error) {
+      console.error('💥 Error saving comparison:', error)
+      throw error
+    }
   }
 }
 
@@ -366,4 +405,5 @@ export const listProjects = usageService.listProjects
 export const saveUserAnalysis = usageService.saveUserAnalysis
 export const createProject = usageService.createProject
 export const saveAnalysisToProject = usageService.saveAnalysisToProject
+export const saveUserComparison = usageService.saveUserComparison
 export const upsertUserProfile = () => {} // Deprecated
