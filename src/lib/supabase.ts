@@ -13,6 +13,26 @@ export interface ProjectAnalysis {
   created_at: string
 }
 
+export type UserRole = 'starter' | 'business' | 'enterprise' | 'owner'
+
+export interface UserRoleSummary {
+  user_id: string
+  email: string
+  role: UserRole
+  created_at: string
+  last_sign_in_at?: string
+  analysis_count: number
+  comparison_count: number
+}
+
+export interface RoleAssignment {
+  id: string
+  user_id: string
+  role: UserRole
+  assigned_at: string
+  assigned_by: string
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -37,12 +57,12 @@ export const authService = {
   async signUp(email: string, password: string, fullName: string) {
     console.log('🔄 Starting signup for:', email)
     
-    const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
-      password,
-      options: {
+    password,
+    options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: {
+      data: {
           full_name: fullName.trim(),
         }
       }
@@ -83,7 +103,7 @@ export const authService = {
   async signIn(email: string, password: string) {
     console.log('🔄 Starting signin for:', email)
     
-    const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password
     })
@@ -101,9 +121,9 @@ export const authService = {
   async signInWithGoogle() {
     console.log('🔄 Starting Google signin')
     
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
         redirectTo: `${window.location.origin}/dashboard`
       }
     })
@@ -139,7 +159,7 @@ export const authService = {
   async signOut() {
     console.log('🔄 Signing out user')
     
-    const { error } = await supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut()
     
     if (error) {
       console.error('❌ Signout error:', error.message)
@@ -222,7 +242,7 @@ export const usageService = {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+    .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
 
@@ -283,7 +303,7 @@ export const usageService = {
     console.log('📁 Creating new project...')
 
     try {
-      const { data, error } = await supabase
+  const { data, error } = await supabase
         .from('projects')
         .insert({
           user_id: session.user.id,
@@ -316,8 +336,8 @@ export const usageService = {
 
     console.log('🔗 Linking analysis to project...')
 
-    try {
-      const { data, error } = await supabase
+  try {
+    const { data, error } = await supabase
         .from('user_analyses')
         .update({ project_id: projectId })
         .eq('id', analysisId)
@@ -332,7 +352,7 @@ export const usageService = {
 
       console.log('✅ Analysis linked to project successfully')
       return data
-    } catch (error) {
+  } catch (error) {
       console.error('💥 Error linking analysis to project:', error)
       throw error
     }
@@ -386,9 +406,9 @@ export const usageService = {
     console.log('📊 Getting project analyses for project:', projectId)
 
     try {
-      const { data, error } = await supabase
+  const { data, error } = await supabase
         .from('user_analyses')
-        .select('*')
+    .select('*')
         .eq('user_id', session.user.id)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false })
@@ -427,15 +447,15 @@ export const usageService = {
       }
 
       // Then delete the project
-      const { data, error } = await supabase
+  const { data, error } = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId)
         .eq('user_id', session.user.id)
         .select()
         .single()
-
-      if (error) {
+    
+  if (error) {
         console.error('❌ Failed to delete project:', error.message)
         throw error
       }
@@ -446,6 +466,149 @@ export const usageService = {
       console.error('💥 Error deleting project:', error)
       throw error
     }
+  },
+
+  async getAllUsers(): Promise<UserRoleSummary[]> {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log('👥 Getting all users for admin panel...')
+
+    try {
+      // First check if user is owner/admin
+      const isUserOwner = await profileService.isOwner()
+      if (!isUserOwner) {
+        throw new Error('Unauthorized: Only owners can access user data')
+      }
+
+      // Get all users with their profiles and stats
+      const { data: profiles, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (profileError) {
+        console.warn('⚠️ Failed to get user profiles:', profileError.message)
+        return []
+      }
+
+      // Get analysis counts for each user
+      const usersWithStats: UserRoleSummary[] = []
+      for (const profile of profiles || []) {
+        const [analysesResult, comparisonsResult] = await Promise.all([
+          supabase
+            .from('user_analyses')
+            .select('id', { count: 'exact' })
+            .eq('user_id', profile.id),
+          supabase
+            .from('competitor_comparisons')
+            .select('id', { count: 'exact' })
+            .eq('user_id', profile.id)
+        ])
+
+        usersWithStats.push({
+          user_id: profile.id,
+          email: profile.email || 'N/A',
+          role: profile.role || 'starter',
+          created_at: profile.created_at,
+          last_sign_in_at: profile.last_sign_in_at,
+          analysis_count: analysesResult.count || 0,
+          comparison_count: comparisonsResult.count || 0
+        })
+      }
+
+      console.log(`✅ Found ${usersWithStats.length} users`)
+      return usersWithStats
+    } catch (error) {
+      console.error('💥 Error getting users:', error)
+      throw error
+    }
+  },
+
+  async updateUserRole(userId: string, newRole: UserRole) {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log(`🔄 Updating user ${userId} role to ${newRole}...`)
+
+    try {
+      // Check if user is owner/admin
+      const isUserOwner = await profileService.isOwner()
+      if (!isUserOwner) {
+        throw new Error('Unauthorized: Only owners can update user roles')
+      }
+
+      // Update user profile
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({ role: newRole })
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Failed to update user role:', error.message)
+        throw error
+      }
+
+      // Log the role assignment
+      const { error: assignmentError } = await supabase
+        .from('role_assignments')
+        .insert({
+          user_id: userId,
+          role: newRole,
+          assigned_by: session.user.id,
+          assigned_at: new Date().toISOString()
+        })
+
+      if (assignmentError) {
+        console.warn('⚠️ Failed to log role assignment:', assignmentError.message)
+      }
+
+      console.log('✅ User role updated successfully')
+      return data
+    } catch (error) {
+      console.error('💥 Error updating user role:', error)
+      throw error
+    }
+  },
+
+  async getRoleAssignments(): Promise<RoleAssignment[]> {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log('📋 Getting role assignments...')
+
+    try {
+      // Check if user is owner/admin
+      const isUserOwner = await profileService.isOwner()
+      if (!isUserOwner) {
+        throw new Error('Unauthorized: Only owners can access role assignments')
+      }
+
+      const { data, error } = await supabase
+        .from('role_assignments')
+        .select('*')
+        .order('assigned_at', { ascending: false })
+        .limit(100)
+
+      if (error) {
+        console.warn('⚠️ Failed to get role assignments:', error.message)
+        return []
+      }
+
+      console.log(`✅ Found ${data?.length || 0} role assignments`)
+      return data || []
+    } catch (error) {
+      console.error('💥 Error getting role assignments:', error)
+      throw error
+    }
   }
 }
 
@@ -454,10 +617,10 @@ export const profileService = {
   async getUserProfile() {
     const { session } = await authService.getCurrentSession()
     if (!session?.user) return null
-
-    const { data, error } = await supabase
+  
+  const { data, error } = await supabase
       .from('user_profiles')
-      .select('*')
+    .select('*')
       .eq('user_id', session.user.id)
       .single()
 
@@ -492,4 +655,7 @@ export const saveAnalysisToProject = usageService.saveAnalysisToProject
 export const saveUserComparison = usageService.saveUserComparison
 export const getProjectAnalyses = usageService.getProjectAnalyses
 export const deleteProject = usageService.deleteProject
-export const upsertUserProfile = () => {} // Deprecated
+export const getAllUsers = usageService.getAllUsers
+export const updateUserRole = usageService.updateUserRole
+export const getRoleAssignments = usageService.getRoleAssignments
+export const upsertUserProfile = profileService.upsertUserProfile
