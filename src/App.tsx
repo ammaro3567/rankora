@@ -9,14 +9,13 @@ import { PricingPage } from './components/PricingPage';
 import { AdminPanel } from './components/AdminPanel';
 import { authService, profileService, supabase } from './lib/supabase';
 import { LoadingOverlay } from './components/LoadingOverlay';
-import LandingPage from './components/LandingPage';
 
 // 🎯 App state type
 type AppState = {
   isLoading: boolean
   isAuthenticated: boolean
   currentUser: any
-  currentPage: 'loading' | 'home' | 'dashboard' | 'login' | 'signup' | 'verify-email' | 'pricing' | 'privacy' | 'terms' | 'admin'
+  currentPage: 'loading' | 'dashboard' | 'login' | 'signup' | 'verify-email' | 'pricing' | 'privacy' | 'terms' | 'admin'
   isOwner: boolean
 }
 
@@ -41,7 +40,7 @@ function App() {
     updateState({ currentPage: page })
     
     if (updateUrl) {
-      const url = page === 'home' ? '/' : `/${page}`
+      const url = page === 'dashboard' ? '/' : `/${page}`
       window.history.replaceState({}, document.title, url)
     }
   }
@@ -111,23 +110,23 @@ function App() {
           console.log('🔒 Protected route - redirecting to login')
           navigateTo('login', true)
         } else if (path === '/') {
-          // 🏠 Root path goes to beautiful landing page
-          console.log('🏠 Root access - showing landing page')
-          navigateTo('home', true)
+          // 🏠 Root path goes to dashboard (our real home page)
+          console.log('🏠 Root access - going to dashboard home page')
+          navigateTo('dashboard', true)
         } else if (['/login', '/signup', '/pricing', '/privacy', '/terms', '/verify-email'].includes(path)) {
           // Public pages - navigate without URL update
           const page = path.substring(1) as AppState['currentPage']
           navigateTo(page, false)
         } else {
-          // Unknown routes go to home page
-          navigateTo('home', true)
+          // Unknown routes go to dashboard (home page)
+          navigateTo('dashboard', true)
         }
       }
       
     } catch (error) {
       console.error('💥 Authentication check failed:', error)
       updateState({ isLoading: false, isAuthenticated: false })
-      navigateTo('home')
+      navigateTo('dashboard')
     }
   }
 
@@ -202,7 +201,7 @@ function App() {
           isOwner: false
         })
         
-        navigateTo('home')
+        navigateTo('dashboard')
 
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('🔄 Token refreshed')
@@ -303,21 +302,21 @@ function App() {
 
     // Non-authenticated user pages
     switch (state.currentPage) {
-      case 'home':
-        // 🏠 Beautiful landing page for new visitors
-        console.log('🏠 Rendering Landing Page')
+      case 'dashboard':
+        // 🏠 Dashboard is our real home page (Guest Mode for non-authenticated)
+        console.log('🏠 Rendering Dashboard as Home Page (Guest Mode)')
         return (
-          <LandingPage
-            onLogin={() => navigateTo('login')}
-            onSignup={() => navigateTo('signup')}
-            onPricing={() => navigateTo('pricing')}
+          <Dashboard
+            onLogout={handleLogout}
+            showAdminAccess={false}
+            isLoggedIn={false}
           />
         )
 
       case 'login':
     return (
       <LoginPage
-            onBack={() => navigateTo('home')}
+            onBack={() => navigateTo('dashboard')}
             onLogin={handleLogin}
             onSwitchToSignup={() => navigateTo('signup')}
             onGoogleLogin={handleGoogleAuth}
@@ -327,7 +326,7 @@ function App() {
       case 'signup':
     return (
       <SignupPage
-            onBack={() => navigateTo('home')}
+            onBack={() => navigateTo('dashboard')}
             onSignup={handleSignup}
             onSwitchToLogin={() => navigateTo('login')}
             onGoogleSignup={handleGoogleAuth}
@@ -337,7 +336,7 @@ function App() {
       case 'verify-email':
         return (
           <EmailVerification
-            onBack={() => navigateTo('home')}
+            onBack={() => navigateTo('dashboard')}
             userEmail={state.currentUser?.email}
           />
         )
@@ -346,13 +345,13 @@ function App() {
         return <PricingPage />
 
       case 'privacy':
-        return <PrivacyPage onBack={() => navigateTo('home')} />
+        return <PrivacyPage onBack={() => navigateTo('dashboard')} />
 
       case 'terms':
-        return <TermsPage onBack={() => navigateTo('home')} />
+        return <TermsPage onBack={() => navigateTo('dashboard')} />
 
       default:
-        navigateTo('home')
+        navigateTo('dashboard')
         return <LoadingOverlay isVisible={true} />
     }
   }
