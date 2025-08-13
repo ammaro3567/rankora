@@ -223,6 +223,106 @@ export const usageService = {
       console.error('💥 Error getting projects:', error)
       return []
     }
+  },
+
+  async saveUserAnalysis(analysisData: any) {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log('💾 Saving user analysis...')
+
+    try {
+      const { data, error } = await supabase
+        .from('user_analyses')
+        .insert({
+          user_id: session.user.id,
+          url: analysisData.url,
+          content: analysisData.content || '',
+          ai_overview_potential: analysisData.ai_overview_potential || 0,
+          recommendations: analysisData.recommendations || [],
+          analysis_results: analysisData,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Failed to save analysis:', error.message)
+        throw error
+      }
+
+      console.log('✅ Analysis saved successfully:', data.id)
+      return data
+    } catch (error) {
+      console.error('💥 Error saving analysis:', error)
+      throw error
+    }
+  },
+
+  async createProject(projectData: any) {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log('📁 Creating new project...')
+
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          user_id: session.user.id,
+          name: projectData.name,
+          description: projectData.description || '',
+          website_url: projectData.website_url || '',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Failed to create project:', error.message)
+        throw error
+      }
+
+      console.log('✅ Project created successfully:', data.id)
+      return data
+    } catch (error) {
+      console.error('💥 Error creating project:', error)
+      throw error
+    }
+  },
+
+  async saveAnalysisToProject(projectId: string, analysisId: string) {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log('🔗 Linking analysis to project...')
+
+    try {
+      const { data, error } = await supabase
+        .from('user_analyses')
+        .update({ project_id: projectId })
+        .eq('id', analysisId)
+        .eq('user_id', session.user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Failed to link analysis to project:', error.message)
+        throw error
+      }
+
+      console.log('✅ Analysis linked to project successfully')
+      return data
+    } catch (error) {
+      console.error('💥 Error linking analysis to project:', error)
+      throw error
+    }
   }
 }
 
@@ -263,4 +363,7 @@ export const getUserProfile = profileService.getUserProfile
 export const isOwner = profileService.isOwner
 export const getMonthlyUsageCounts = usageService.getMonthlyUsageCounts
 export const listProjects = usageService.listProjects
+export const saveUserAnalysis = usageService.saveUserAnalysis
+export const createProject = usageService.createProject
+export const saveAnalysisToProject = usageService.saveAnalysisToProject
 export const upsertUserProfile = () => {} // Deprecated
