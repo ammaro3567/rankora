@@ -204,14 +204,15 @@ function App() {
         const ownerStatus = await isOwner();
         setShowOwnerAccess(ownerStatus);
         
-        // CRITICAL: Force stop loading and redirect immediately
+        // CRITICAL: Force stop loading and set dashboard page
         setIsLoading(false);
-        if (window.location.pathname !== '/dashboard') {
-          console.log('Redirecting to dashboard');
-          window.location.href = '/dashboard';
-          return;
-        }
         setCurrentPage('dashboard');
+        
+        // Update URL if not already on dashboard
+        if (window.location.pathname !== '/dashboard') {
+          console.log('Updating URL to /dashboard');
+          window.history.pushState({}, document.title, '/dashboard');
+        }
       } else {
         console.log('No user session, setting logged out state');
         setIsLoggedIn(false);
