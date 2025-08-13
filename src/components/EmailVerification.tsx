@@ -1,147 +1,177 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { ArrowLeft, Mail, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { StarField } from './StarField';
+import { authService, supabase } from '../lib/supabase';
 
 interface EmailVerificationProps {
   onBack: () => void;
+  userEmail?: string;
 }
 
-const EmailVerification: React.FC<EmailVerificationProps> = ({ onBack }) => {
-  const [status, setStatus] = useState<'waiting' | 'loading' | 'success' | 'error'>('waiting');
-  const [message, setMessage] = useState('');
+export const EmailVerification: React.FC<EmailVerificationProps> = ({ onBack, userEmail }) => {
+  const [status, setStatus] = useState<'waiting' | 'checking' | 'success' | 'error'>('waiting')
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
     // Check if this is a verification callback from email
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
-    const type = hashParams.get('type');
+    const handleVerificationCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+      const type = hashParams.get('type')
 
-    if (type === 'signup' && accessToken && refreshToken) {
-      // This is a callback from email verification - redirect to dashboard
-      const verifyAndRedirect = async () => {
+      if (type === 'signup' && accessToken && refreshToken) {
+        console.log('📧 Processing email verification callback')
+        setStatus('checking')
+
         try {
-          const { error } = await supabase.auth.setSession({
+          // Set the session from verification callback
+          const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
-          });
+          })
 
-          if (!error) {
-            // Successful verification - go directly to dashboard
-            console.log('✅ Email verified successfully, redirecting to dashboard');
-            window.location.href = '/dashboard';
-          } else {
-            setStatus('error');
-            setMessage('Email verification failed. Please try again.');
+          if (error) {
+            console.error('❌ Session setting failed:', error.message)
+            setStatus('error')
+            setMessage('Email verification failed. Please try again or contact support.')
+            return
           }
+
+          if (data.session?.user) {
+            console.log('✅ Email verified successfully for:', data.session.user.email)
+            setStatus('success')
+            setMessage('Email verified successfully! Redirecting to dashboard...')
+            
+            // Clean up URL and redirect to dashboard
+            window.history.replaceState({}, document.title, '/dashboard')
+            
+            // Let the auth state change handle the redirect
+            setTimeout(() => {
+              window.location.reload() // Force refresh to trigger auth check
+            }, 1500)
+          } else {
+            setStatus('error')
+            setMessage('Verification completed but no user session found.')
+          }
+          
         } catch (error) {
-          setStatus('error');
-          setMessage('Something went wrong. Please try again.');
+          console.error('💥 Verification error:', error)
+          setStatus('error')
+          setMessage('Something went wrong during verification. Please try again.')
         }
-      };
-      
-      verifyAndRedirect();
+      }
     }
-    // If no verification params, stay in waiting state to show instructions
-  }, []);
+
+    handleVerificationCallback()
+  }, [])
+
+  const renderContent = () => {
+    switch (status) {
+      case 'checking':
+        return (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            </div>
+            <h2 className="text-2xl font-bold text-primary mb-2">Verifying Email...</h2>
+            <p className="text-secondary">
+              Please wait while we verify your email address.
+            </p>
+          </div>
+        )
+
+      case 'success':
+        return (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-primary mb-2">Email Verified!</h2>
+            <p className="text-secondary mb-4">{message}</p>
+            <div className="animate-pulse">
+              <p className="text-sm text-accent-primary">Redirecting to dashboard...</p>
+            </div>
+          </div>
+        )
+
+      case 'error':
+        return (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-primary mb-2">Verification Failed</h2>
+            <p className="text-secondary mb-6">{message}</p>
+            <button
+              onClick={onBack}
+              className="btn-primary"
+            >
+              Go Back to Home
+            </button>
+          </div>
+        )
+
+      default: // waiting
+        return (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-primary mb-2">Check Your Email</h2>
+            <p className="text-secondary mb-6">
+              We've sent a verification email to{' '}
+              <span className="font-medium text-primary">
+                {userEmail || 'your email address'}
+              </span>
+              . Please click the link in the email to verify your account.
+            </p>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h3 className="font-medium text-blue-900 mb-2">Next steps:</h3>
+              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                <li>Check your email inbox (and spam folder)</li>
+                <li>Click the verification link in the email</li>
+                <li>You'll be automatically redirected to your dashboard</li>
+              </ol>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm text-secondary">
+                Didn't receive the email? Check your spam folder or try signing up again.
+              </p>
+              <button
+                onClick={onBack}
+                className="text-accent-primary hover:text-accent-secondary font-medium transition-colors duration-200"
+              >
+                Go back to signup
+              </button>
+            </div>
+          </div>
+        )
+    }
+  }
 
   return (
     <div className="min-h-screen bg-primary relative overflow-hidden flex items-center justify-center">
       <StarField />
       
       <div className="relative z-10 w-full max-w-md mx-auto px-4">
-        <div className="card text-center animate-scaleIn">
-          
-          {/* Waiting for Confirmation State */}
-          {status === 'waiting' && (
-            <>
-              <div className="w-16 h-16 bg-accent-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-accent-primary" />
-              </div>
-              <h2 className="text-2xl font-bold text-primary mb-2">Check Your Email</h2>
-              <p className="text-secondary mb-6">
-                We've sent you a verification email. Please check your inbox and click the verification link to complete your registration and access the dashboard.
-              </p>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={onBack}
-                  className="btn-secondary w-full flex items-center justify-center space-x-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Login</span>
-                </button>
-              </div>
-              
-              <div className="mt-4 p-3 bg-accent-primary/10 rounded-lg">
-                <p className="text-tertiary text-sm">
-                  <strong>Can't find the email?</strong> Check your spam folder or wait a few minutes for delivery. The verification link will take you directly to the dashboard.
-                </p>
-              </div>
-            </>
-          )}
+        {/* Back button - only show when waiting */}
+        {status === 'waiting' && (
+          <button
+            onClick={onBack}
+            className="absolute -top-16 left-4 text-secondary hover:text-primary transition-colors duration-200 flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Home</span>
+          </button>
+        )}
 
-          {/* Loading State */}
-          {status === 'loading' && (
-            <>
-              <div className="w-16 h-16 bg-accent-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary"></div>
-              </div>
-              <h2 className="text-2xl font-bold text-primary mb-2">Verifying Email...</h2>
-              <p className="text-secondary mb-4">
-                Please wait while we verify your email address.
-              </p>
-            </>
-          )}
-
-          {/* Success State */}
-          {status === 'success' && (
-            <>
-              <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-success" />
-              </div>
-              <h2 className="text-2xl font-bold text-primary mb-2">Email Verified!</h2>
-              <p className="text-secondary mb-4">{message}</p>
-              <p className="text-tertiary text-sm">
-                Redirecting to dashboard in 3 seconds...
-              </p>
-            </>
-          )}
-
-          {/* Error State */}
-          {status === 'error' && (
-            <>
-              <div className="w-16 h-16 bg-error/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-error" />
-              </div>
-              <h2 className="text-2xl font-bold text-primary mb-2">Verification Failed</h2>
-              <p className="text-secondary mb-6">{message}</p>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={onBack}
-                  className="btn-primary w-full flex items-center justify-center space-x-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Login</span>
-                </button>
-                
-                <button
-                  onClick={() => window.location.href = '/signup'}
-                  className="btn-secondary w-full"
-                >
-                  Try Signing Up Again
-                </button>
-              </div>
-            </>
-          )}
+        <div className="card animate-scaleIn">
+          {renderContent()}
         </div>
       </div>
     </div>
-  );
-};
-
-export default EmailVerification;
-
+  )
+}
