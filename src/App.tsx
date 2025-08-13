@@ -130,10 +130,26 @@ function App() {
             return;
           }
           setIsLoggedIn(true);
-          setCurrentPage('dashboard');
           // Check if user is owner for admin access
           const ownerStatus = await isOwner();
           setShowOwnerAccess(ownerStatus);
+          
+          // If user is logged in but on home page, redirect to dashboard
+          if (path === '/' || path === '/home') {
+            window.history.replaceState({}, document.title, '/dashboard');
+            setCurrentPage('dashboard');
+          } else if (path === '/dashboard') {
+            setCurrentPage('dashboard');
+          } else {
+            setCurrentPage('dashboard'); // Default to dashboard for logged in users
+          }
+        } else {
+          // Not logged in - redirect protected routes to login
+          const protectedRoutes = ['/dashboard', '/admin'];
+          if (protectedRoutes.includes(path)) {
+            window.history.replaceState({}, document.title, '/login');
+            setCurrentPage('login');
+          }
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -171,14 +187,29 @@ function App() {
           }
         }
         
-        setCurrentPage('dashboard');
         // Check if user is owner for admin access
         const ownerStatus = await isOwner();
         setShowOwnerAccess(ownerStatus);
+        
+        // Smart routing based on current path
+        const currentPath = window.location.pathname;
+        if (currentPath === '/' || currentPath === '/home' || currentPath === '/login' || currentPath === '/signup') {
+          window.history.replaceState({}, document.title, '/dashboard');
+          setCurrentPage('dashboard');
+        } else if (currentPath === '/dashboard') {
+          setCurrentPage('dashboard');
+        }
       } else {
         setIsLoggedIn(false);
-        setCurrentPage('home');
         setShowOwnerAccess(false);
+        
+        // Only redirect if on protected route
+        const currentPath = window.location.pathname;
+        const protectedRoutes = ['/dashboard', '/admin'];
+        if (protectedRoutes.includes(currentPath)) {
+          window.history.replaceState({}, document.title, '/');
+          setCurrentPage('home');
+        }
       }
     });
 
