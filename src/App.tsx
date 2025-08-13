@@ -206,6 +206,9 @@ function App() {
         
         // CRITICAL: Force stop loading and set dashboard page
         setIsLoading(false);
+        
+        // Force dashboard state for any logged in user
+        console.log('Setting currentPage to dashboard for logged in user');
         setCurrentPage('dashboard');
         
         // Update URL if not already on dashboard
@@ -262,7 +265,7 @@ function App() {
     );
   }
 
-  // Show Dashboard if logged in
+  // Show Dashboard if logged in and on dashboard page
   if (isLoggedIn && currentPage === 'dashboard') {
     return (
       <Dashboard 
@@ -270,6 +273,16 @@ function App() {
         showAdminAccess={showOwnerAccess}
         onOpenAdmin={() => setCurrentPage('admin')}
       />
+    );
+  }
+
+  // CRITICAL: Force dashboard for logged in users on /dashboard URL
+  if (isLoggedIn && window.location.pathname === '/dashboard' && currentPage !== 'dashboard') {
+    setCurrentPage('dashboard');
+    return (
+      <div className="min-h-screen bg-primary flex items-center justify-center">
+        <div className="loading-spinner w-12 h-12" />
+      </div>
     );
   }
 
