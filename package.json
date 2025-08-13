@@ -25,7 +25,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run copy-manifest && npm run generate-sitemap",
+    "build": "npm run gen-icons && vite build && npm run copy-manifest && npm run generate-sitemap",
+    "gen-icons": "node scripts/generate-icons.mjs",
     "copy-manifest": "cp public/site.webmanifest dist/ || copy public\\site.webmanifest dist\\",
     "build:prod": "npm run type-check && npm run lint && vite build --mode production",
     "lint": "eslint .",
@@ -63,6 +64,7 @@
     "gh-pages": "^6.1.1",
     "globals": "^15.9.0",
     "postcss": "^8.4.35",
+    "sharp": "^0.34.3",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",

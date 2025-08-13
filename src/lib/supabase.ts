@@ -17,7 +17,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    debug: true
   }
 })
 
@@ -69,6 +70,7 @@ export const signInWithGoogle = async () => {
     options: {
       redirectTo: `${window.location.origin}/#/auth/callback`,
       queryParams: {
+        // modern params; avoid deprecated flow warnings
         access_type: 'offline',
         prompt: 'consent',
       },
