@@ -30,7 +30,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ onBack }) => {
 
           if (!error) {
             // Successful verification - go directly to dashboard
-            window.location.href = 'https://rankora.online/dashboard';
+            window.location.href = '/dashboard';
           } else {
             setStatus('error');
             setMessage('Email verification failed. Please try again.');

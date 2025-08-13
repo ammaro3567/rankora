@@ -23,8 +23,75 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if this is email verification
-        if (window.location.pathname === '/verify-email' || window.location.hash.includes('type=signup')) {
+        // Route handling based on URL
+        const path = window.location.pathname;
+        
+        // Handle specific routes
+        switch (path) {
+          case '/dashboard':
+            const user = await getCurrentUser();
+            if (user && user.email_confirmed_at) {
+              setIsLoggedIn(true);
+              setCurrentPage('dashboard');
+              const ownerStatus = await isOwner();
+              setShowOwnerAccess(ownerStatus);
+              setIsLoading(false);
+              return;
+            } else {
+              window.history.replaceState({}, document.title, '/login');
+              setCurrentPage('login');
+              setIsLoading(false);
+              return;
+            }
+            
+          case '/login':
+            setCurrentPage('login');
+            setIsLoading(false);
+            return;
+            
+          case '/signup':
+            setCurrentPage('signup');
+            setIsLoading(false);
+            return;
+            
+          case '/verify-email':
+            setCurrentPage('verify-email');
+            setIsLoading(false);
+            return;
+            
+          case '/privacy':
+            setCurrentPage('privacy');
+            setIsLoading(false);
+            return;
+            
+          case '/terms':
+            setCurrentPage('terms');
+            setIsLoading(false);
+            return;
+            
+          case '/pricing':
+            setCurrentPage('pricing');
+            setIsLoading(false);
+            return;
+            
+          case '/admin':
+            const adminUser = await getCurrentUser();
+            if (adminUser && await isOwner()) {
+              setIsLoggedIn(true);
+              setCurrentPage('admin');
+              setShowOwnerAccess(true);
+              setIsLoading(false);
+              return;
+            } else {
+              window.history.replaceState({}, document.title, '/login');
+              setCurrentPage('login');
+              setIsLoading(false);
+              return;
+            }
+        }
+
+        // Check for email verification callback
+        if (window.location.hash.includes('type=signup')) {
           setCurrentPage('verify-email');
           setIsLoading(false);
           return;
@@ -47,7 +114,7 @@ function App() {
               const ownerStatus = await isOwner();
               setShowOwnerAccess(ownerStatus);
               // Clean up URL
-              window.history.replaceState({}, document.title, 'https://rankora.online/');
+              window.history.replaceState({}, document.title, '/dashboard');
             }
             setIsLoading(false);
           }, 1000);
@@ -163,12 +230,27 @@ function App() {
 
   // Show Privacy Policy page
   if (currentPage === 'privacy') {
-    return <PrivacyPage onBack={() => setCurrentPage('home')} />;
+    return <PrivacyPage onBack={() => {
+      window.history.replaceState({}, document.title, '/');
+      setCurrentPage('home');
+    }} />;
   }
 
   // Show Terms of Service page
   if (currentPage === 'terms') {
-    return <TermsPage onBack={() => setCurrentPage('home')} />;
+    return <TermsPage onBack={() => {
+      window.history.replaceState({}, document.title, '/');
+      setCurrentPage('home');
+    }} />;
+  }
+
+  // Show Pricing page (standalone)
+  if (currentPage === 'pricing') {
+    return (
+      <div className="min-h-screen bg-primary">
+        <PricingPage />
+      </div>
+    );
   }
 
   // Show Login/Signup pages
@@ -187,13 +269,18 @@ function App() {
         onLogin={async () => {
           const user = await getCurrentUser();
           if (user && !user.email_confirmed_at) {
+            window.history.replaceState({}, document.title, '/verify-email');
             setCurrentPage('verify-email');
             return;
           }
           setIsLoggedIn(true);
+          window.history.replaceState({}, document.title, '/dashboard');
           setCurrentPage('dashboard');
         }}
-        onSwitchToSignup={() => setCurrentPage('signup')}
+        onSwitchToSignup={() => {
+          window.history.replaceState({}, document.title, '/signup');
+          setCurrentPage('signup');
+        }}
       />
     );
   }
@@ -206,7 +293,10 @@ function App() {
           // Always redirect to email verification for new signups
           setCurrentPage('verify-email');
         }}
-        onSwitchToLogin={() => setCurrentPage('login')}
+        onSwitchToLogin={() => {
+          window.history.replaceState({}, document.title, '/login');
+          setCurrentPage('login');
+        }}
       />
     );
   }

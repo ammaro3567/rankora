@@ -242,7 +242,8 @@ export const PricingPage: React.FC = () => {
           <div className="card p-8 max-w-md mx-4 relative">
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-secondary hover:text-primary"
+              className="absolute top-4 right-4 text-secondary hover:text-primary transition-colors z-10 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Close"
             >
               <X className="w-6 h-6" />
             </button>
