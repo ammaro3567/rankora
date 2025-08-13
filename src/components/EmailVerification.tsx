@@ -30,6 +30,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ onBack }) => {
 
           if (!error) {
             // Successful verification - go directly to dashboard
+            console.log('✅ Email verified successfully, redirecting to dashboard');
             window.location.href = '/dashboard';
           } else {
             setStatus('error');

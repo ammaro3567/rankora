@@ -54,8 +54,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignup, onSwit
       if (error) {
         setError(error.message);
       } else if (data.user) {
-        // Create initial profile with full name
-        await upsertUserProfile({ full_name: formData.name });
+        // Profile already created in signUp function, no need to create again
         setSuccess(true);
         setTimeout(() => {
           onSignup();

@@ -184,7 +184,10 @@ function App() {
     // Listen for auth changes
     const hasRedirectedRef = { current: false } as { current: boolean };
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, !!session?.user);
+      console.log('🔔 Auth state change:', event, !!session?.user, session?.user?.email);
+      
+      // Debug: show current page when auth changes
+      console.log('📍 Current page when auth changed:', currentPage);
       
       if (session?.user) {
         // Check email verification status
