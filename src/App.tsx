@@ -162,19 +162,27 @@ function App() {
     checkAuth();
 
     // Safety timeout: stop loading if anything stalls
-    const fallback = setTimeout(() => setIsLoading(false), 4000);
+    const fallback = setTimeout(() => {
+      console.warn('Auth check timeout - forcing loading to stop');
+      setIsLoading(false);
+    }, 3000);
 
     // Listen for auth changes
     const hasRedirectedRef = { current: false } as { current: boolean };
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, !!session?.user);
+      
       if (session?.user) {
         // Check email verification status
         if (!session.user.email_confirmed_at) {
+          console.log('Email not confirmed, redirecting to verify-email');
           setCurrentPage('verify-email');
           setIsLoggedIn(false);
+          setIsLoading(false);
           return;
         }
 
+        console.log('User authenticated, setting logged in state');
         setIsLoggedIn(true);
         
         // For Google OAuth users, ensure profile exists
@@ -196,17 +204,19 @@ function App() {
         const ownerStatus = await isOwner();
         setShowOwnerAccess(ownerStatus);
         
-        // Ensure single redirect and end loading
-        if (!hasRedirectedRef.current && window.location.pathname !== '/dashboard') {
-          hasRedirectedRef.current = true;
-          window.location.replace('/dashboard');
+        // CRITICAL: Force stop loading and redirect immediately
+        setIsLoading(false);
+        if (window.location.pathname !== '/dashboard') {
+          console.log('Redirecting to dashboard');
+          window.location.href = '/dashboard';
           return;
         }
         setCurrentPage('dashboard');
-        setIsLoading(false);
       } else {
+        console.log('No user session, setting logged out state');
         setIsLoggedIn(false);
         setShowOwnerAccess(false);
+        setIsLoading(false);
         
         // Only redirect if on protected route
         const currentPath = window.location.pathname;
@@ -215,7 +225,6 @@ function App() {
           window.history.replaceState({}, document.title, '/');
           setCurrentPage('home');
         }
-        setIsLoading(false);
       }
     });
 
