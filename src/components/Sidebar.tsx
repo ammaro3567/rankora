@@ -43,32 +43,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   useEffect(() => {
     const init = async () => {
+      console.log('🔍 Sidebar: isLoggedIn =', isLoggedIn);
+      
       // 🎯 Only fetch user if logged in (according to App state)
       if (isLoggedIn) {
-        const user = await getCurrentUser();
-        if (user?.email) {
-          setUserEmail(user.email);
-        } else {
-          // Fallback - wait a bit and try again
-          setTimeout(async () => {
-            const retryUser = await getCurrentUser();
-            if (retryUser?.email) setUserEmail(retryUser.email);
-          }, 1000);
-        }
-        
         try {
-          const sub = await getUserSubscription();
-          if (sub?.subscription_status === 'active') {
-            setPlanLabel('Paid Plan');
+          const user = await getCurrentUser();
+          console.log('👤 Sidebar: Got user =', user?.email);
+          
+          if (user?.email) {
+            setUserEmail(user.email);
           } else {
+            console.log('⚠️ No email found, setting as Guest');
+            setUserEmail('Guest');
+          }
+          
+          // Get subscription status
+          try {
+            const sub = await getUserSubscription();
+            if (sub?.subscription_status === 'active') {
+              setPlanLabel('Paid Plan');
+            } else {
+              setPlanLabel('Free Plan');
+            }
+          } catch (error) {
+            console.log('💰 No subscription found, using Free Plan');
             setPlanLabel('Free Plan');
           }
-        } catch {}
+        } catch (error) {
+          console.error('❌ Sidebar: Error getting user:', error);
+          setUserEmail('Guest');
+          setPlanLabel('Free Plan');
+        }
       } else {
+        console.log('🚫 Sidebar: User not logged in, setting as Guest');
         setUserEmail('Guest');
         setPlanLabel('Free Plan');
       }
     };
+    
     init();
   }, [isLoggedIn]);
   const menuItems = [

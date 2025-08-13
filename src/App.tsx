@@ -87,15 +87,14 @@ function App() {
 
         // Handle routing for authenticated users
         const path = window.location.pathname
+        console.log(`🎯 Authenticated user on path: ${path}`)
         
-        if (path === '/' || path === '/home' || path === '/login' || path === '/signup') {
-          navigateTo('dashboard')
-        } else if (path === '/dashboard') {
-          navigateTo('dashboard', false)
-        } else if (path === '/admin' && ownerStatus) {
+        // Always redirect authenticated users to dashboard unless they're specifically on admin
+        if (path === '/admin' && ownerStatus) {
           navigateTo('admin', false)
         } else {
-          navigateTo('dashboard')
+          // For all other paths (including /), redirect to dashboard
+          navigateTo('dashboard', true)
         }
         
       } else {
@@ -105,15 +104,22 @@ function App() {
         
         // Handle routing for non-authenticated users
         const path = window.location.pathname
-        const publicPages = ['/', '/login', '/signup', '/pricing', '/privacy', '/terms']
+        console.log(`🏠 Non-authenticated user on path: ${path}`)
         
+        // Redirect protected routes to login
         if (path === '/dashboard' || path === '/admin') {
-          navigateTo('login')
-        } else if (publicPages.includes(path)) {
-          const page = path === '/' ? 'home' : path.substring(1)
+          console.log('🔒 Protected route - redirecting to login')
+          navigateTo('login', true)
+        } else if (path === '/') {
+          // Root path goes to home (landing page)
+          navigateTo('home', false)
+        } else if (['/login', '/signup', '/pricing', '/privacy', '/terms', '/verify-email'].includes(path)) {
+          // Public pages - navigate without URL update
+          const page = path.substring(1)
           navigateTo(page, false)
         } else {
-          navigateTo('home')
+          // Unknown routes go to home
+          navigateTo('home', true)
         }
       }
       
@@ -182,7 +188,8 @@ function App() {
           isOwner: ownerStatus
         })
         
-        navigateTo('dashboard')
+        console.log('🎯 Redirecting signed-in user to dashboard')
+        navigateTo('dashboard', true)
 
       } else if (event === 'SIGNED_OUT') {
         // User signed out
@@ -269,12 +276,13 @@ function App() {
     if (state.isAuthenticated) {
       switch (state.currentPage) {
         case 'dashboard':
-          return (
-            <Dashboard
-              onLogout={handleLogout}
+          console.log('🎨 Rendering Dashboard - User:', state.currentUser?.email)
+    return (
+      <Dashboard 
+        onLogout={handleLogout}
               showAdminAccess={state.isOwner}
               onOpenAdmin={() => navigateTo('admin')}
-              isLoggedIn={true}
+              isLoggedIn={state.isAuthenticated}
             />
           )
         
@@ -295,7 +303,7 @@ function App() {
     // Non-authenticated user pages
     switch (state.currentPage) {
       case 'home':
-        return (
+    return (
           <LandingPage
             onLogin={() => navigateTo('login')}
             onSignup={() => navigateTo('signup')}
@@ -304,8 +312,8 @@ function App() {
         )
 
       case 'login':
-        return (
-          <LoginPage
+    return (
+      <LoginPage
             onBack={() => navigateTo('home')}
             onLogin={handleLogin}
             onSwitchToSignup={() => navigateTo('signup')}
@@ -314,8 +322,8 @@ function App() {
         )
 
       case 'signup':
-        return (
-          <SignupPage
+    return (
+      <SignupPage
             onBack={() => navigateTo('home')}
             onSignup={handleSignup}
             onSwitchToLogin={() => navigateTo('login')}
