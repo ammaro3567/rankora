@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { SignupPage } from './components/SignupPage';
 import { Dashboard } from './components/Dashboard';
@@ -7,15 +7,16 @@ import { PrivacyPage } from './components/PrivacyPage';
 import { TermsPage } from './components/TermsPage';
 import { PricingPage } from './components/PricingPage';
 import { AdminPanel } from './components/AdminPanel';
-import { authService, profileService } from './lib/supabase';
+import { authService, profileService, supabase } from './lib/supabase';
 import { LoadingOverlay } from './components/LoadingOverlay';
+import LandingPage from './components/LandingPage';
 
 // 🎯 App state type
 type AppState = {
   isLoading: boolean
   isAuthenticated: boolean
   currentUser: any
-  currentPage: string
+  currentPage: 'loading' | 'home' | 'dashboard' | 'login' | 'signup' | 'verify-email' | 'pricing' | 'privacy' | 'terms' | 'admin'
   isOwner: boolean
 }
 
@@ -35,7 +36,7 @@ function App() {
   }
 
   // 🛣️ Navigation helper
-  const navigateTo = (page: string, updateUrl = true) => {
+  const navigateTo = (page: AppState['currentPage'], updateUrl = true) => {
     console.log(`🧭 Navigating to: ${page}`)
     updateState({ currentPage: page })
     
@@ -105,24 +106,21 @@ function App() {
         const path = window.location.pathname
         console.log(`🏠 Non-authenticated user on path: ${path}`)
         
-        // Special handling for root path - allow dashboard access for everyone
-        if (path === '/') {
-          // 🏠 Root path always goes to dashboard (our main home page)
-          console.log('🏠 Root access - going to dashboard (home page)')
-          navigateTo('dashboard', true)
-        } else if (path === '/dashboard') {
-          // 🏠 Dashboard access allowed for everyone (with guest mode if needed)
-          navigateTo('dashboard', false)
-        } else if (path === '/admin') {
-          console.log('🔒 Admin route - redirecting to login')
+        // Redirect protected routes to login
+        if (path === '/dashboard' || path === '/admin') {
+          console.log('🔒 Protected route - redirecting to login')
           navigateTo('login', true)
+        } else if (path === '/') {
+          // 🏠 Root path goes to beautiful landing page
+          console.log('🏠 Root access - showing landing page')
+          navigateTo('home', true)
         } else if (['/login', '/signup', '/pricing', '/privacy', '/terms', '/verify-email'].includes(path)) {
           // Public pages - navigate without URL update
-          const page = path.substring(1)
+          const page = path.substring(1) as AppState['currentPage']
           navigateTo(page, false)
         } else {
-          // Unknown routes go to login
-          navigateTo('login', true)
+          // Unknown routes go to home page
+          navigateTo('home', true)
         }
       }
       
@@ -271,8 +269,8 @@ function App() {
 
   // 🎨 Render logic
   const renderCurrentPage = () => {
-    if (state.isLoading) {
-      return <LoadingOverlay />
+    if (state.isLoading || state.currentPage === 'loading') {
+      return <LoadingOverlay isVisible={true} />
     }
 
     // Authenticated user pages
@@ -295,31 +293,31 @@ function App() {
           }
           // Fallback to dashboard if not owner
           navigateTo('dashboard')
-          return <LoadingOverlay />
+          return <LoadingOverlay isVisible={true} />
         
         default:
           navigateTo('dashboard')
-          return <LoadingOverlay />
+          return <LoadingOverlay isVisible={true} />
       }
     }
 
     // Non-authenticated user pages
     switch (state.currentPage) {
-      case 'dashboard':
-        // 🏠 Allow dashboard access for non-authenticated users (guest mode)
-        console.log('🏠 Rendering Dashboard in Guest Mode')
+      case 'home':
+        // 🏠 Beautiful landing page for new visitors
+        console.log('🏠 Rendering Landing Page')
         return (
-          <Dashboard
-            onLogout={handleLogout}
-            showAdminAccess={false}
-            isLoggedIn={false}
+          <LandingPage
+            onLogin={() => navigateTo('login')}
+            onSignup={() => navigateTo('signup')}
+            onPricing={() => navigateTo('pricing')}
           />
         )
 
       case 'login':
     return (
       <LoginPage
-            onBack={() => navigateTo('dashboard')}
+            onBack={() => navigateTo('home')}
             onLogin={handleLogin}
             onSwitchToSignup={() => navigateTo('signup')}
             onGoogleLogin={handleGoogleAuth}
@@ -329,7 +327,7 @@ function App() {
       case 'signup':
     return (
       <SignupPage
-            onBack={() => navigateTo('dashboard')}
+            onBack={() => navigateTo('home')}
             onSignup={handleSignup}
             onSwitchToLogin={() => navigateTo('login')}
             onGoogleSignup={handleGoogleAuth}
@@ -339,28 +337,23 @@ function App() {
       case 'verify-email':
         return (
           <EmailVerification
-            onBack={() => navigateTo('dashboard')}
+            onBack={() => navigateTo('home')}
             userEmail={state.currentUser?.email}
           />
         )
 
       case 'pricing':
-        return (
-          <PricingPage
-            onBack={() => navigateTo('dashboard')}
-            onLogin={() => navigateTo('login')}
-          />
-        )
+        return <PricingPage />
 
       case 'privacy':
-        return <PrivacyPage onBack={() => navigateTo('dashboard')} />
+        return <PrivacyPage onBack={() => navigateTo('home')} />
 
       case 'terms':
-        return <TermsPage onBack={() => navigateTo('dashboard')} />
+        return <TermsPage onBack={() => navigateTo('home')} />
 
       default:
-        navigateTo('dashboard')
-        return <LoadingOverlay />
+        navigateTo('home')
+        return <LoadingOverlay isVisible={true} />
     }
   }
 
