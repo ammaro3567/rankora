@@ -163,13 +163,23 @@ function App() {
       }
     };
 
-    checkAuth();
+    // Don't run checkAuth if onAuthStateChange already handled it
+    let authCheckDone = false;
+    
+    const runCheckAuth = async () => {
+      await checkAuth();
+      authCheckDone = true;
+    };
+    
+    runCheckAuth();
 
-    // Safety timeout: stop loading if anything stalls
+    // Safety timeout: only trigger if auth check takes too long AND onAuthStateChange didn't fire
     const fallback = setTimeout(() => {
-      console.warn('Auth check timeout - forcing loading to stop');
-      setIsLoading(false);
-    }, 3000);
+      if (!authCheckDone) {
+        console.warn('Auth check timeout - forcing loading to stop');
+        setIsLoading(false);
+      }
+    }, 5000); // Increased timeout
 
     // Listen for auth changes
     const hasRedirectedRef = { current: false } as { current: boolean };
@@ -189,6 +199,9 @@ function App() {
         console.log('User authenticated, setting logged in state');
         setIsLoggedIn(true);
         
+        // Force stop loading immediately when user is authenticated
+        setIsLoading(false);
+        
         // For Google OAuth users, ensure profile exists
         if (event === 'SIGNED_IN' && session.user.app_metadata.provider === 'google') {
           try {
@@ -207,9 +220,6 @@ function App() {
         // Check if user is owner for admin access
         const ownerStatus = await isOwner();
         setShowOwnerAccess(ownerStatus);
-        
-        // CRITICAL: Force stop loading 
-        setIsLoading(false);
         
         // Let the render logic handle dashboard routing
         console.log('✅ User logged in, render will handle dashboard');
