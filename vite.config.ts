@@ -13,6 +13,7 @@ export default defineConfig({
     sourcemap: false,
     cssCodeSplit: true,
     assetsInlineLimit: 4096,
+    copyPublicDir: true,
     rollupOptions: {
       output: {
         manualChunks: {
