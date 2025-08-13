@@ -148,6 +148,84 @@ export const authService = {
   }
 }
 
+// 📊 Usage tracking functions
+export const usageService = {
+  async getMonthlyUsageCounts() {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      return { total: 0, analyses: 0, comparisons: 0 }
+    }
+
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    try {
+      // Get analyses count
+      const { data: analyses, error: analysesError } = await supabase
+        .from('user_analyses')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString())
+
+      if (analysesError) {
+        console.warn('⚠️ Failed to get analyses count:', analysesError.message)
+      }
+
+      // Get comparisons count
+      const { data: comparisons, error: comparisonsError } = await supabase
+        .from('competitor_comparisons')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString())
+
+      if (comparisonsError) {
+        console.warn('⚠️ Failed to get comparisons count:', comparisonsError.message)
+      }
+
+      const analysesCount = analyses?.length || 0
+      const comparisonsCount = comparisons?.length || 0
+      const total = analysesCount + comparisonsCount
+
+      console.log(`📊 Monthly usage: ${total} total (${analysesCount} analyses, ${comparisonsCount} comparisons)`)
+
+      return {
+        total,
+        analyses: analysesCount,
+        comparisons: comparisonsCount
+      }
+    } catch (error) {
+      console.error('💥 Error getting monthly usage:', error)
+      return { total: 0, analyses: 0, comparisons: 0 }
+    }
+  },
+
+  async listProjects() {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) return []
+
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.warn('⚠️ Failed to get projects:', error.message)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('💥 Error getting projects:', error)
+      return []
+    }
+  }
+}
+
 // 👤 User profile functions
 export const profileService = {
   async getUserProfile() {
@@ -183,4 +261,6 @@ export const signInWithGoogle = authService.signInWithGoogle
 export const getCurrentUser = authService.getCurrentSession
 export const getUserProfile = profileService.getUserProfile
 export const isOwner = profileService.isOwner
+export const getMonthlyUsageCounts = usageService.getMonthlyUsageCounts
+export const listProjects = usageService.listProjects
 export const upsertUserProfile = () => {} // Deprecated
