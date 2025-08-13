@@ -165,6 +165,7 @@ function App() {
     const fallback = setTimeout(() => setIsLoading(false), 4000);
 
     // Listen for auth changes
+    const hasRedirectedRef = { current: false } as { current: boolean };
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         // Check email verification status
@@ -194,14 +195,15 @@ function App() {
         // Check if user is owner for admin access
         const ownerStatus = await isOwner();
         setShowOwnerAccess(ownerStatus);
-
+        
         // Ensure single redirect and end loading
-        if (!hasRedirectedRef.current) {
+        if (!hasRedirectedRef.current && window.location.pathname !== '/dashboard') {
           hasRedirectedRef.current = true;
-          window.history.replaceState({}, document.title, '/dashboard');
-          setCurrentPage('dashboard');
-          setIsLoading(false);
+          window.location.replace('/dashboard');
+          return;
         }
+        setCurrentPage('dashboard');
+        setIsLoading(false);
       } else {
         setIsLoggedIn(false);
         setShowOwnerAccess(false);
