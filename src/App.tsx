@@ -122,14 +122,16 @@ function App() {
           return;
         }
 
-        const user = await getCurrentUser();
-        if (user) {
+        // 🎯 Use getSession instead of getCurrentUser for better reliability
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
           // Check if email is verified for existing users
-          if (!user.email_confirmed_at) {
+          if (!session.user.email_confirmed_at) {
             setCurrentPage('verify-email');
             setIsLoading(false);
             return;
           }
+          console.log('✅ Session found on checkAuth, user is logged in');
           setIsLoggedIn(true);
           // Check if user is owner for admin access
           const ownerStatus = await isOwner();
@@ -145,9 +147,11 @@ function App() {
             setCurrentPage('dashboard'); // Default to dashboard for logged in users
           }
         } else {
+          console.log('❌ No session found on checkAuth, user appears logged out');
           // Not logged in - redirect protected routes to login
           const protectedRoutes = ['/dashboard', '/admin'];
           if (protectedRoutes.includes(path)) {
+            console.log('🔄 Redirecting protected route to login:', path);
             window.history.replaceState({}, document.title, '/login');
             setCurrentPage('login');
           }
