@@ -1,5 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
+// 📝 Type definitions
+export interface ProjectAnalysis {
+  id: string
+  user_id: string
+  project_id: string | null
+  url: string
+  content: string
+  ai_overview_potential: number
+  recommendations: string[]
+  analysis_results: any
+  created_at: string
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -362,6 +375,77 @@ export const usageService = {
       console.error('💥 Error saving comparison:', error)
       throw error
     }
+  },
+
+  async getProjectAnalyses(projectId: string) {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      return []
+    }
+
+    console.log('📊 Getting project analyses for project:', projectId)
+
+    try {
+      const { data, error } = await supabase
+        .from('user_analyses')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.warn('⚠️ Failed to get project analyses:', error.message)
+        return []
+      }
+
+      console.log(`✅ Found ${data?.length || 0} analyses for project`)
+      return data || []
+    } catch (error) {
+      console.error('💥 Error getting project analyses:', error)
+      return []
+    }
+  },
+
+  async deleteProject(projectId: string) {
+    const { session } = await authService.getCurrentSession()
+    if (!session?.user) {
+      throw new Error('User not authenticated')
+    }
+
+    console.log('🗑️ Deleting project:', projectId)
+
+    try {
+      // First, remove project reference from analyses
+      const { error: updateError } = await supabase
+        .from('user_analyses')
+        .update({ project_id: null })
+        .eq('project_id', projectId)
+        .eq('user_id', session.user.id)
+
+      if (updateError) {
+        console.warn('⚠️ Failed to update analyses:', updateError.message)
+      }
+
+      // Then delete the project
+      const { data, error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId)
+        .eq('user_id', session.user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Failed to delete project:', error.message)
+        throw error
+      }
+
+      console.log('✅ Project deleted successfully')
+      return data
+    } catch (error) {
+      console.error('💥 Error deleting project:', error)
+      throw error
+    }
   }
 }
 
@@ -406,4 +490,6 @@ export const saveUserAnalysis = usageService.saveUserAnalysis
 export const createProject = usageService.createProject
 export const saveAnalysisToProject = usageService.saveAnalysisToProject
 export const saveUserComparison = usageService.saveUserComparison
+export const getProjectAnalyses = usageService.getProjectAnalyses
+export const deleteProject = usageService.deleteProject
 export const upsertUserProfile = () => {} // Deprecated
