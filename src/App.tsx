@@ -204,18 +204,11 @@ function App() {
         const ownerStatus = await isOwner();
         setShowOwnerAccess(ownerStatus);
         
-        // CRITICAL: Force stop loading and set dashboard page
+        // CRITICAL: Force stop loading 
         setIsLoading(false);
         
-        // Force dashboard state for any logged in user
-        console.log('Setting currentPage to dashboard for logged in user');
-        setCurrentPage('dashboard');
-        
-        // Update URL if not already on dashboard
-        if (window.location.pathname !== '/dashboard') {
-          console.log('Updating URL to /dashboard');
-          window.history.pushState({}, document.title, '/dashboard');
-        }
+        // Let the render logic handle dashboard routing
+        console.log('✅ User logged in, render will handle dashboard');
       } else {
         console.log('No user session, setting logged out state');
         setIsLoggedIn(false);
@@ -265,26 +258,38 @@ function App() {
     );
   }
 
-  // 🎯 SMART LOGIC: Logged in users ALWAYS get Dashboard (except specific pages)
+  // 🎯 CLEAN LOGIC: Logged in users get Dashboard
   if (isLoggedIn) {
     // Allow admin page for owners
     if (currentPage === 'admin' && showOwnerAccess) {
       return <AdminPanel onBack={() => setCurrentPage('dashboard')} />;
     }
     
-    // For ANY logged in user → Force Dashboard
+    // Auto-redirect to dashboard if needed (only once)
     if (currentPage !== 'dashboard') {
-      console.log('🔄 Logged in user detected, forcing Dashboard');
-      setCurrentPage('dashboard');
-      window.history.replaceState({}, document.title, '/dashboard');
+      setTimeout(() => {
+        console.log('🔄 Redirecting logged user to Dashboard');
+        setCurrentPage('dashboard');
+        window.history.replaceState({}, document.title, '/dashboard');
+      }, 0);
     }
     
+    // Show dashboard (or loading if redirecting)
+    if (currentPage === 'dashboard') {
+      return (
+        <Dashboard 
+          onLogout={handleLogout}
+          showAdminAccess={showOwnerAccess}
+          onOpenAdmin={() => setCurrentPage('admin')}
+        />
+      );
+    }
+    
+    // Show brief loading during redirect
     return (
-      <Dashboard 
-        onLogout={handleLogout}
-        showAdminAccess={showOwnerAccess}
-        onOpenAdmin={() => setCurrentPage('admin')}
-      />
+      <div className="min-h-screen bg-primary flex items-center justify-center">
+        <div className="loading-spinner w-8 h-8" />
+      </div>
     );
   }
 
@@ -329,15 +334,15 @@ function App() {
       <LoginPage
         onBack={() => setCurrentPage('home')}
         onLogin={async () => {
+          console.log('🔄 Login callback triggered');
           const user = await getCurrentUser();
           if (user && !user.email_confirmed_at) {
             window.history.replaceState({}, document.title, '/verify-email');
             setCurrentPage('verify-email');
             return;
           }
-          setIsLoggedIn(true);
-          window.history.replaceState({}, document.title, '/dashboard');
-          setCurrentPage('dashboard');
+          // Auth state change will handle the dashboard redirect
+          console.log('✅ Login complete, onAuthStateChange will handle dashboard');
         }}
         onSwitchToSignup={() => {
           window.history.replaceState({}, document.title, '/signup');
