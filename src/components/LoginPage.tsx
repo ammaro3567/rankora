@@ -34,6 +34,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLogin, onSwitchT
 
       if (data?.user) {
         onLogin();
+        // Force navigation to dashboard to avoid any stale UI states
+        window.location.replace('/dashboard');
         return;
       }
 
