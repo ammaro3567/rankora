@@ -1,0 +1,36 @@
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'vite.config.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/index.html b/index.html[m
+[1mindex 4d8c853..1474a42 100644[m
+[1m--- a/index.html[m
+[1m+++ b/index.html[m
+[36m@@ -2,7 +2,7 @@[m
+ <html lang="en">[m
+   <head>[m
+     <meta charset="UTF-8" />[m
+[31m-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />[m
+[32m+[m[32m    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />[m
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />[m
+     [m
+     <!-- Primary Meta Tags -->[m
+[36m@@ -33,7 +33,6 @@[m
+     [m
+     <!-- Security Headers -->[m
+     <meta http-equiv="X-Content-Type-Options" content="nosniff" />[m
+[31m-    <meta http-equiv="X-Frame-Options" content="DENY" />[m
+     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />[m
+     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />[m
+     [m
+[1mdiff --git a/vite.config.ts b/vite.config.ts[m
+[1mindex 2491c31..d21151d 100644[m
+[1m--- a/vite.config.ts[m
+[1m+++ b/vite.config.ts[m
+[36m@@ -4,7 +4,7 @@[m [mimport react from '@vitejs/plugin-react';[m
+ // https://vitejs.dev/config/[m
+ export default defineConfig({[m
+   plugins: [react()],[m
+[31m-  base: '/rankora/',[m
+[32m+[m[32m  base: '/',[m
+   [m
+   // Build optimizations for production[m
+   build: {[m
