@@ -105,13 +105,16 @@ function App() {
         const path = window.location.pathname
         console.log(`🏠 Non-authenticated user on path: ${path}`)
         
-        // Redirect protected routes to login
-        if (path === '/dashboard' || path === '/admin') {
-          console.log('🔒 Protected route - redirecting to login')
-          navigateTo('login', true)
-        } else if (path === '/') {
-          // 🚨 NO LANDING PAGE! Root goes directly to login
-          console.log('🔥 Root access - redirecting to login (NO HOME PAGE)')
+        // Special handling for root path - allow dashboard access for everyone
+        if (path === '/') {
+          // 🏠 Root path always goes to dashboard (our main home page)
+          console.log('🏠 Root access - going to dashboard (home page)')
+          navigateTo('dashboard', true)
+        } else if (path === '/dashboard') {
+          // 🏠 Dashboard access allowed for everyone (with guest mode if needed)
+          navigateTo('dashboard', false)
+        } else if (path === '/admin') {
+          console.log('🔒 Admin route - redirecting to login')
           navigateTo('login', true)
         } else if (['/login', '/signup', '/pricing', '/privacy', '/terms', '/verify-email'].includes(path)) {
           // Public pages - navigate without URL update
@@ -302,10 +305,21 @@ function App() {
 
     // Non-authenticated user pages
     switch (state.currentPage) {
+      case 'dashboard':
+        // 🏠 Allow dashboard access for non-authenticated users (guest mode)
+        console.log('🏠 Rendering Dashboard in Guest Mode')
+        return (
+          <Dashboard
+            onLogout={handleLogout}
+            showAdminAccess={false}
+            isLoggedIn={false}
+          />
+        )
+
       case 'login':
     return (
       <LoginPage
-            onBack={() => navigateTo('login')}
+            onBack={() => navigateTo('dashboard')}
             onLogin={handleLogin}
             onSwitchToSignup={() => navigateTo('signup')}
             onGoogleLogin={handleGoogleAuth}
@@ -315,7 +329,7 @@ function App() {
       case 'signup':
     return (
       <SignupPage
-            onBack={() => navigateTo('login')}
+            onBack={() => navigateTo('dashboard')}
             onSignup={handleSignup}
             onSwitchToLogin={() => navigateTo('login')}
             onGoogleSignup={handleGoogleAuth}
@@ -325,7 +339,7 @@ function App() {
       case 'verify-email':
         return (
           <EmailVerification
-            onBack={() => navigateTo('login')}
+            onBack={() => navigateTo('dashboard')}
             userEmail={state.currentUser?.email}
           />
         )
@@ -333,19 +347,19 @@ function App() {
       case 'pricing':
         return (
           <PricingPage
-            onBack={() => navigateTo('login')}
+            onBack={() => navigateTo('dashboard')}
             onLogin={() => navigateTo('login')}
           />
         )
 
       case 'privacy':
-        return <PrivacyPage onBack={() => navigateTo('login')} />
+        return <PrivacyPage onBack={() => navigateTo('dashboard')} />
 
       case 'terms':
-        return <TermsPage onBack={() => navigateTo('login')} />
+        return <TermsPage onBack={() => navigateTo('dashboard')} />
 
       default:
-        navigateTo('login')
+        navigateTo('dashboard')
         return <LoadingOverlay />
     }
   }
