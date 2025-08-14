@@ -52,6 +52,30 @@ function App() {
     console.log('🔍 Checking authentication status...')
     
     try {
+      // تفاؤليًا: لو فيه توكن محلّي، اعتبر المستخدم مسجّل مؤقتًا لمنع الارتداد
+      try {
+        const raw = localStorage.getItem('rankora-auth-token')
+        if (raw) {
+          const path = window.location.pathname
+          updateState({ isAuthenticated: true, isLoading: false })
+          if (path === '/dashboard') {
+            navigateTo('dashboard', false)
+          } else if (path === '/admin') {
+            // سيُعاد التحقق في الخلفية لاحقًا
+            navigateTo('admin', false)
+          } else if (path === '/' || path === '/home') {
+            navigateTo('home', false)
+          }
+          // تأكيد الجلسة في الخلفية وتحديث المستخدم عند توفّره
+          authService.getCurrentSession().then(({ session }) => {
+            if (session?.user) {
+              updateState({ isAuthenticated: true, currentUser: session.user })
+            }
+          })
+          // لا تخرج؛ كمل مسار الفحص العادي تحسّبًا
+        }
+      } catch {}
+      
       const { session, error } = await authService.getCurrentSession()
       
       if (error) {
