@@ -251,7 +251,7 @@ function App() {
   // 🎭 Event handlers
   const goToDashboard = async () => {
     if (state.isAuthenticated) {
-      navigateTo('dashboard')
+      window.location.href = '/dashboard'
       return
     }
     updateState({ isLoading: true })
@@ -265,7 +265,7 @@ function App() {
         } catch {
           updateState({ isAuthenticated: true })
         }
-        navigateTo('dashboard')
+        window.location.href = '/dashboard'
         // تأكيد لاحق من Supabase بدون تعطيل التوجيه
         authService.getCurrentSession().then(({ session }) => {
           if (session?.user) updateState({ currentUser: session.user })
@@ -277,7 +277,7 @@ function App() {
     const { session } = await authService.getCurrentSession()
     if (session?.user) {
       updateState({ isAuthenticated: true, currentUser: session.user })
-      navigateTo('dashboard')
+      window.location.href = '/dashboard'
     } else {
       navigateTo('login')
     }
