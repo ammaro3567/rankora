@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { isSignedIn, user } from '@clerk/clerk-react'
 
 // 📝 Type definitions
 export interface ProjectAnalysis {
