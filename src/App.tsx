@@ -249,6 +249,21 @@ function App() {
   }, [state.isAuthenticated])
 
   // 🎭 Event handlers
+  const goToDashboard = async () => {
+    if (state.isAuthenticated) {
+      navigateTo('dashboard')
+      return
+    }
+    updateState({ isLoading: true })
+    const { session } = await authService.getCurrentSession()
+    if (session?.user) {
+      updateState({ isAuthenticated: true, currentUser: session.user })
+      navigateTo('dashboard')
+    } else {
+      navigateTo('login')
+    }
+    updateState({ isLoading: false })
+  }
   const handleLogin = async (email: string, password: string) => {
     console.log('🔐 Handling login...')
     updateState({ isLoading: true })
@@ -316,7 +331,7 @@ function App() {
               onSignup={() => navigateTo('signup')}
               onPricing={() => navigateTo('pricing')}
               isAuthenticated={true}
-              onGoDashboard={() => navigateTo('dashboard')}
+              onGoDashboard={goToDashboard}
             />
           )
         case 'dashboard':
@@ -360,7 +375,7 @@ function App() {
             onSignup={() => navigateTo('signup')}
             onPricing={() => navigateTo('pricing')}
             isAuthenticated={state.isAuthenticated}
-            onGoDashboard={() => navigateTo('dashboard')}
+            onGoDashboard={goToDashboard}
           />
         )
 
