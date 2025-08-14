@@ -102,7 +102,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
         />
         
         <main className="flex-1 lg:ml-0 relative z-10">
-          <div className="p-4 lg:p-10 pt-6 lg:pt-10 space-y-6">
+      <div className="p-4 lg:p-10 pt-6 lg:pt-10 space-y-6">
+            {/* strengthen card contrast over animated bg */}
+            <style>{`
+              .card { background-color: rgba(15, 23, 42, 0.75); border-color: rgba(148, 163, 184, 0.25); }
+              .surface-secondary { background-color: rgba(30, 41, 59, 0.65); }
+              .surface-primary { background-color: rgba(15, 23, 42, 0.8); }
+              .limit-banner { background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02)); }
+            `}</style>
             {renderContent()}
           </div>
         </main>

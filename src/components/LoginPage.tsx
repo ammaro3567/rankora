@@ -119,6 +119,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
             <p className="text-gray-300">Sign in to your Rankora account</p>
+            <p className="mt-2 text-emerald-400 text-sm">Secure • Fast • AI-powered</p>
           </div>
 
           {/* Error message */}

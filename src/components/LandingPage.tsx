@@ -267,7 +267,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-primary relative z-10">
+      <section id="faq" className="py-20 relative z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
@@ -279,7 +279,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
           </div>
 
           <div className="space-y-6">
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
+            <div className="bg-slate-900/70 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-6 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.25)] transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
                 What is Rankora and how does it work?
               </h3>
@@ -288,7 +288,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
               </p>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
+            <div className="bg-slate-900/70 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-6 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.25)] transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
                 How accurate are the analysis results?
               </h3>
@@ -297,7 +297,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
               </p>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
+            <div className="bg-slate-900/70 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-6 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.25)] transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
                 What's included in the Free plan?
               </h3>
@@ -306,7 +306,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
               </p>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
+            <div className="bg-slate-900/70 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-6 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.25)] transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
                 How does the competitor comparison feature work?
               </h3>
@@ -315,7 +315,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
               </p>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
+            <div className="bg-slate-900/70 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-6 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.25)] transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
                 Is my data secure and private?
               </h3>
@@ -328,7 +328,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-accent to-blue-400 relative z-10">
+      <section className="py-20 bg-gradient-to-r from-emerald-600 to-emerald-500/80 relative z-10">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-8">
             Ready to Start Ranking?
@@ -340,13 +340,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={onSignup}
-              className="w-full sm:w-auto bg-white text-accent px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transform hover:scale-105 transition duration-200 shadow-lg"
+              className="w-full sm:w-auto bg-white text-emerald-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transform hover:scale-105 transition duration-200 shadow-lg"
             >
               Get Started Free
             </button>
             <button
               onClick={onPricing}
-              className="w-full sm:w-auto border-2 border-white text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white hover:text-accent transition duration-200"
+              className="w-full sm:w-auto border-2 border-white text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white hover:text-emerald-600 transition duration-200"
             >
               View Pricing
             </button>

@@ -246,7 +246,14 @@ function App() {
       return { success: false, error: result.error }
     }
 
-    // Auth state change listener will handle the rest
+    // Auth state change listener will handle the rest, but add safe redirect
+    setTimeout(() => {
+      if (state.isLoading) {
+        console.log('⏱️ Safety redirect to dashboard after login')
+        updateState({ isLoading: false, isAuthenticated: true, currentPage: 'dashboard' })
+        navigateTo('dashboard', true)
+      }
+    }, 2000)
     return { success: true, error: null }
   }
 
@@ -314,10 +321,7 @@ function App() {
           return <LoadingOverlay isVisible={true} />
         
         default:
-          // Fallback safely to dashboard without overlay to avoid infinite spinner
-          if (state.currentPage !== 'dashboard') {
-            navigateTo('dashboard', true)
-          }
+          // Fallback safely: render dashboard directly
           return (
             <Dashboard 
               onLogout={handleLogout}
