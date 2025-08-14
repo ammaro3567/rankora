@@ -77,7 +77,7 @@ function App() {
             // سيُعاد التحقق في الخلفية لاحقًا
             navigateTo('admin', false)
           } else if (path === '/' || path === '/home') {
-            navigateTo('home', false)
+            navigateTo('dashboard', true)
           }
           // تأكيد الجلسة في الخلفية وتحديث المستخدم عند توفّره
           authService.getCurrentSession().then(({ session }) => {
@@ -130,7 +130,7 @@ function App() {
         if (path === '/admin' && ownerStatus) {
           navigateTo('admin', false)
         } else if (path === '/' || path === '/home') {
-          navigateTo('home', false)
+          navigateTo('dashboard', true)
         } else if (path === '/dashboard') {
           navigateTo('dashboard', false)
         } else if (['/login','/signup','/verify-email'].includes(path)) {
