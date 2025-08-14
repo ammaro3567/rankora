@@ -12,6 +12,17 @@ import { LoadingOverlay } from './components/LoadingOverlay';
 import { StarField } from './components/StarField';
 import LandingPage from './components/LandingPage';
 
+// ⚡ Early boot redirect: enforce route before React renders anything
+try {
+  const bootPath = window.location.pathname
+  const hasToken = !!localStorage.getItem('rankora-auth-token')
+  if (hasToken && (bootPath === '/' || bootPath === '/home')) {
+    window.location.replace('/dashboard')
+  } else if (!hasToken && bootPath === '/dashboard') {
+    window.location.replace('/home')
+  }
+} catch {}
+
 // 🎯 App state type
 type AppState = {
   isLoading: boolean
@@ -136,7 +147,8 @@ function App() {
         } else if (['/login','/signup','/verify-email'].includes(path)) {
           navigateTo('dashboard', true)
         } else {
-          navigateTo('home', false)
+          // لا تعيد مستخدمًا موثّقًا إلى الهوم إطلاقًا
+          navigateTo('dashboard', true)
         }
         
       } else {
@@ -148,9 +160,12 @@ function App() {
         const path = window.location.pathname
         console.log(`🏠 Non-authenticated user on path: ${path}`)
         
-        // Redirect protected routes to login
-        if (path === '/dashboard' || path === '/admin') {
-          console.log('🔒 Protected route - redirecting to login')
+        // Redirect protected routes
+        if (path === '/dashboard') {
+          console.log('🔒 Protected route - redirecting guest to home')
+          navigateTo('home', true)
+        } else if (path === '/admin') {
+          console.log('🔒 Admin route - redirecting to login')
           navigateTo('login', true)
         } else if (path === '/') {
           // 🏠 Root path goes to beautiful landing page for new users
