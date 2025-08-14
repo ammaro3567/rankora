@@ -59,7 +59,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     
     # Content Security Policy (adjust as needed for your specific requirements)
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://*.paypal.com https://*.clerk.com https://*.clerk.accounts.dev; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://www.paypal.com https://*.paypal.com https://*.clerk.com https://*.clerk.accounts.dev; frame-src 'self' https://www.paypal.com https://*.paypal.com https://*.clerk.com https://*.clerk.accounts.dev"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.paypal.com https://*.paypal.com https://*.clerk.com https://*.clerk.accounts.dev; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://www.paypal.com https://*.paypal.com https://*.clerk.com https://*.clerk.accounts.dev; frame-src 'self' https://www.paypal.com https://*.paypal.com https://*.clerk.com https://*.clerk.accounts.dev"
 
 # Form handling for contact forms (if needed)
 [[plugins]]
