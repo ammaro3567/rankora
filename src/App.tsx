@@ -195,12 +195,11 @@ function App() {
         console.log('✅ User signed in successfully')
         const ownerStatus = await profileService.isOwner()
         
-        // Immediate loading stop and dashboard redirect
+        // Immediate loading stop (لا تغيّر الصفحة الحالية هنا لتجنب إعادة "loading")
         updateState({ 
           isLoading: false, 
           isAuthenticated: true, 
           currentUser: session.user,
-          currentPage: state.currentPage,
           isOwner: ownerStatus
         })
         

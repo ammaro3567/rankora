@@ -11,6 +11,15 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   isVisible 
 }) => {
   if (!isVisible) return null;
+  // Safety auto-hide after 2.5s in case parent forgets to flip the flag
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      const el = document.querySelector('.loading-overlay');
+      if (el) {
+        el.classList.add('pointer-events-none');
+      }
+    }, 2500);
+  }
 
   return (
     <div className="loading-overlay">
