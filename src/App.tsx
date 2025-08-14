@@ -86,16 +86,20 @@ function App() {
           isOwner: ownerStatus
         })
 
-        // Handle routing for authenticated users
+        // Handle routing for authenticated users (no forced redirect from home)
         const path = window.location.pathname
         console.log(`🎯 Authenticated user on path: ${path}`)
         
-        // Always redirect authenticated users to dashboard unless they're specifically on admin
         if (path === '/admin' && ownerStatus) {
           navigateTo('admin', false)
-        } else {
-          // For all other paths (including /), redirect to dashboard
+        } else if (path === '/' || path === '/home') {
+          navigateTo('home', false)
+        } else if (path === '/dashboard') {
+          navigateTo('dashboard', false)
+        } else if (['/login','/signup','/verify-email'].includes(path)) {
           navigateTo('dashboard', true)
+        } else {
+          navigateTo('home', false)
         }
         
       } else {
@@ -180,7 +184,7 @@ function App() {
         }
 
         // User is authenticated and verified
-        console.log('✅ User signed in successfully - immediate dashboard redirect')
+        console.log('✅ User signed in successfully')
         const ownerStatus = await profileService.isOwner()
         
         // Immediate loading stop and dashboard redirect
@@ -188,7 +192,7 @@ function App() {
           isLoading: false, 
           isAuthenticated: true, 
           currentUser: session.user,
-          currentPage: 'dashboard',
+          currentPage: state.currentPage,
           isOwner: ownerStatus
         })
         
@@ -197,8 +201,12 @@ function App() {
           updateState({ isLoading: false })
         }, 0)
         
-        console.log('🎯 Redirecting signed-in user to dashboard')
-        navigateTo('dashboard', true)
+        // لا تحويل تلقائي من الهوم؛ إن كان المستخدم على صفحات المصادقة حوّله
+        const currentPath = window.location.pathname
+        if (['/login','/signup','/verify-email'].includes(currentPath)) {
+          console.log('🎯 Post-auth redirect to dashboard')
+          navigateTo('dashboard', true)
+        }
 
       } else if (event === 'SIGNED_OUT') {
         // User signed out
@@ -224,13 +232,11 @@ function App() {
     }
   }, [])
 
-  // ✅ Ensure authenticated users always land on dashboard and loading stops
+  // ✅ Ensure loading stops when authenticated; don't auto-redirect from home
   useEffect(() => {
     if (state.isAuthenticated) {
       if (state.isLoading) updateState({ isLoading: false })
-      if (state.currentPage !== 'dashboard' && state.currentPage !== 'admin') {
-        navigateTo('dashboard', true)
-      }
+      // لا تحويل تلقائي هنا للحفاظ على سلوك الهوم
     }
   }, [state.isAuthenticated])
 
@@ -246,14 +252,7 @@ function App() {
       return { success: false, error: result.error }
     }
 
-    // Auth state change listener will handle the rest, but add safe redirect
-    setTimeout(() => {
-      if (state.isLoading) {
-        console.log('⏱️ Safety redirect to dashboard after login')
-        updateState({ isLoading: false, isAuthenticated: true, currentPage: 'dashboard' })
-        navigateTo('dashboard', true)
-      }
-    }, 2000)
+    // Auth state change listener will handle the rest بدون فرض تحويل
     return { success: true, error: null }
   }
 
