@@ -1,17 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <script>
-      try {
-        var raw = localStorage.getItem('rankora-auth-token');
-        var p = window.location.pathname;
-        if (raw && (p === '/' || p === '/home')) {
-          window.location.replace('/dashboard');
-        } else if (!raw && p === '/dashboard') {
-          window.location.replace('/home');
-        }
-      } catch (e) {}
-    </script>
+    <!-- Early redirects based on Supabase token removed; Clerk will handle routing client-side -->
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -68,17 +58,7 @@
     <meta name="theme-color" content="#10b981" />
   </head>
   <body>
-    <script>
-      try {
-        var raw = localStorage.getItem('rankora-auth-token');
-        var path = window.location.pathname;
-        if (raw && (path === '/' || path === '/home')) {
-          window.location.replace('/dashboard');
-        } else if (!raw && path === '/dashboard') {
-          window.location.replace('/home');
-        }
-      } catch (e) {}
-    </script>
+    <!-- Early redirects removed to avoid conflicts with Clerk auth -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx?v=7"></script>
     <!-- PayPal SDK Script will be loaded dynamically -->

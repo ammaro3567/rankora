@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react'
 
 interface LandingPageProps {
   onLogin: () => void
@@ -13,26 +13,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [localAuth, setLocalAuth] = useState<boolean>(!!isAuthenticated)
 
-  // Fallback: تأكيد حالة تسجيل الدخول مباشرة من Supabase لو تأخر الأب
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        // فحص سريع من LocalStorage أولاً
-        try {
-          const raw = localStorage.getItem('rankora-auth-token')
-          if (raw) setLocalAuth(true)
-        } catch {}
-        const { data } = await supabase.auth.getSession()
-        // لا تُعيده إلى false لو الجلسة لسه ما اتحملت
-        if (mounted && data.session?.user) setLocalAuth(true)
-      } catch {}
-    })()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) setLocalAuth(!!session?.user)
-    })
-    return () => { mounted = false; subscription?.unsubscribe?.() }
-  }, [])
+  // لم نعد نعتمد على Supabase Auth
 
   useEffect(() => { setLocalAuth(prev => prev || !!isAuthenticated) }, [isAuthenticated])
 

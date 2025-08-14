@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { isSignedIn, user } from '@clerk/clerk-react'
 
 // 📝 Type definitions
 export interface ProjectAnalysis {
@@ -42,150 +43,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // 🚀 Clean Supabase client configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    storageKey: 'rankora-auth-token'
-  }
+  // لم نعد نستخدم Supabase Auth لإدارة الجلسات
 })
 
 // 🔐 Authentication functions - simple and clean
-export const authService = {
-  // Sign up new user
-  async signUp(email: string, password: string, fullName: string) {
-    console.log('🔄 Starting signup for:', email)
-    
-  const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-    password,
-    options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      data: {
-          full_name: fullName.trim(),
-        }
-      }
-    })
-
-    if (error) {
-      console.error('❌ Signup error:', error.message)
-      return { success: false, error: error.message, data: null }
-    }
-
-    if (data.user) {
-      console.log('✅ Signup successful:', data.user.email)
-      
-      // Create user profile - only once, here
-      try {
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: data.user.id,
-            full_name: fullName.trim(),
-            email: data.user.email
-          })
-
-        if (profileError) {
-          console.warn('⚠️ Profile creation failed:', profileError.message)
-        } else {
-          console.log('✅ Profile created successfully')
-        }
-      } catch (profileErr) {
-        console.warn('⚠️ Profile creation error:', profileErr)
-      }
-    }
-
-    return { success: true, error: null, data }
-  },
-
-  // Sign in existing user
-  async signIn(email: string, password: string) {
-    console.log('🔄 Starting signin for:', email)
-    
-  const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password
-    })
-
-    if (error) {
-      console.error('❌ Signin error:', error.message)
-      return { success: false, error: error.message, data: null }
-    }
-
-    console.log('✅ Signin successful:', data.user?.email)
-    return { success: true, error: null, data }
-  },
-
-  // Google OAuth
-  async signInWithGoogle() {
-    console.log('🔄 Starting Google signin')
-    
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
-
-    if (error) {
-      console.error('❌ Google signin error:', error.message)
-      return { success: false, error: error.message }
-    }
-
-    console.log('✅ Google signin initiated')
-    return { success: true, error: null }
-  },
-
-  // Get current session
-  async getCurrentSession() {
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (error) {
-      console.error('❌ Session check error:', error.message)
-      return { session: null, error: error.message }
-    }
-
-    if (session?.user) {
-      console.log('✅ Session found:', session.user.email)
-    } else {
-      console.log('ℹ️ No active session')
-    }
-
-    return { session, error: null }
-  },
-
-  // Sign out
-  async signOut() {
-    console.log('🔄 Signing out user')
-    
-  const { error } = await supabase.auth.signOut()
-    
-    if (error) {
-      console.error('❌ Signout error:', error.message)
-      return { success: false, error: error.message }
-    }
-
-    console.log('✅ Signout successful')
-    return { success: true, error: null }
-  },
-
-  // Check if email is verified
-  isEmailVerified(user: any) {
-    return user?.email_confirmed_at != null
-  },
-
-  // Auth state listener
-  onAuthStateChange(callback: (event: string, session: any) => void) {
-    return supabase.auth.onAuthStateChange(callback)
-  }
-}
+// أزلنا طبقة authService لأن Clerk يتكفّل بالمصادقة
 
 // Helper to return the current authenticated user object (not the whole session)
-export const getCurrentUser = async () => {
-  const { session } = await authService.getCurrentSession()
-  return session?.user ?? null
-}
+export const getCurrentUser = async () => null
 
 // 📊 Usage tracking functions
 export const usageService = {
@@ -253,7 +118,8 @@ export const usageService = {
   },
 
   async listProjects() {
-    const { session } = await authService.getCurrentSession()
+    // TODO: بدّل إلى Clerk user id
+    const session = null as any
     if (!session?.user) return []
 
     try {
@@ -276,10 +142,9 @@ export const usageService = {
   },
 
   async saveUserAnalysis(analysisData: any) {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: استخدم Clerk User ID
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log('💾 Saving user analysis...')
 
@@ -312,10 +177,9 @@ export const usageService = {
   },
 
   async createProject(projectData: any) {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: استخدم Clerk User ID
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log('📁 Creating new project...')
 
@@ -346,10 +210,9 @@ export const usageService = {
   },
 
   async saveAnalysisToProject(projectId: string, analysisId: string) {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: استخدم Clerk User ID
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log('🔗 Linking analysis to project...')
 
@@ -376,10 +239,9 @@ export const usageService = {
   },
 
   async saveUserComparison(comparisonData: any) {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: استخدم Clerk User ID
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log('⚔️ Saving competitor comparison...')
 
@@ -415,10 +277,9 @@ export const usageService = {
   },
 
   async getProjectAnalyses(projectId: string) {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      return []
-    }
+    // TODO: استخدم Clerk User ID
+    const session = null as any
+    if (!session?.user) return []
 
     console.log('📊 Getting project analyses for project:', projectId)
 
@@ -444,10 +305,9 @@ export const usageService = {
   },
 
   async deleteProject(projectId: string) {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: استخدم Clerk User ID
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log('🗑️ Deleting project:', projectId)
 
@@ -486,10 +346,9 @@ export const usageService = {
   },
 
   async getAllUsers(): Promise<UserRoleSummary[]> {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: تحقّق عبر Clerk owner
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log('👥 Getting all users for admin panel...')
 
@@ -545,10 +404,9 @@ export const usageService = {
   },
 
   async updateUserRole(userId: string, newRole: UserRole) {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: تحقّق عبر Clerk owner
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log(`🔄 Updating user ${userId} role to ${newRole}...`)
 
@@ -595,10 +453,9 @@ export const usageService = {
   },
 
   async getRoleAssignments(): Promise<RoleAssignment[]> {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      throw new Error('User not authenticated')
-    }
+    // TODO: تحقّق عبر Clerk owner
+    const session = null as any
+    if (!session?.user) throw new Error('User not authenticated')
 
     console.log('📋 Getting role assignments...')
 
@@ -658,10 +515,7 @@ export const profileService = {
 }
 
 // Export for backward compatibility (will remove later)
-export const signUp = authService.signUp
-export const signIn = authService.signIn
-export const signInWithGoogle = authService.signInWithGoogle
-export const getCurrentSession = authService.getCurrentSession
+// تمت إزالة واجهات Supabase Auth
 export const getUserProfile = profileService.getUserProfile
 export const isOwner = profileService.isOwner
 export const getMonthlyUsageCounts = usageService.getMonthlyUsageCounts

@@ -1,34 +1,26 @@
 import { useState, useEffect } from 'react';
-import { LoginPage } from './components/LoginPage';
-import { SignupPage } from './components/SignupPage';
+// import { LoginPage } from './components/LoginPage';
+// import { SignupPage } from './components/SignupPage';
 import { Dashboard } from './components/Dashboard';
-import { EmailVerification } from './components/EmailVerification';
+// import { EmailVerification } from './components/EmailVerification';
 import { PrivacyPage } from './components/PrivacyPage';
 import { TermsPage } from './components/TermsPage';
 import { PricingPage } from './components/PricingPage';
 import { AdminPanel } from './components/AdminPanel';
-import { authService, profileService, supabase } from './lib/supabase';
+import { profileService } from './lib/supabase';
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser, useClerk } from '@clerk/clerk-react';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { StarField } from './components/StarField';
 import LandingPage from './components/LandingPage';
 
-// ⚡ Early boot redirect: enforce route before React renders anything
-try {
-  const bootPath = window.location.pathname
-  const hasToken = !!localStorage.getItem('rankora-auth-token')
-  if (hasToken && (bootPath === '/' || bootPath === '/home')) {
-    window.location.replace('/dashboard')
-  } else if (!hasToken && bootPath === '/dashboard') {
-    window.location.replace('/home')
-  }
-} catch {}
+// تم إزالة تحويلات Supabase المبكرة؛ Clerk سيتكفل بإدارة الدخول
 
 // 🎯 App state type
 type AppState = {
   isLoading: boolean
   isAuthenticated: boolean
   currentUser: any
-  currentPage: 'loading' | 'home' | 'dashboard' | 'login' | 'signup' | 'verify-email' | 'pricing' | 'privacy' | 'terms' | 'admin'
+  currentPage: 'loading' | 'home' | 'dashboard' | 'login' | 'signup' | 'pricing' | 'privacy' | 'terms' | 'admin'
   isOwner: boolean
 }
 
@@ -58,345 +50,56 @@ function App() {
     }
   }
 
-  // 🔐 Authentication check
-  const checkAuthentication = async () => {
-    console.log('🔍 Checking authentication status...')
-    
-    try {
-      const currentPath = window.location.pathname
-      // 🚦 Short-circuit: لو فيه توكن ومحاولة دخول مباشرة للداشبورد، امنع أي فليكر واعرض لودينج حتى تأكيد الجلسة
-      try {
-        const rawToken = localStorage.getItem('rankora-auth-token')
-        if (rawToken && currentPath === '/dashboard') {
-          updateState({ isAuthenticated: true, isLoading: true, currentPage: 'dashboard' })
-          authService.getCurrentSession().then(({ session }) => {
-            if (session?.user) {
-              updateState({ currentUser: session.user, isLoading: false })
-            }
-          })
-          return
-        }
-      } catch {}
+  // 🔐 Clerk-driven auth state
+  const { isLoaded, isSignedIn, user } = useUser()
+  const { signOut } = useClerk()
 
-      // تفاؤليًا: لو فيه توكن محلّي، اعتبر المستخدم مسجّل مؤقتًا لمنع الارتداد
-      try {
-        const raw = localStorage.getItem('rankora-auth-token')
-        if (raw) {
-          const path = window.location.pathname
-          let interimUser: any = null
-          try {
-            const parsed = JSON.parse(raw)
-            interimUser = parsed?.user || parsed?.currentSession?.user || parsed?.session?.user || parsed?.data?.user || null
-          } catch {}
-          updateState({ isAuthenticated: true, isLoading: true, ...(interimUser ? { currentUser: interimUser } : {}) })
-          if (path === '/dashboard') {
-            navigateTo('dashboard', false)
-          } else if (path === '/admin') {
-            // سيُعاد التحقق في الخلفية لاحقًا
-            navigateTo('admin', false)
-          } else if (path === '/' || path === '/home') {
-            navigateTo('dashboard', true)
-          }
-          // تأكيد الجلسة في الخلفية وتحديث المستخدم عند توفّره
-          authService.getCurrentSession().then(({ session }) => {
-            if (session?.user) {
-              updateState({ isAuthenticated: true, currentUser: session.user, isLoading: false })
-            }
-          })
-          // أوقف المسار هنا لتجنب كسر الحالة التفاؤلية
-          return
-        }
-      } catch {}
-      
-      const { session, error } = await authService.getCurrentSession()
-      
-      if (error) {
-        console.error('❌ Auth check failed:', error)
-        updateState({ isLoading: false, isAuthenticated: false })
-        return
-      }
-
-      if (session?.user) {
-        // Check email verification
-        if (!authService.isEmailVerified(session.user)) {
-          console.log('📧 Email not verified, showing verification page')
-          updateState({ 
-            isLoading: false, 
-            isAuthenticated: false, 
-            currentUser: session.user,
-            currentPage: 'verify-email'
-          })
-          return
-        }
-
-        // User is authenticated and verified
-        console.log('✅ User authenticated:', session.user.email)
-        
-        // Check if user is owner
-        const ownerStatus = await profileService.isOwner()
-        
-        updateState({ 
-          isLoading: false, 
-          isAuthenticated: true, 
-          currentUser: session.user,
-          isOwner: ownerStatus
-        })
-
-        // Handle routing for authenticated users (no forced redirect from home)
-        const path = window.location.pathname
-        console.log(`🎯 Authenticated user on path: ${path}`)
-        
-        if (path === '/admin' && ownerStatus) {
-          navigateTo('admin', false)
-        } else if (path === '/' || path === '/home') {
-          navigateTo('dashboard', true)
-        } else if (path === '/dashboard') {
-          navigateTo('dashboard', false)
-        } else if (['/login','/signup','/verify-email'].includes(path)) {
-          navigateTo('dashboard', true)
-        } else {
-          // لا تعيد مستخدمًا موثّقًا إلى الهوم إطلاقًا
-          navigateTo('dashboard', true)
-        }
-        
-      } else {
-        // No authenticated user
-        console.log('ℹ️ No authenticated user found')
-        updateState({ isLoading: false, isAuthenticated: false })
-        
-        // Handle routing for non-authenticated users
-        const path = window.location.pathname
-        console.log(`🏠 Non-authenticated user on path: ${path}`)
-        
-        // Redirect protected routes
-        if (path === '/dashboard') {
-          console.log('🔒 Protected route - redirecting guest to home')
-          navigateTo('home', true)
-        } else if (path === '/admin') {
-          console.log('🔒 Admin route - redirecting to login')
-          navigateTo('login', true)
-        } else if (path === '/') {
-          // 🏠 Root path goes to beautiful landing page for new users
-          console.log('🏠 Root access - showing landing page')
-          navigateTo('home', true)
-        } else if (['/login', '/signup', '/pricing', '/privacy', '/terms', '/verify-email'].includes(path)) {
-          // Public pages - navigate without URL update
-          const page = path.substring(1) as AppState['currentPage']
-          navigateTo(page, false)
-        } else {
-          // Unknown routes go to home (landing page)
-          navigateTo('home', true)
-        }
-      }
-      
-    } catch (error) {
-      console.error('💥 Authentication check failed:', error)
-      updateState({ isLoading: false, isAuthenticated: false })
-      navigateTo('home')
-    }
-  }
-
-  // 🎧 Auth state listener
+  // 🎧 React to Clerk state and enforce routing
   useEffect(() => {
-    console.log('🚀 App initializing...')
-    
-    // Initial auth check
-    checkAuthentication()
-
-    // Safety: ensure loading never sticks على الصفحات العامة فقط
-    const bootTimeout = setTimeout(() => {
-      try {
-        const path = window.location.pathname
-        const hasToken = !!localStorage.getItem('rankora-auth-token')
-        if (state.isLoading) {
-          // لا تُسقط اللودينج على /dashboard عندما نتوقع جلسة للمستخدم
-          if (!(hasToken && path === '/dashboard' && !state.currentUser)) {
-            console.log('🛟 Safety: forcing loading=false after boot timeout')
-            updateState({ isLoading: false })
-          }
-        }
-      } catch {
-        if (state.isLoading) updateState({ isLoading: false })
+    if (!isLoaded) return
+    const path = window.location.pathname
+    if (isSignedIn) {
+      updateState({ isAuthenticated: true, currentUser: user, isLoading: false })
+      if (path === '/' || path === '/home' || ['/login','/signup','/verify-email'].includes(path)) {
+        navigateTo('dashboard', true)
+      } else if (path === '/dashboard') {
+        navigateTo('dashboard', false)
+      } else if (path === '/admin') {
+        // مؤقتًا: السماح فقط لو كان isOwner=true لاحقًا بعد تكييف قواعد البيانات مع Clerk
+        if (!state.isOwner) navigateTo('dashboard', true)
       }
-    }, 2000)
-
-    // Listen for auth state changes
-    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
-      console.log(`🔔 Auth state changed: ${event}`, session?.user?.email || 'no user')
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        // User just signed in
-        if (!authService.isEmailVerified(session.user)) {
-          console.log('📧 New user needs email verification')
-          updateState({ 
-            isLoading: false, 
-            isAuthenticated: false, 
-            currentUser: session.user,
-            currentPage: 'verify-email'
-          })
-          return
-        }
-
-        // Handle Google OAuth profile creation
-        if (session.user.app_metadata?.provider === 'google') {
-          try {
-            const existingProfile = await profileService.getUserProfile()
-            if (!existingProfile) {
-              console.log('🔄 Creating profile for Google user')
-              const { error } = await supabase
-                .from('user_profiles')
-                .insert({
-                  user_id: session.user.id,
-                  full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
-                  email: session.user.email
-                })
-              
-              if (error) {
-                console.warn('⚠️ Google profile creation failed:', error.message)
-              }
-            }
-          } catch (error) {
-            console.warn('⚠️ Google profile check failed:', error)
-          }
-        }
-
-        // User is authenticated and verified
-        console.log('✅ User signed in successfully')
-        const ownerStatus = await profileService.isOwner()
-        
-        // Immediate loading stop (لا تغيّر الصفحة الحالية هنا لتجنب إعادة "loading")
-        updateState({ 
-          isLoading: false, 
-          isAuthenticated: true, 
-          currentUser: session.user,
-          isOwner: ownerStatus
-        })
-        
-        // أوقف اللودينج فقط بعد تأكيد المستخدم
-        updateState({ isLoading: false })
-        
-        // لا تحويل تلقائي من الهوم؛ إن كان المستخدم على صفحات المصادقة حوّله
-        const currentPath = window.location.pathname
-        if (['/login','/signup','/verify-email'].includes(currentPath)) {
-          console.log('🎯 Post-auth redirect to dashboard')
-          navigateTo('dashboard', true)
-        }
-
-      } else if (event === 'SIGNED_OUT') {
-        // User signed out
-        console.log('👋 User signed out')
-        updateState({ 
-          isLoading: false, 
-          isAuthenticated: false, 
-          currentUser: null,
-          isOwner: false
-        })
-        
-        navigateTo('home')
-
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed')
-        // Don't change state, just log
+    } else {
+      updateState({ isAuthenticated: false, currentUser: null, isLoading: false })
+      if (path === '/dashboard' || path === '/admin') {
+        navigateTo('home', true)
+      } else if (path === '/') {
+        navigateTo('home', true)
       }
-    })
-
-    // Cleanup subscription
-    return () => {
-      clearTimeout(bootTimeout)
-      subscription.unsubscribe()
     }
-  }, [])
+  }, [isLoaded, isSignedIn, user])
 
-  // ✅ Ensure loading stops when authenticated AND user is known
+  // ✅ Ensure loading stops when Clerk loaded
   useEffect(() => {
-    if (state.isAuthenticated && state.currentUser && state.isLoading) {
-      updateState({ isLoading: false })
-    }
-  }, [state.isAuthenticated, state.currentUser])
+    if (isLoaded && state.isLoading) updateState({ isLoading: false })
+  }, [isLoaded])
 
   // 🎭 Event handlers
   const goToDashboard = async () => {
     if (state.isAuthenticated) {
       window.location.href = '/dashboard'
-      return
-    }
-    updateState({ isLoading: true })
-    // التقاط سريع من localStorage لمنع الارتداد
-    try {
-      const raw = localStorage.getItem('rankora-auth-token')
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw)
-          updateState({ isAuthenticated: true, currentUser: parsed?.user || state.currentUser })
-        } catch {
-          updateState({ isAuthenticated: true })
-        }
-        window.location.href = '/dashboard'
-        // تأكيد لاحق من Supabase بدون تعطيل التوجيه
-        authService.getCurrentSession().then(({ session }) => {
-          if (session?.user) updateState({ currentUser: session.user })
-        })
-        updateState({ isLoading: false })
-        return
-      }
-    } catch {}
-    const { session } = await authService.getCurrentSession()
-    if (session?.user) {
-      updateState({ isAuthenticated: true, currentUser: session.user })
-      window.location.href = '/dashboard'
     } else {
-      navigateTo('login')
+      navigateTo('home', true)
     }
-    updateState({ isLoading: false })
   }
-  const handleLogin = async (email: string, password: string) => {
-    console.log('🔐 Handling login...')
-    updateState({ isLoading: true })
+  // لم نعد نستخدم صفحات تسجيل الدخول المخصصة؛ سنعرض أزرار Clerk الجاهزة
 
-    const result = await authService.signIn(email, password)
-    
-    if (!result.success) {
-      updateState({ isLoading: false })
-      return { success: false, error: result.error }
-    }
+  // لا حاجة لدوال تسجيل الاشتراك اليدوية
 
-    // Auth state change listener will handle the rest بدون فرض تحويل
-    return { success: true, error: null }
-  }
-
-  const handleSignup = async (email: string, password: string, fullName: string) => {
-    console.log('📝 Handling signup...')
-    updateState({ isLoading: true })
-
-    const result = await authService.signUp(email, password, fullName)
-    
-    if (!result.success) {
-      updateState({ isLoading: false })
-      return { success: false, error: result.error }
-    }
-
-    // Show verification page
-    updateState({ 
-      isLoading: false,
-      currentPage: 'verify-email',
-      currentUser: result.data?.user
-    })
-    
-    return { success: true, error: null }
-  }
-
-  const handleGoogleAuth = async () => {
-    console.log('🔗 Handling Google auth...')
-    const result = await authService.signInWithGoogle()
-    return result
-  }
+  // لا حاجة لتعامل خاص مع جوجل؛ Clerk يتكفّل به
 
   const handleLogout = async () => {
     console.log('👋 Handling logout...')
-    updateState({ isLoading: true })
-    
-    await authService.signOut()
-    // Auth state change listener will handle the rest
+    await signOut()
   }
 
   // 🎨 Render logic
@@ -405,8 +108,8 @@ function App() {
       return <LoadingOverlay isVisible={true} />
     }
 
-    // Authenticated user pages
-    if (state.isAuthenticated) {
+    // Authenticated user pages (driven by Clerk)
+    if (isLoaded && isSignedIn) {
       switch (state.currentPage) {
         case 'home':
           // 🔓 مستخدم مسجّل لكن يبقى على الهوم مع زر الذهاب للداشبورد
@@ -449,7 +152,7 @@ function App() {
       }
     }
 
-    // Public pages (home shows Go to Dashboard when authenticated)
+    // Public pages (Clerk-driven)
     switch (state.currentPage) {
       case 'home':
         console.log('🏠 Rendering Landing Page')
@@ -458,38 +161,37 @@ function App() {
             onLogin={() => navigateTo('login')}
             onSignup={() => navigateTo('signup')}
             onPricing={() => navigateTo('pricing')}
-            isAuthenticated={state.isAuthenticated}
+            isAuthenticated={isLoaded && isSignedIn}
             onGoDashboard={goToDashboard}
           />
         )
 
       case 'login':
-    return (
-      <LoginPage
-            onBack={() => navigateTo('home')}
-            onLogin={handleLogin}
-            onSwitchToSignup={() => navigateTo('signup')}
-            onGoogleLogin={handleGoogleAuth}
-          />
+        return (
+          <div className="p-6 flex items-center justify-center">
+            <SignedOut>
+              <SignInButton />
+              <SignUpButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </div>
         )
 
       case 'signup':
-    return (
-      <SignupPage
-            onBack={() => navigateTo('home')}
-            onSignup={handleSignup}
-            onSwitchToLogin={() => navigateTo('login')}
-            onGoogleSignup={handleGoogleAuth}
-          />
+        return (
+          <div className="p-6 flex items-center justify-center">
+            <SignedOut>
+              <SignUpButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </div>
         )
 
-      case 'verify-email':
-        return (
-          <EmailVerification
-            onBack={() => navigateTo('home')}
-            userEmail={state.currentUser?.email}
-          />
-        )
+      
 
       case 'pricing':
         return <PricingPage onBack={() => navigateTo('home')} />
