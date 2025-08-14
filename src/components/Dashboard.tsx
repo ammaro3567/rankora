@@ -14,10 +14,9 @@ interface DashboardProps {
   onLogout: () => void;
   showAdminAccess?: boolean;
   onOpenAdmin?: () => void;
-  isLoggedIn?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess, onOpenAdmin, isLoggedIn }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess, onOpenAdmin }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -85,7 +84,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           showAdminAccess={showAdminAccess}
           onOpenAdmin={onOpenAdmin}
-          isLoggedIn={isLoggedIn}
+
         />
         
         <main className="flex-1 lg:ml-0 relative z-10">

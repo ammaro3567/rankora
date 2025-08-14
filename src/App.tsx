@@ -9,13 +9,14 @@ import { PricingPage } from './components/PricingPage';
 import { AdminPanel } from './components/AdminPanel';
 import { authService, profileService, supabase } from './lib/supabase';
 import { LoadingOverlay } from './components/LoadingOverlay';
+import LandingPage from './components/LandingPage';
 
 // 🎯 App state type
 type AppState = {
   isLoading: boolean
   isAuthenticated: boolean
   currentUser: any
-  currentPage: 'loading' | 'dashboard' | 'login' | 'signup' | 'verify-email' | 'pricing' | 'privacy' | 'terms' | 'admin'
+  currentPage: 'loading' | 'home' | 'dashboard' | 'login' | 'signup' | 'verify-email' | 'pricing' | 'privacy' | 'terms' | 'admin'
   isOwner: boolean
 }
 
@@ -40,7 +41,7 @@ function App() {
     updateState({ currentPage: page })
     
     if (updateUrl) {
-      const url = page === 'dashboard' ? '/' : `/${page}`
+      const url = page === 'home' ? '/' : `/${page}`
       window.history.replaceState({}, document.title, url)
     }
   }
@@ -110,23 +111,23 @@ function App() {
           console.log('🔒 Protected route - redirecting to login')
           navigateTo('login', true)
         } else if (path === '/') {
-          // 🏠 Root path goes to dashboard (our real home page)
-          console.log('🏠 Root access - going to dashboard home page')
-          navigateTo('dashboard', true)
+          // 🏠 Root path goes to beautiful landing page for new users
+          console.log('🏠 Root access - showing landing page')
+          navigateTo('home', true)
         } else if (['/login', '/signup', '/pricing', '/privacy', '/terms', '/verify-email'].includes(path)) {
           // Public pages - navigate without URL update
           const page = path.substring(1) as AppState['currentPage']
           navigateTo(page, false)
         } else {
-          // Unknown routes go to dashboard (home page)
-          navigateTo('dashboard', true)
+          // Unknown routes go to home (landing page)
+          navigateTo('home', true)
         }
       }
       
     } catch (error) {
       console.error('💥 Authentication check failed:', error)
       updateState({ isLoading: false, isAuthenticated: false })
-      navigateTo('dashboard')
+      navigateTo('home')
     }
   }
 
@@ -201,7 +202,7 @@ function App() {
           isOwner: false
         })
         
-        navigateTo('dashboard')
+        navigateTo('home')
 
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('🔄 Token refreshed')
@@ -282,7 +283,7 @@ function App() {
         onLogout={handleLogout}
               showAdminAccess={state.isOwner}
               onOpenAdmin={() => navigateTo('admin')}
-              isLoggedIn={state.isAuthenticated}
+
             />
           )
         
@@ -302,21 +303,21 @@ function App() {
 
     // Non-authenticated user pages
     switch (state.currentPage) {
-      case 'dashboard':
-        // 🏠 Dashboard is our real home page (Guest Mode for non-authenticated)
-        console.log('🏠 Rendering Dashboard as Home Page (Guest Mode)')
+      case 'home':
+        // 🏠 Beautiful landing page for new visitors
+        console.log('🏠 Rendering Landing Page for non-authenticated users')
         return (
-          <Dashboard
-            onLogout={handleLogout}
-            showAdminAccess={false}
-            isLoggedIn={false}
+          <LandingPage
+            onLogin={() => navigateTo('login')}
+            onSignup={() => navigateTo('signup')}
+            onPricing={() => navigateTo('pricing')}
           />
         )
 
       case 'login':
     return (
       <LoginPage
-            onBack={() => navigateTo('dashboard')}
+            onBack={() => navigateTo('home')}
             onLogin={handleLogin}
             onSwitchToSignup={() => navigateTo('signup')}
             onGoogleLogin={handleGoogleAuth}
@@ -326,7 +327,7 @@ function App() {
       case 'signup':
     return (
       <SignupPage
-            onBack={() => navigateTo('dashboard')}
+            onBack={() => navigateTo('home')}
             onSignup={handleSignup}
             onSwitchToLogin={() => navigateTo('login')}
             onGoogleSignup={handleGoogleAuth}
@@ -336,7 +337,7 @@ function App() {
       case 'verify-email':
         return (
           <EmailVerification
-            onBack={() => navigateTo('dashboard')}
+            onBack={() => navigateTo('home')}
             userEmail={state.currentUser?.email}
           />
         )
@@ -345,13 +346,13 @@ function App() {
         return <PricingPage />
 
       case 'privacy':
-        return <PrivacyPage onBack={() => navigateTo('dashboard')} />
+        return <PrivacyPage onBack={() => navigateTo('home')} />
 
       case 'terms':
-        return <TermsPage onBack={() => navigateTo('dashboard')} />
+        return <TermsPage onBack={() => navigateTo('home')} />
 
       default:
-        navigateTo('dashboard')
+        navigateTo('home')
         return <LoadingOverlay isVisible={true} />
     }
   }

@@ -25,7 +25,7 @@ interface SidebarProps {
   onToggle: () => void;
   showAdminAccess?: boolean;
   onOpenAdmin?: () => void;
-  isLoggedIn?: boolean;
+
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -35,55 +35,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen, 
   onToggle,
   showAdminAccess,
-  onOpenAdmin,
-  isLoggedIn
+  onOpenAdmin
 }) => {
   const [userEmail, setUserEmail] = useState<string>('Guest');
   const [planLabel, setPlanLabel] = useState<string>('Free Plan');
 
   useEffect(() => {
     const init = async () => {
-      console.log('🔍 Sidebar: isLoggedIn =', isLoggedIn);
-      
-      // 🎯 Only fetch user if logged in (according to App state)
-      if (isLoggedIn) {
-        try {
-          const user = await getCurrentUser();
-          console.log('👤 Sidebar: Got user =', user?.email);
-          
-          if (user?.email) {
-            setUserEmail(user.email);
-          } else {
-            console.log('⚠️ No email found, setting as Guest');
-            setUserEmail('Guest');
-          }
-          
-          // Get subscription status
-          try {
-            const sub = await getUserSubscription();
-            if (sub?.subscription_status === 'active') {
-              setPlanLabel('Paid Plan');
-            } else {
-              setPlanLabel('Free Plan');
+      // 🎯 Always check if user is authenticated (Dashboard only loads for authenticated users now)
+      try {
+        const user = await getCurrentUser();
+        console.log('👤 Sidebar: Got user =', user?.email);
+        
+        if (user?.email) {
+          setUserEmail(user.email);
+        } else {
+          console.log('⚠️ No email found, retrying...');
+          // Retry after a brief delay (sometimes Supabase needs a moment)
+          setTimeout(async () => {
+            try {
+              const retryUser = await getCurrentUser();
+              if (retryUser?.email) {
+                setUserEmail(retryUser.email);
+              } else {
+                setUserEmail('Loading...');
+              }
+            } catch (error) {
+              console.error('❌ Retry failed:', error);
+              setUserEmail('Error');
             }
-          } catch (error) {
-            console.log('💰 No subscription found, using Free Plan');
+          }, 1000);
+        }
+        
+        // Get subscription status
+        try {
+          const sub = await getUserSubscription();
+          if (sub?.subscription_status === 'active') {
+            setPlanLabel('Paid Plan');
+          } else {
             setPlanLabel('Free Plan');
           }
         } catch (error) {
-          console.error('❌ Sidebar: Error getting user:', error);
-          setUserEmail('Guest');
+          console.log('💰 No subscription found, using Free Plan');
           setPlanLabel('Free Plan');
         }
-      } else {
-        console.log('🚫 Sidebar: User not logged in, setting as Guest');
-        setUserEmail('Guest');
+      } catch (error) {
+        console.error('❌ Sidebar: Error getting user:', error);
+        setUserEmail('Loading...');
         setPlanLabel('Free Plan');
       }
     };
     
     init();
-  }, [isLoggedIn]);
+  }, []);
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: Home },
     { id: 'analyzer', label: 'AI Analyzer', icon: BarChart3 },
