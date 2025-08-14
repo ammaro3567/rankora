@@ -140,7 +140,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-primary relative">
+    <div className="min-h-screen relative bg-transparent">
       {/* Enhanced Star Field Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 bg-gradient-to-r from-accent/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>

@@ -119,7 +119,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-primary relative overflow-hidden flex items-center justify-center">
+    <div className="min-h-screen bg-transparent relative overflow-hidden flex items-center justify-center">
       <StarField />
       
       <div className="relative z-10 w-full max-w-md mx-auto px-4">

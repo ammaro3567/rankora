@@ -72,7 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
       {activeTab === 'success' ? (
         renderContent()
       ) : (
-    <div className="min-h-screen bg-primary relative">
+    <div className="min-h-screen relative bg-transparent">
       <StarField />
       
       {/* Enhanced Background Effects to match Landing Page */}

@@ -9,6 +9,7 @@ import { PricingPage } from './components/PricingPage';
 import { AdminPanel } from './components/AdminPanel';
 import { authService, profileService, supabase } from './lib/supabase';
 import { LoadingOverlay } from './components/LoadingOverlay';
+import { StarField } from './components/StarField';
 import LandingPage from './components/LandingPage';
 
 // 🎯 App state type
@@ -223,6 +224,16 @@ function App() {
     }
   }, [])
 
+  // ✅ Ensure authenticated users always land on dashboard and loading stops
+  useEffect(() => {
+    if (state.isAuthenticated) {
+      if (state.isLoading) updateState({ isLoading: false })
+      if (state.currentPage !== 'dashboard' && state.currentPage !== 'admin') {
+        navigateTo('dashboard', true)
+      }
+    }
+  }, [state.isAuthenticated])
+
   // 🎭 Event handlers
   const handleLogin = async (email: string, password: string) => {
     console.log('🔐 Handling login...')
@@ -374,8 +385,16 @@ function App() {
   }
 
   return (
-    <div className="app">
-      {renderCurrentPage()}
+    <div className="min-h-screen relative bg-gradient-to-b from-black via-slate-900 to-black">
+      {/* Global animated background */}
+      <StarField />
+      {/* Emerald auras */}
+      <div className="pointer-events-none absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
+
+      <div className="relative z-10 app">
+        {renderCurrentPage()}
+      </div>
     </div>
   )
 }
