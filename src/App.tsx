@@ -52,6 +52,19 @@ function App() {
     console.log('🔍 Checking authentication status...')
     
     try {
+      const currentPath = window.location.pathname
+      // 🚦 Short-circuit: لو فيه توكن ومحاولة دخول مباشرة للداشبورد، اعرضه فورًا ثم أكد الجلسة بالخلفية
+      try {
+        const rawToken = localStorage.getItem('rankora-auth-token')
+        if (rawToken && currentPath === '/dashboard') {
+          updateState({ isAuthenticated: true, isLoading: false, currentPage: 'dashboard' })
+          authService.getCurrentSession().then(({ session }) => {
+            if (session?.user) updateState({ currentUser: session.user })
+          })
+          return
+        }
+      } catch {}
+
       // تفاؤليًا: لو فيه توكن محلّي، اعتبر المستخدم مسجّل مؤقتًا لمنع الارتداد
       try {
         const raw = localStorage.getItem('rankora-auth-token')

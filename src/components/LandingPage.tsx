@@ -36,6 +36,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
 
   useEffect(() => { setLocalAuth(prev => prev || !!isAuthenticated) }, [isAuthenticated])
 
+  // تحويل إجباري صامت من الهوم إلى الداشبورد إذا المستخدم مصدّق بالفعل
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('rankora-auth-token')
+      if (raw && window.location.pathname === '/' && localAuth) {
+        window.location.replace('/dashboard')
+      }
+    } catch {}
+  }, [localAuth])
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
       {/* Enhanced Star Field Background with Movement */}
