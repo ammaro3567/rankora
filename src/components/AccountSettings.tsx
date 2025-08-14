@@ -459,12 +459,13 @@ const ChangePasswordCard: React.FC = () => {
     try {
       setLoading(true);
       // Supabase لا يدعم تغيير الباسورد إلا عبر updateUser في الجلسة الحالية
-      const { data: { session } } = await import('../lib/supabase').then(m => m.supabase.auth.getSession());
+      const { supabase } = await import('../lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setError('Not authenticated');
         return;
       }
-      const { error } = await import('../lib/supabase').then(m => m.supabase.auth.updateUser({ password: newPassword }));
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) setError(error.message);
       else setSuccess(true);
     } catch (e: any) {
