@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { User, Mail, Lock, Shield, Save } from 'lucide-react';
 import { getUserSubscription } from '../lib/paypal';
-import { getUserProfile, upsertUserProfile, getCurrentUser } from '../lib/supabase';
+import { supabase, getUserProfile, upsertUserProfile, getCurrentUser } from '../lib/supabase';
 import { getProductByPayPalPlanId } from '../paypal-config';
 
 interface AccountSettingsProps {
@@ -459,7 +459,6 @@ const ChangePasswordCard: React.FC = () => {
     try {
       setLoading(true);
       // Supabase لا يدعم تغيير الباسورد إلا عبر updateUser في الجلسة الحالية
-      const { supabase } = await import('../lib/supabase');
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setError('Not authenticated');
