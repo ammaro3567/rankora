@@ -117,8 +117,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         {/* Login Form */}
         <div className="card animate-scaleIn">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary mb-2">Welcome Back</h1>
-            <p className="text-secondary">Sign in to your Rankora account</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+            <p className="text-gray-300">Sign in to your Rankora account</p>
           </div>
 
           {/* Error message */}
@@ -141,7 +141,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="input-primary pl-12 h-12"
+                  className="input-primary pl-12 h-12 bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:border-emerald-400 focus:ring-emerald-400/20"
                   placeholder="your.email@example.com"
                   autoComplete="email"
                   disabled={isLoading}
@@ -163,7 +163,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="input-primary pl-12 pr-12 h-12"
+                  className="input-primary pl-12 pr-12 h-12 bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:border-emerald-400 focus:ring-emerald-400/20"
                   placeholder="••••••••••••"
                   autoComplete="current-password"
                   disabled={isLoading}
@@ -189,7 +189,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full h-12 flex items-center justify-center gap-2"
+              className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -213,7 +213,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-            className="w-full h-12 bg-white border border-border text-primary rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 rounded-xl bg-white/10 hover:bg-white/15 border border-gray-600 text-white font-semibold flex items-center justify-center gap-3 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

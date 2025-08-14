@@ -313,7 +313,7 @@ function App() {
       case 'home':
         // 🏠 Beautiful landing page for new visitors
         console.log('🏠 Rendering Landing Page for non-authenticated users')
-        return (
+    return (
           <LandingPage
             onLogin={() => navigateTo('login')}
             onSignup={() => navigateTo('signup')}

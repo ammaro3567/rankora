@@ -347,7 +347,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
             <p className="text-secondary text-sm">Absolutely. We use enterprise-grade security and never share your data with third parties.</p>
           </div>
         </div>
-      </div>
+          </div>
         </div>
       </div>
     </div>

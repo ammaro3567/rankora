@@ -181,6 +181,12 @@ export const authService = {
   }
 }
 
+// Helper to return the current authenticated user object (not the whole session)
+export const getCurrentUser = async () => {
+  const { session } = await authService.getCurrentSession()
+  return session?.user ?? null
+}
+
 // 📊 Usage tracking functions
 export const usageService = {
   async getMonthlyUsageCounts() {
@@ -207,19 +213,30 @@ export const usageService = {
       }
 
       // Get comparisons count
-      const { data: comparisons, error: comparisonsError } = await supabase
-        .from('competitor_comparisons')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString())
+      let comparisonsCount = 0
+      try {
+        const { data: comparisons, error: comparisonsError } = await supabase
+          .from('competitor_comparisons')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .gte('created_at', startOfMonth.toISOString())
+          .lte('created_at', endOfMonth.toISOString())
 
-      if (comparisonsError) {
-        console.warn('⚠️ Failed to get comparisons count:', comparisonsError.message)
+        if (comparisonsError) {
+          // Gracefully handle missing table in schema
+          if ((comparisonsError as any).message?.includes('Could not find the table')) {
+            comparisonsCount = 0
+          } else {
+            console.warn('⚠️ Failed to get comparisons count:', comparisonsError.message)
+          }
+        } else {
+          comparisonsCount = comparisons?.length || 0
+        }
+      } catch {
+        comparisonsCount = 0
       }
 
       const analysesCount = analyses?.length || 0
-      const comparisonsCount = comparisons?.length || 0
       const total = analysesCount + comparisonsCount
 
       console.log(`📊 Monthly usage: ${total} total (${analysesCount} analyses, ${comparisonsCount} comparisons)`)
