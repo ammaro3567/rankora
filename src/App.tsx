@@ -309,6 +309,17 @@ function App() {
     // Authenticated user pages
     if (state.isAuthenticated) {
       switch (state.currentPage) {
+        case 'home':
+          // 🔓 مستخدم مسجّل لكن يبقى على الهوم مع زر الذهاب للداشبورد
+          return (
+            <LandingPage
+              onLogin={() => navigateTo('login')}
+              onSignup={() => navigateTo('signup')}
+              onPricing={() => navigateTo('pricing')}
+              isAuthenticated={true}
+              onGoDashboard={() => navigateTo('dashboard')}
+            />
+          )
         case 'dashboard':
           console.log('🎨 Rendering Dashboard - User:', state.currentUser?.email)
     return (
