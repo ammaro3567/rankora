@@ -64,13 +64,15 @@ function App() {
     
     try {
       const currentPath = window.location.pathname
-      // 🚦 Short-circuit: لو فيه توكن ومحاولة دخول مباشرة للداشبورد، اعرضه فورًا ثم أكد الجلسة بالخلفية
+      // 🚦 Short-circuit: لو فيه توكن ومحاولة دخول مباشرة للداشبورد، امنع أي فليكر واعرض لودينج حتى تأكيد الجلسة
       try {
         const rawToken = localStorage.getItem('rankora-auth-token')
         if (rawToken && currentPath === '/dashboard') {
-          updateState({ isAuthenticated: true, isLoading: false, currentPage: 'dashboard' })
+          updateState({ isAuthenticated: true, isLoading: true, currentPage: 'dashboard' })
           authService.getCurrentSession().then(({ session }) => {
-            if (session?.user) updateState({ currentUser: session.user })
+            if (session?.user) {
+              updateState({ currentUser: session.user, isLoading: false })
+            }
           })
           return
         }
@@ -86,7 +88,7 @@ function App() {
             const parsed = JSON.parse(raw)
             interimUser = parsed?.user || parsed?.currentSession?.user || parsed?.session?.user || parsed?.data?.user || null
           } catch {}
-          updateState({ isAuthenticated: true, isLoading: false, ...(interimUser ? { currentUser: interimUser } : {}) })
+          updateState({ isAuthenticated: true, isLoading: true, ...(interimUser ? { currentUser: interimUser } : {}) })
           if (path === '/dashboard') {
             navigateTo('dashboard', false)
           } else if (path === '/admin') {
@@ -98,10 +100,11 @@ function App() {
           // تأكيد الجلسة في الخلفية وتحديث المستخدم عند توفّره
           authService.getCurrentSession().then(({ session }) => {
             if (session?.user) {
-              updateState({ isAuthenticated: true, currentUser: session.user })
+              updateState({ isAuthenticated: true, currentUser: session.user, isLoading: false })
             }
           })
-          // لا تخرج؛ كمل مسار الفحص العادي تحسّبًا
+          // أوقف المسار هنا لتجنب كسر الحالة التفاؤلية
+          return
         }
       } catch {}
       
@@ -200,13 +203,22 @@ function App() {
     // Initial auth check
     checkAuthentication()
 
-    // Safety: ensure loading never sticks on first boot
+    // Safety: ensure loading never sticks على الصفحات العامة فقط
     const bootTimeout = setTimeout(() => {
-      if (state.isLoading) {
-        console.log('🛟 Safety: forcing loading=false after boot timeout')
-        updateState({ isLoading: false })
+      try {
+        const path = window.location.pathname
+        const hasToken = !!localStorage.getItem('rankora-auth-token')
+        if (state.isLoading) {
+          // لا تُسقط اللودينج على /dashboard عندما نتوقع جلسة للمستخدم
+          if (!(hasToken && path === '/dashboard' && !state.currentUser)) {
+            console.log('🛟 Safety: forcing loading=false after boot timeout')
+            updateState({ isLoading: false })
+          }
+        }
+      } catch {
+        if (state.isLoading) updateState({ isLoading: false })
       }
-    }, 1200)
+    }, 2000)
 
     // Listen for auth state changes
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
@@ -260,10 +272,8 @@ function App() {
           isOwner: ownerStatus
         })
         
-        // Force immediate re-render to stop loading
-        setTimeout(() => {
-          updateState({ isLoading: false })
-        }, 0)
+        // أوقف اللودينج فقط بعد تأكيد المستخدم
+        updateState({ isLoading: false })
         
         // لا تحويل تلقائي من الهوم؛ إن كان المستخدم على صفحات المصادقة حوّله
         const currentPath = window.location.pathname
@@ -297,13 +307,12 @@ function App() {
     }
   }, [])
 
-  // ✅ Ensure loading stops when authenticated; don't auto-redirect from home
+  // ✅ Ensure loading stops when authenticated AND user is known
   useEffect(() => {
-    if (state.isAuthenticated) {
-      if (state.isLoading) updateState({ isLoading: false })
-      // لا تحويل تلقائي هنا للحفاظ على سلوك الهوم
+    if (state.isAuthenticated && state.currentUser && state.isLoading) {
+      updateState({ isLoading: false })
     }
-  }, [state.isAuthenticated])
+  }, [state.isAuthenticated, state.currentUser])
 
   // 🎭 Event handlers
   const goToDashboard = async () => {
@@ -411,9 +420,6 @@ function App() {
             />
           )
         case 'dashboard':
-          if (!state.currentUser) {
-            return <LoadingOverlay isVisible={true} />
-          }
           console.log('🎨 Rendering Dashboard - User:', state.currentUser?.email)
           return (
             <Dashboard 
