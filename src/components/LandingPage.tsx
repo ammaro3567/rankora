@@ -24,7 +24,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
           if (raw) setLocalAuth(true)
         } catch {}
         const { data } = await supabase.auth.getSession()
-        if (mounted) setLocalAuth(!!data.session?.user)
+        // لا تُعيده إلى false لو الجلسة لسه ما اتحملت
+        if (mounted && data.session?.user) setLocalAuth(true)
       } catch {}
     })()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -33,7 +34,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
     return () => { mounted = false; subscription?.unsubscribe?.() }
   }, [])
 
-  useEffect(() => { setLocalAuth(!!isAuthenticated) }, [isAuthenticated])
+  useEffect(() => { setLocalAuth(prev => prev || !!isAuthenticated) }, [isAuthenticated])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
