@@ -16,23 +16,36 @@ export const WEBHOOKS = {
 // Helper function to send data to n8n webhook
 export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string }) => {
   try {
+    console.log('🔗 Sending webhook request to:', WEBHOOKS.N8N_ANALYSIS_WEBHOOK);
+    console.log('📤 Payload:', data);
+    
     const response = await fetch(WEBHOOKS.N8N_ANALYSIS_WEBHOOK, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
+      timeout: 30000, // 30 second timeout
     });
 
+    console.log('📥 Response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('📛 Webhook error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('✅ Webhook success:', result);
     return { success: true, data: result };
   } catch (error) {
-    console.error('Webhook error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    console.error('💥 Webhook error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown webhook error. Please check your connection and try again.' 
+    };
   }
 };
 
@@ -86,22 +99,35 @@ export const analyzeCompetitorArticle = async (url: string) => {
 export const analyzeComparison = async (params: { userUrl: string; competitorUrl: string }) => {
   const endpoint = WEBHOOKS.COMPARISON_WEBHOOK || WEBHOOKS.USER_ARTICLE_WEBHOOK;
   try {
+    console.log('🔗 Sending comparison request to:', endpoint);
+    console.log('📤 Comparison payload:', params);
+    
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
+      timeout: 45000, // 45 second timeout for comparison (longer process)
     });
 
+    console.log('📥 Comparison response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('📛 Comparison error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('✅ Comparison success:', result);
     return { success: true, data: result };
   } catch (error) {
-    console.error('Combined comparison webhook error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    console.error('💥 Comparison webhook error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Comparison analysis failed. Please check your URLs and try again.' 
+    };
   }
 };

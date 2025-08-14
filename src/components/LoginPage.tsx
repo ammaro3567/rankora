@@ -63,8 +63,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       if (!result.success) {
         setError(result.error || 'Login failed. Please try again.')
         setIsLoading(false)
+      } else {
+        // Success - add safety timeout to prevent infinite loading
+        setTimeout(() => {
+          setIsLoading(false)
+        }, 3000) // 3 second safety timeout
       }
-      // If successful, App.tsx will handle the redirect via auth state change
+      // App.tsx will handle the redirect via auth state change
       
     } catch (err) {
       console.error('💥 Login error:', err)
@@ -137,7 +142,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   value={formData.email}
                   onChange={handleInputChange}
                   className="input-primary pl-12 h-12"
-                  placeholder="Enter your email"
+                  placeholder="your.email@example.com"
                   autoComplete="email"
                   disabled={isLoading}
                   required
@@ -159,7 +164,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   value={formData.password}
                   onChange={handleInputChange}
                   className="input-primary pl-12 pr-12 h-12"
-                  placeholder="Enter your password"
+                  placeholder="••••••••••••"
                   autoComplete="current-password"
                   disabled={isLoading}
                   required

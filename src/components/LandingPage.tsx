@@ -11,27 +11,40 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
 
   return (
     <div className="min-h-screen bg-primary relative">
-      {/* Star Field Background */}
+      {/* Enhanced Star Field Background with Movement */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Moving gradient orbs for atmosphere */}
+        <div className="absolute w-96 h-96 bg-gradient-to-r from-accent/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
+        <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
+        
+        {/* Animated stars */}
         <div className="absolute w-1 h-1 bg-white rounded-full opacity-20 animate-pulse" style={{top: '10%', left: '20%'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-30 animate-pulse" style={{top: '20%', right: '15%', animationDelay: '1s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-40" style={{top: '30%', left: '70%'}}></div>
+        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-30 animate-pulse" style={{top: '20%', right: '15%', animationDelay: '1s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '30%', left: '70%', animationDelay: '0.5s'}}></div>
         <div className="absolute w-1 h-1 bg-white rounded-full opacity-25 animate-pulse" style={{top: '40%', left: '10%', animationDelay: '2s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-35" style={{top: '50%', right: '25%'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-20 animate-pulse" style={{top: '60%', left: '85%', animationDelay: '1.5s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-purple-400 rounded-full opacity-35 animate-pulse" style={{top: '50%', right: '25%', animationDelay: '1.5s'}}></div>
+        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-20 animate-pulse" style={{top: '60%', left: '85%', animationDelay: '1.5s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-30" style={{top: '70%', left: '30%'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-40 animate-pulse" style={{top: '80%', right: '40%', animationDelay: '0.5s'}}></div>
+        <div className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '80%', right: '40%', animationDelay: '0.5s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-25" style={{top: '90%', left: '60%'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-35 animate-pulse" style={{top: '15%', left: '50%', animationDelay: '2.5s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-20" style={{top: '25%', right: '60%'}}></div>
+        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-35 animate-pulse" style={{top: '15%', left: '50%', animationDelay: '2.5s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-purple-400 rounded-full opacity-20 animate-pulse" style={{top: '25%', right: '60%', animationDelay: '3s'}}></div>
         <div className="absolute w-1 h-1 bg-white rounded-full opacity-30 animate-pulse" style={{top: '35%', left: '5%', animationDelay: '1.8s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-40" style={{top: '45%', right: '10%'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-25 animate-pulse" style={{top: '55%', left: '75%', animationDelay: '0.8s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '45%', right: '10%', animationDelay: '2.2s'}}></div>
+        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-25 animate-pulse" style={{top: '55%', left: '75%', animationDelay: '0.8s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-35" style={{top: '65%', right: '50%'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-20 animate-pulse" style={{top: '75%', left: '15%', animationDelay: '2.2s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-30" style={{top: '85%', right: '20%'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-40 animate-pulse" style={{top: '95%', left: '40%', animationDelay: '1.2s'}}></div>
+        <div className="absolute w-1 h-1 bg-purple-400 rounded-full opacity-20 animate-pulse" style={{top: '75%', left: '15%', animationDelay: '2.2s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-accent rounded-full opacity-30 animate-pulse" style={{top: '85%', right: '20%', animationDelay: '1.7s'}}></div>
+        <div className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '95%', left: '40%', animationDelay: '1.2s'}}></div>
       </div>
+
+      {/* Add floating animation keyframes */}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.1; }
+          50% { transform: translateY(-20px) rotate(180deg); opacity: 0.2; }
+        }
+      `}</style>
 
       {/* Navigation */}
       <nav className="bg-secondary/80 backdrop-blur-sm border-b border-gray-700/50 relative z-10">
@@ -258,44 +271,53 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
               Frequently Asked Questions
             </h2>
             <p className="text-xl text-gray-300">
-              Everything you need to know about Rankora
+              Everything you need to know about Rankora and AI Overviews optimization
             </p>
           </div>
 
           <div className="space-y-6">
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
-                How does Rankora's AI ranking work?
+                What is Rankora and how does it work?
               </h3>
               <p className="text-gray-300">
-                Rankora uses advanced machine learning algorithms to analyze multiple criteria and generate intelligent rankings. Our AI considers context, relationships, and patterns in your data to provide meaningful results.
+                Rankora is an AI-powered content analysis tool that helps optimize your content for Google's AI Overviews. It analyzes your articles across 6 key metrics: readability, factuality, structure, Q&A format, structured data, and authority.
               </p>
             </div>
 
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
-                Can I customize ranking criteria?
+                How accurate are the analysis results?
               </h3>
               <p className="text-gray-300">
-                Absolutely! You can define custom criteria, set weights, and adjust parameters to match your specific ranking needs. Rankora adapts to your requirements.
+                Our AI analysis has a 98% accuracy rate, trained on thousands of successful AI Overview snippets. We continuously update our algorithms based on Google's latest AI Overview patterns and ranking factors.
               </p>
             </div>
 
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
-                Is there a free plan available?
+                What's included in the Free plan?
               </h3>
               <p className="text-gray-300">
-                Yes! We offer a generous free plan that includes basic ranking features. You can upgrade to access advanced analytics and collaboration tools.
+                The Free plan includes 2 content analyses per month, basic scoring across all 6 metrics, general improvement suggestions, and email support. Perfect for testing our platform.
               </p>
             </div>
 
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
-                How secure is my data?
+                How does the competitor comparison feature work?
               </h3>
               <p className="text-gray-300">
-                We take security seriously. All data is encrypted in transit and at rest, with regular security audits and compliance with industry standards.
+                Our competitor comparison tool analyzes both your content and a competitor's content side-by-side across all metrics, providing detailed insights and AI-generated strategies.
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:shadow-lg hover:shadow-accent/5 transition duration-300">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Is my data secure and private?
+              </h3>
+              <p className="text-gray-300">
+                Absolutely. We use enterprise-grade security measures to protect your data. We don't store your content permanently, and we never share your data with third parties.
               </p>
             </div>
           </div>

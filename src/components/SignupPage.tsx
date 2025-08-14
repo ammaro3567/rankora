@@ -160,7 +160,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                   value={formData.fullName}
                   onChange={handleInputChange}
                   className="input-primary pl-12 h-12"
-                  placeholder="Enter your full name"
+                  placeholder="John Doe"
                   autoComplete="name"
                   disabled={isLoading}
                   required
@@ -182,7 +182,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                   value={formData.email}
                   onChange={handleInputChange}
                   className="input-primary pl-12 h-12"
-                  placeholder="Enter your email"
+                  placeholder="your.email@example.com"
                   autoComplete="email"
                   disabled={isLoading}
                   required
@@ -204,7 +204,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                   value={formData.password}
                   onChange={handleInputChange}
                   className="input-primary pl-12 pr-12 h-12"
-                  placeholder="Create a password"
+                  placeholder="••••••••••••"
                   autoComplete="new-password"
                   disabled={isLoading}
                   required
@@ -238,7 +238,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   className="input-primary pl-12 pr-12 h-12"
-                  placeholder="Confirm your password"
+                  placeholder="••••••••••••"
                   autoComplete="new-password"
                   disabled={isLoading}
                   required

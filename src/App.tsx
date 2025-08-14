@@ -179,15 +179,22 @@ function App() {
         }
 
         // User is authenticated and verified
-        console.log('✅ User signed in successfully')
+        console.log('✅ User signed in successfully - immediate dashboard redirect')
         const ownerStatus = await profileService.isOwner()
         
+        // Immediate loading stop and dashboard redirect
         updateState({ 
           isLoading: false, 
           isAuthenticated: true, 
           currentUser: session.user,
+          currentPage: 'dashboard',
           isOwner: ownerStatus
         })
+        
+        // Force immediate re-render to stop loading
+        setTimeout(() => {
+          updateState({ isLoading: false })
+        }, 0)
         
         console.log('🎯 Redirecting signed-in user to dashboard')
         navigateTo('dashboard', true)
@@ -343,7 +350,7 @@ function App() {
         )
 
       case 'pricing':
-        return <PricingPage />
+        return <PricingPage onBack={() => navigateTo('home')} />
 
       case 'privacy':
         return <PrivacyPage onBack={() => navigateTo('home')} />

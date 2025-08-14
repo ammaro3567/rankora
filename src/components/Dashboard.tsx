@@ -75,6 +75,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
     <div className="min-h-screen bg-primary relative">
       <StarField />
       
+      {/* Enhanced Background Effects to match Landing Page */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-gradient-to-r from-accent/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '15%', left: '5%', animation: 'float 20s ease-in-out infinite'}}></div>
+        <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{top: '65%', right: '5%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
+        <div className="absolute w-60 h-60 bg-gradient-to-r from-purple-400/8 to-accent/8 rounded-full blur-3xl animate-pulse" style={{top: '40%', left: '70%', animation: 'float 30s ease-in-out infinite'}}></div>
+      </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.1; }
+          50% { transform: translateY(-20px) rotate(180deg); opacity: 0.2; }
+        }
+      `}</style>
+      
       <div className="flex">
         <Sidebar
           activeTab={activeTab}

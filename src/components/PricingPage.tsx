@@ -8,7 +8,11 @@ declare global {
   }
 }
 
-export const PricingPage: React.FC = () => {
+interface PricingPageProps {
+  onBack?: () => void;
+}
+
+export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<PayPalProduct | null>(null);
@@ -136,7 +140,49 @@ export const PricingPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-primary relative">
+      {/* Enhanced Star Field Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-gradient-to-r from-accent/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
+        <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
+        
+        {/* Animated stars */}
+        <div className="absolute w-1 h-1 bg-white rounded-full opacity-20 animate-pulse" style={{top: '10%', left: '20%'}}></div>
+        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-30 animate-pulse" style={{top: '20%', right: '15%', animationDelay: '1s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '30%', left: '70%', animationDelay: '0.5s'}}></div>
+        <div className="absolute w-1 h-1 bg-white rounded-full opacity-25 animate-pulse" style={{top: '40%', left: '10%', animationDelay: '2s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-purple-400 rounded-full opacity-35 animate-pulse" style={{top: '50%', right: '25%', animationDelay: '1.5s'}}></div>
+      </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.1; }
+          50% { transform: translateY(-20px) rotate(180deg); opacity: 0.2; }
+        }
+      `}</style>
+
+      {/* Navigation Bar */}
+      <nav className="bg-secondary/80 backdrop-blur-sm border-b border-gray-700/50 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <img className="h-8 w-8" src="/logo32.png" alt="Rankora" />
+              <span className="ml-2 text-xl font-bold text-white">Rankora</span>
+            </div>
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
+              >
+                ← Back to Home
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      <div className="relative z-10 py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="text-center animate-fadeInUp">
         <div className="inline-block mb-6">
@@ -300,6 +346,8 @@ export const PricingPage: React.FC = () => {
             <h4 className="font-semibold text-primary mb-2">Is my data secure?</h4>
             <p className="text-secondary text-sm">Absolutely. We use enterprise-grade security and never share your data with third parties.</p>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>
