@@ -103,12 +103,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 FAQ
               </a>
               {localAuth ? (
-                <button
+                <a
+                  href="/dashboard"
                   onClick={onGoDashboard}
                   className="bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 shadow-lg shadow-emerald-500/20"
                 >
                   Go to Dashboard
-                </button>
+                </a>
               ) : (
                 <>
                   <button
@@ -157,12 +158,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                   FAQ
                 </a>
                 {localAuth ? (
-                  <button
+                  <a
+                    href="/dashboard"
                     onClick={onGoDashboard}
                     className="text-left bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 mx-3 shadow-lg shadow-emerald-500/20"
                   >
                     Go to Dashboard
-                  </button>
+                  </a>
                 ) : (
                   <>
                     <button
@@ -201,12 +203,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {localAuth ? (
-                <button
+                <a
+                  href="/dashboard"
                   onClick={onGoDashboard}
                   className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transform hover:scale-105 transition duration-200 shadow-lg shadow-emerald-500/20"
                 >
                   Go to Dashboard
-                </button>
+                </a>
               ) : (
                 <>
                   <button
