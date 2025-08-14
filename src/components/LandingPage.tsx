@@ -18,6 +18,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
     let mounted = true
     ;(async () => {
       try {
+        // فحص سريع من LocalStorage أولاً
+        try {
+          const raw = localStorage.getItem('rankora-auth-token')
+          if (raw) setLocalAuth(true)
+        } catch {}
         const { data } = await supabase.auth.getSession()
         if (mounted) setLocalAuth(!!data.session?.user)
       } catch {}

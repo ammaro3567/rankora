@@ -149,7 +149,7 @@ function App() {
         console.log('🛟 Safety: forcing loading=false after boot timeout')
         updateState({ isLoading: false })
       }
-    }, 2500)
+    }, 1200)
 
     // Listen for auth state changes
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
