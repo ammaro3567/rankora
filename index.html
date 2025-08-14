@@ -57,6 +57,15 @@
     <meta name="theme-color" content="#10b981" />
   </head>
   <body>
+    <script>
+      try {
+        var raw = localStorage.getItem('rankora-auth-token');
+        var path = window.location.pathname;
+        if (raw && (path === '/' || path === '/home')) {
+          window.location.replace('/dashboard');
+        }
+      } catch (e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx?v=6"></script>
     <!-- PayPal SDK Script will be loaded dynamically -->
