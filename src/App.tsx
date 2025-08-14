@@ -255,6 +255,25 @@ function App() {
       return
     }
     updateState({ isLoading: true })
+    // التقاط سريع من localStorage لمنع الارتداد
+    try {
+      const raw = localStorage.getItem('rankora-auth-token')
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw)
+          updateState({ isAuthenticated: true, currentUser: parsed?.user || state.currentUser })
+        } catch {
+          updateState({ isAuthenticated: true })
+        }
+        navigateTo('dashboard')
+        // تأكيد لاحق من Supabase بدون تعطيل التوجيه
+        authService.getCurrentSession().then(({ session }) => {
+          if (session?.user) updateState({ currentUser: session.user })
+        })
+        updateState({ isLoading: false })
+        return
+      }
+    } catch {}
     const { session } = await authService.getCurrentSession()
     if (session?.user) {
       updateState({ isAuthenticated: true, currentUser: session.user })
