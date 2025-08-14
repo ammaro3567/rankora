@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 interface LandingPageProps {
   onLogin: () => void
@@ -10,6 +11,24 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing, isAuthenticated = false, onGoDashboard }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [localAuth, setLocalAuth] = useState<boolean>(!!isAuthenticated)
+
+  // Fallback: تأكيد حالة تسجيل الدخول مباشرة من Supabase لو تأخر الأب
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (mounted) setLocalAuth(!!data.session?.user)
+      } catch {}
+    })()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setLocalAuth(!!session?.user)
+    })
+    return () => { mounted = false; subscription?.unsubscribe?.() }
+  }, [])
+
+  useEffect(() => { setLocalAuth(!!isAuthenticated) }, [isAuthenticated])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
@@ -77,7 +96,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
               <a href="#faq" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
                 FAQ
               </a>
-              {isAuthenticated ? (
+              {localAuth ? (
                 <button
                   onClick={onGoDashboard}
                   className="bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 shadow-lg shadow-emerald-500/20"
@@ -131,7 +150,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 <a href="#faq" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
                   FAQ
                 </a>
-                {isAuthenticated ? (
+                {localAuth ? (
                   <button
                     onClick={onGoDashboard}
                     className="text-left bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 mx-3 shadow-lg shadow-emerald-500/20"
@@ -175,7 +194,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              {isAuthenticated ? (
+              {localAuth ? (
                 <button
                   onClick={onGoDashboard}
                   className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transform hover:scale-105 transition duration-200 shadow-lg shadow-emerald-500/20"
