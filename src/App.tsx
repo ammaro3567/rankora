@@ -351,12 +351,11 @@ function App() {
       }
     }
 
-    // Non-authenticated user pages
+    // Public pages (home shows Go to Dashboard when authenticated)
     switch (state.currentPage) {
       case 'home':
-        // 🏠 Beautiful landing page for new visitors
-        console.log('🏠 Rendering Landing Page for non-authenticated users')
-    return (
+        console.log('🏠 Rendering Landing Page')
+        return (
           <LandingPage
             onLogin={() => navigateTo('login')}
             onSignup={() => navigateTo('signup')}
