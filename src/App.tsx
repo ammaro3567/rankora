@@ -143,6 +143,14 @@ function App() {
     // Initial auth check
     checkAuthentication()
 
+    // Safety: ensure loading never sticks on first boot
+    const bootTimeout = setTimeout(() => {
+      if (state.isLoading) {
+        console.log('🛟 Safety: forcing loading=false after boot timeout')
+        updateState({ isLoading: false })
+      }
+    }, 2500)
+
     // Listen for auth state changes
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
       console.log(`🔔 Auth state changed: ${event}`, session?.user?.email || 'no user')
@@ -228,6 +236,7 @@ function App() {
 
     // Cleanup subscription
     return () => {
+      clearTimeout(bootTimeout)
       subscription.unsubscribe()
     }
   }, [])
