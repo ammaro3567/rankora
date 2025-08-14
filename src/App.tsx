@@ -81,7 +81,12 @@ function App() {
         const raw = localStorage.getItem('rankora-auth-token')
         if (raw) {
           const path = window.location.pathname
-          updateState({ isAuthenticated: true, isLoading: false })
+          let interimUser: any = null
+          try {
+            const parsed = JSON.parse(raw)
+            interimUser = parsed?.user || parsed?.currentSession?.user || parsed?.session?.user || parsed?.data?.user || null
+          } catch {}
+          updateState({ isAuthenticated: true, isLoading: false, ...(interimUser ? { currentUser: interimUser } : {}) })
           if (path === '/dashboard') {
             navigateTo('dashboard', false)
           } else if (path === '/admin') {
@@ -406,13 +411,15 @@ function App() {
             />
           )
         case 'dashboard':
+          if (!state.currentUser) {
+            return <LoadingOverlay isVisible={true} />
+          }
           console.log('🎨 Rendering Dashboard - User:', state.currentUser?.email)
-    return (
-      <Dashboard 
-        onLogout={handleLogout}
+          return (
+            <Dashboard 
+              onLogout={handleLogout}
               showAdminAccess={state.isOwner}
               onOpenAdmin={() => navigateTo('admin')}
-
             />
           )
         
