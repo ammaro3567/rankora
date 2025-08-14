@@ -276,7 +276,7 @@ function App() {
 
   // 🎨 Render logic
   const renderCurrentPage = () => {
-    if (state.isLoading || state.currentPage === 'loading') {
+    if (state.isLoading) {
       return <LoadingOverlay isVisible={true} />
     }
 
@@ -303,8 +303,17 @@ function App() {
           return <LoadingOverlay isVisible={true} />
         
         default:
-          navigateTo('dashboard')
-          return <LoadingOverlay isVisible={true} />
+          // Fallback safely to dashboard without overlay to avoid infinite spinner
+          if (state.currentPage !== 'dashboard') {
+            navigateTo('dashboard', true)
+          }
+          return (
+            <Dashboard 
+              onLogout={handleLogout}
+              showAdminAccess={state.isOwner}
+              onOpenAdmin={() => navigateTo('admin')}
+            />
+          )
       }
     }
 

@@ -10,9 +10,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-primary relative">
+    <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
       {/* Enhanced Star Field Background with Movement */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Emerald aura */}
+        <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
+        <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
         {/* Moving gradient orbs for atmosphere */}
         <div className="absolute w-96 h-96 bg-gradient-to-r from-accent/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
         <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
