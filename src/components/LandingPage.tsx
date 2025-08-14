@@ -4,9 +4,11 @@ interface LandingPageProps {
   onLogin: () => void
   onSignup: () => void
   onPricing: () => void
+  isAuthenticated?: boolean
+  onGoDashboard?: () => void
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing, isAuthenticated = false, onGoDashboard }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
@@ -75,18 +77,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
               <a href="#faq" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
                 FAQ
               </a>
-              <button
-                onClick={onLogin}
-                className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
-              >
-                Login
-              </button>
-              <button
-                onClick={onSignup}
-                className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 shadow-lg shadow-accent/20"
-              >
-                Sign Up Free
-              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={onGoDashboard}
+                  className="bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 shadow-lg shadow-emerald-500/20"
+                >
+                  Go to Dashboard
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={onLogin}
+                    className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={onSignup}
+                    className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 shadow-lg shadow-accent/20"
+                  >
+                    Sign Up Free
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -118,18 +131,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
                 <a href="#faq" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
                   FAQ
                 </a>
-                <button
-                  onClick={onLogin}
-                  className="text-left text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
-                >
-                  Login
-                </button>
-                <button
-                  onClick={onSignup}
-                  className="text-left bg-accent text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 mx-3 shadow-lg shadow-accent/20"
-                >
-                  Sign Up Free
-                </button>
+                {isAuthenticated ? (
+                  <button
+                    onClick={onGoDashboard}
+                    className="text-left bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 mx-3 shadow-lg shadow-emerald-500/20"
+                  >
+                    Go to Dashboard
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={onLogin}
+                      className="text-left text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={onSignup}
+                      className="text-left bg-accent text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 mx-3 shadow-lg shadow-accent/20"
+                    >
+                      Sign Up Free
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -151,18 +175,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing 
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button
-                onClick={onSignup}
-                className="w-full sm:w-auto bg-accent text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-accent/90 transform hover:scale-105 transition duration-200 shadow-lg shadow-accent/20"
-              >
-                Start Ranking Free
-              </button>
-              <button
-                onClick={onLogin}
-                className="w-full sm:w-auto border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:border-gray-500 hover:bg-gray-800/50 transition duration-200"
-              >
-                Sign In
-              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={onGoDashboard}
+                  className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transform hover:scale-105 transition duration-200 shadow-lg shadow-emerald-500/20"
+                >
+                  Go to Dashboard
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={onSignup}
+                    className="w-full sm:w-auto bg-accent text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-accent/90 transform hover:scale-105 transition duration-200 shadow-lg shadow-accent/20"
+                  >
+                    Start Ranking Free
+                  </button>
+                  <button
+                    onClick={onLogin}
+                    className="w-full sm:w-auto border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:border-gray-500 hover:bg-gray-800/50 transition duration-200"
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="mt-12 text-sm text-gray-400">

@@ -342,6 +342,8 @@ function App() {
             onLogin={() => navigateTo('login')}
             onSignup={() => navigateTo('signup')}
             onPricing={() => navigateTo('pricing')}
+            isAuthenticated={state.isAuthenticated}
+            onGoDashboard={() => navigateTo('dashboard')}
           />
         )
 
