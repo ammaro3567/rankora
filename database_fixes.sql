@@ -1,109 +1,85 @@
 -- Database fixes for Clerk integration
 -- Run this in your Supabase SQL editor
+-- This script updates existing tables to work with Clerk
 
--- 1. Fix stripe_user_subscriptions table - add clerk_user_id column
-ALTER TABLE stripe_user_subscriptions 
-ADD COLUMN IF NOT EXISTS clerk_user_id TEXT;
+-- 1. Check current table structure
+SELECT 
+  table_name,
+  column_name,
+  data_type,
+  is_nullable
+FROM information_schema.columns 
+WHERE table_schema = 'public' 
+  AND table_name IN ('profiles', 'competitor_comparisons', 'user_analyses', 'projects', 'stripe_user_subscriptions')
+  AND column_name IN ('clerk_user_id', 'user_id')
+ORDER BY table_name, column_name;
 
--- 2. Create profiles table if it doesn't exist
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  clerk_user_id TEXT UNIQUE NOT NULL,
-  email TEXT,
-  full_name TEXT,
-  last_sign_in_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- 2. Update existing NULL values in profiles table
+-- For now, we'll set a temporary value for existing records
+UPDATE profiles 
+SET clerk_user_id = 'legacy_user_' || id::text 
+WHERE clerk_user_id IS NULL;
 
--- 3. Create competitor_comparisons table if it doesn't exist
-CREATE TABLE IF NOT EXISTS competitor_comparisons (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  clerk_user_id TEXT NOT NULL,
-  user_url TEXT NOT NULL,
-  competitor_url TEXT NOT NULL,
-  comparison_data JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- 3. Update existing NULL values in competitor_comparisons table
+UPDATE competitor_comparisons 
+SET clerk_user_id = 'legacy_user_' || id::text 
+WHERE clerk_user_id IS NULL;
 
--- 4. Create user_analyses table if it doesn't exist
-CREATE TABLE IF NOT EXISTS user_analyses (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  clerk_user_id TEXT NOT NULL,
-  url TEXT NOT NULL,
-  analysis_data JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- 4. Update existing NULL values in user_analyses table
+UPDATE user_analyses 
+SET clerk_user_id = 'legacy_user_' || id::text 
+WHERE clerk_user_id IS NULL;
 
--- 5. Create projects table if it doesn't exist
-CREATE TABLE IF NOT EXISTS projects (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  clerk_user_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- 5. Update existing NULL values in projects table
+UPDATE projects 
+SET clerk_user_id = 'legacy_user_' || id::text 
+WHERE clerk_user_id IS NULL;
 
--- 6. Add indexes for better performance
+-- 6. Update existing NULL values in stripe_user_subscriptions table
+UPDATE stripe_user_subscriptions 
+SET clerk_user_id = 'legacy_user_' || id::text 
+WHERE clerk_user_id IS NULL;
+
+-- 7. Now make clerk_user_id NOT NULL
+ALTER TABLE profiles ALTER COLUMN clerk_user_id SET NOT NULL;
+ALTER TABLE competitor_comparisons ALTER COLUMN clerk_user_id SET NOT NULL;
+ALTER TABLE user_analyses ALTER COLUMN clerk_user_id SET NOT NULL;
+ALTER TABLE projects ALTER COLUMN clerk_user_id SET NOT NULL;
+ALTER TABLE stripe_user_subscriptions ALTER COLUMN clerk_user_id SET NOT NULL;
+
+-- 8. Add indexes for better performance (if they don't exist)
 CREATE INDEX IF NOT EXISTS idx_profiles_clerk_user_id ON profiles(clerk_user_id);
 CREATE INDEX IF NOT EXISTS idx_competitor_comparisons_clerk_user_id ON competitor_comparisons(clerk_user_id);
 CREATE INDEX IF NOT EXISTS idx_user_analyses_clerk_user_id ON user_analyses(clerk_user_id);
 CREATE INDEX IF NOT EXISTS idx_projects_clerk_user_id ON projects(clerk_user_id);
 CREATE INDEX IF NOT EXISTS idx_stripe_user_subscriptions_clerk_user_id ON stripe_user_subscriptions(clerk_user_id);
 
--- 7. Enable Row Level Security (RLS) - temporarily disabled during transition
--- ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE competitor_comparisons ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE user_analyses ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-
--- 8. Create RLS policies (commented out during transition)
-/*
--- Profiles policy
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT USING (clerk_user_id = current_setting('clerk_user_id', true));
-
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (clerk_user_id = current_setting('clerk_user_id', true));
-
-CREATE POLICY "Users can insert own profile" ON profiles
-  FOR INSERT WITH CHECK (clerk_user_id = current_setting('clerk_user_id', true));
-
--- Competitor comparisons policy
-CREATE POLICY "Users can view own comparisons" ON competitor_comparisons
-  FOR SELECT USING (clerk_user_id = current_setting('clerk_user_id', true));
-
-CREATE POLICY "Users can insert own comparisons" ON competitor_comparisons
-  FOR INSERT WITH CHECK (clerk_user_id = current_setting('clerk_user_id', true));
-
--- User analyses policy
-CREATE POLICY "Users can view own analyses" ON user_analyses
-  FOR SELECT USING (clerk_user_id = current_setting('clerk_user_id', true));
-
-CREATE POLICY "Users can insert own analyses" ON user_analyses
-  FOR INSERT WITH CHECK (clerk_user_id = current_setting('clerk_user_id', true));
-
--- Projects policy
-CREATE POLICY "Users can view own projects" ON projects
-  FOR SELECT USING (clerk_user_id = current_setting('clerk_user_id', true));
-
-CREATE POLICY "Users can insert own projects" ON projects
-  FOR INSERT WITH CHECK (clerk_user_id = current_setting('clerk_user_id', true));
-*/
-
--- 9. Update existing data if needed (if you have old user_id columns)
--- UPDATE stripe_user_subscriptions SET clerk_user_id = user_id WHERE clerk_user_id IS NULL AND user_id IS NOT NULL;
--- UPDATE profiles SET clerk_user_id = user_id WHERE clerk_user_id IS NULL AND user_id IS NOT NULL;
--- UPDATE competitor_comparisons SET clerk_user_id = user_id WHERE clerk_user_id IS NULL AND user_id IS NOT NULL;
--- UPDATE user_analyses SET clerk_user_id = user_id WHERE clerk_user_id IS NULL AND user_id IS NOT NULL;
--- UPDATE projects SET clerk_user_id = user_id WHERE clerk_user_id IS NULL AND user_id IS NOT NULL;
-
--- 10. Grant necessary permissions
+-- 9. Grant necessary permissions (if not already granted)
 GRANT ALL ON profiles TO authenticated;
 GRANT ALL ON competitor_comparisons TO authenticated;
 GRANT ALL ON user_analyses TO authenticated;
 GRANT ALL ON projects TO authenticated;
 GRANT ALL ON stripe_user_subscriptions TO authenticated;
+
+-- 10. Verify the final structure
+SELECT 
+  table_name,
+  column_name,
+  data_type,
+  is_nullable
+FROM information_schema.columns 
+WHERE table_schema = 'public' 
+  AND table_name IN ('profiles', 'competitor_comparisons', 'user_analyses', 'projects', 'stripe_user_subscriptions')
+  AND column_name = 'clerk_user_id'
+ORDER BY table_name;
+
+-- 11. Show sample data to verify (separate queries to avoid syntax issues)
+SELECT 'profiles' as table_name, clerk_user_id FROM profiles LIMIT 3;
+
+SELECT 'competitor_comparisons' as table_name, clerk_user_id FROM competitor_comparisons LIMIT 3;
+
+SELECT 'user_analyses' as table_name, clerk_user_id FROM user_analyses LIMIT 3;
+
+SELECT 'projects' as table_name, clerk_user_id FROM projects LIMIT 3;
+
+SELECT 'stripe_user_subscriptions' as table_name, clerk_user_id FROM stripe_user_subscriptions LIMIT 3;

@@ -77,9 +77,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
       
       {/* Enhanced Background Effects to match Landing Page */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-96 h-96 bg-gradient-to-r from-accent/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '15%', left: '5%', animation: 'float 20s ease-in-out infinite'}}></div>
-        <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{top: '65%', right: '5%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
-        <div className="absolute w-60 h-60 bg-gradient-to-r from-purple-400/8 to-accent/8 rounded-full blur-3xl animate-pulse" style={{top: '40%', left: '70%', animation: 'float 30s ease-in-out infinite'}}></div>
+        <div className="absolute w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '15%', left: '5%', animation: 'float 20s ease-in-out infinite'}}></div>
+        <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 rounded-full blur-3xl animate-pulse" style={{top: '65%', right: '5%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
+        <div className="absolute w-60 h-60 bg-gradient-to-r from-emerald-400/8 to-emerald-500/8 rounded-full blur-3xl animate-pulse" style={{top: '40%', left: '70%', animation: 'float 30s ease-in-out infinite'}}></div>
       </div>
 
       <style>{`

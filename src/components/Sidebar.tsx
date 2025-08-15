@@ -101,12 +101,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Logo */}
           <div className="p-6 border-b border-primary">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-accent-primary rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">R</span>
               </div>
               <div>
                 <h1 className="text-xl font-bold text-primary">
-                  RANK<span className="text-accent-primary">ORA</span>
+                  RANK<span className="text-emerald-400">ORA</span>
                 </h1>
                 <p className="text-xs text-tertiary">AI Content Analyzer</p>
               </div>
@@ -116,8 +116,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* User Info */}
           <div className="p-4 border-b border-primary/30">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-accent-primary/20 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-accent-primary" />
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-emerald-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-primary truncate">
@@ -146,12 +146,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`
                     w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200
                     ${isActive 
-                      ? 'bg-accent-primary/20 text-accent-primary border border-accent-primary/30' 
-                      : 'text-primary hover:bg-primary/10 hover:text-accent-primary'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                      : 'text-primary hover:bg-primary/10 hover:text-emerald-400'
                     }
                   `}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-accent-primary' : 'text-tertiary'}`} />
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-tertiary'}`} />
                   <span className="font-medium">{item.label}</span>
                 </button>
               );
@@ -161,9 +161,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {showAdminAccess && (
               <button
                 onClick={onOpenAdmin}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
               >
-                <Crown className="w-5 h-5 text-purple-400" />
+                <Crown className="w-5 h-5 text-emerald-400" />
                 <span className="font-medium">Admin Panel</span>
               </button>
             )}
