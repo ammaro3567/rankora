@@ -180,7 +180,7 @@ export const DashboardOverview: React.FC = () => {
       
       const { data, error } = await supabase
         .from('user_analyses')
-        .select('url, result, created_at')
+        .select('url, analysis_results, created_at')
         .eq('clerk_user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -189,14 +189,14 @@ export const DashboardOverview: React.FC = () => {
           title: 'Content Analysis',
           url: row.url,
           score: (() => {
-            const r = row.result || {};
+            const r = row.analysis_results || {};
             const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
               .map((v: any) => (typeof v === 'number' ? v : 0));
             const valid = vals.filter((v: number) => v > 0);
             return valid.length ? Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length) : 0;
           })(),
           time: new Date(row.created_at).toLocaleString(),
-      type: 'analysis'
+          type: 'analysis'
         }));
         setRecentAnalyses(items);
       }
