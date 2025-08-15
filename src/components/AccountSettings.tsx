@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { User, Mail, Lock, Shield, Save } from 'lucide-react';
 import { getUserSubscription } from '../lib/paypal';
-import { supabase, getUserProfile, upsertUserProfile, getCurrentUser } from '../lib/supabase';
+import { supabase, getUserProfile, upsertUserProfile } from '../lib/supabase';
 import { getProductByPayPalPlanId } from '../paypal-config';
+import { useUser, useClerk } from '@clerk/clerk-react';
 
 interface AccountSettingsProps {
   onLogout: () => void;
 }
 
 export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) => {
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const [activeSection, setActiveSection] = useState('profile');
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -31,8 +34,10 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
-        const sub = await getUserSubscription();
-        setSubscription(sub);
+        if (user?.id) {
+          const sub = await getUserSubscription(user.id);
+          setSubscription(sub);
+        }
       } catch (error) {
         console.error('Error fetching subscription:', error);
       } finally {
@@ -40,39 +45,46 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
       }
     };
 
-    fetchSubscription();
-    // Load profile
-    (async () => {
-      try {
-        const user = await getCurrentUser();
-        if (user?.email) {
-          setFormData(prev => ({ ...prev, email: user.email as string }));
+    if (isLoaded && user) {
+      fetchSubscription();
+      // Load profile from Clerk user data
+      const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress;
+      const fullName = user.fullName || '';
+      
+      setFormData(prev => ({
+        ...prev,
+        email: email || '',
+        name: fullName || ''
+      }));
+
+      // Load additional profile data from Supabase
+      (async () => {
+        try {
+          const profile = await getUserProfile();
+          if (profile) {
+            setFormData(prev => ({
+              ...prev,
+              company: profile.company || '',
+              timezone: profile.timezone || 'UTC',
+              notifications: (profile.notifications as any) || prev.notifications
+            }));
+          }
+        } catch (e) {
+          console.log('No profile data found, using defaults');
         }
-        const profile = await getUserProfile();
-        if (profile) {
-          setFormData(prev => ({
-            ...prev,
-            name: profile.full_name || '',
-            company: profile.company || '',
-            timezone: profile.timezone || 'UTC',
-            notifications: (profile.notifications as any) || prev.notifications
-          }));
-        }
-      } catch (e) {
-        // noop
-      }
-    })();
-  }, []);
+      })();
+    }
+  }, [isLoaded, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
-      const checkbox = e.target as HTMLInputElement;
+      const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
         ...prev,
         notifications: {
           ...prev.notifications,
-          [name]: checkbox.checked
+          [name]: checked
         }
       }));
     } else {
@@ -83,101 +95,95 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
     }
   };
 
-  const getSubscriptionDetails = () => {
-    if (!subscription?.price_id) return null;
-    return getProductByPayPalPlanId(subscription.price_id);
+  const handleLogout = async () => {
+    await signOut();
+    onLogout();
   };
-
-  const subscriptionDetails = getSubscriptionDetails();
-  const isSubscribed = subscription && subscription.subscription_status === 'active';
-
-  const sections = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'security', label: 'Security', icon: Shield },
-  ];
 
   const renderProfile = () => (
     <div className="space-y-6">
       <div>
         <h3 className="text-xl font-semibold text-primary mb-4">Profile Information</h3>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-primary mb-2">Full Name</label>
+            <label className="block text-sm font-medium text-secondary mb-2">Full Name</label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="input-primary"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="Enter your full name"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-primary mb-2">Email Address</label>
+            <label className="block text-sm font-medium text-secondary mb-2">Email</label>
             <input
               type="email"
               name="email"
               value={formData.email}
-              onChange={handleInputChange}
-              className="input-primary"
+              disabled
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-400 cursor-not-allowed"
             />
+            <p className="text-xs text-gray-500 mt-1">Email managed by Clerk</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-primary mb-2">Company</label>
+            <label className="block text-sm font-medium text-secondary mb-2">Company</label>
             <input
               type="text"
               name="company"
               value={formData.company}
               onChange={handleInputChange}
-              className="input-primary"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="Enter your company name"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-primary mb-2">Timezone</label>
+            <label className="block text-sm font-medium text-secondary mb-2">Timezone</label>
             <select
               name="timezone"
               value={formData.timezone}
               onChange={handleInputChange}
-              className="input-primary"
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="UTC-8">Pacific Time (UTC-8)</option>
-              <option value="UTC-7">Mountain Time (UTC-7)</option>
-              <option value="UTC-6">Central Time (UTC-6)</option>
-              <option value="UTC-5">Eastern Time (UTC-5)</option>
-              <option value="UTC+0">UTC</option>
+              <option value="UTC">UTC</option>
+              <option value="America/New_York">Eastern Time</option>
+              <option value="America/Chicago">Central Time</option>
+              <option value="America/Denver">Mountain Time</option>
+              <option value="America/Los_Angeles">Pacific Time</option>
+              <option value="Europe/London">London</option>
+              <option value="Europe/Paris">Paris</option>
+              <option value="Asia/Tokyo">Tokyo</option>
             </select>
           </div>
         </div>
         {saveError && (
-          <div className="p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm mb-4">
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm mb-4">
             {saveError}
           </div>
         )}
         {saveSuccess && (
-          <div className="p-3 bg-success/10 border border-success/30 rounded-lg text-success text-sm mb-4">
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm mb-4">
             Profile saved successfully
           </div>
         )}
         <button
-          className={`btn-primary mt-2 ${saveLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className={`bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 shadow-lg shadow-emerald-500/20 mt-2 ${saveLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           disabled={saveLoading}
           onClick={async () => {
             setSaveError(null);
             setSaveSuccess(false);
             setSaveLoading(true);
             try {
-              const { error } = await upsertUserProfile({
+              const result = await upsertUserProfile({
                 full_name: formData.name,
-                company: formData.company,
-                timezone: formData.timezone,
-                notifications: formData.notifications as any
+                company: formData.company
               });
-              if (error) {
-                setSaveError(error.message || 'Failed to save profile');
-              } else {
+              if (result) {
                 setSaveSuccess(true);
               }
             } catch (err: any) {
-              setSaveError(err?.message || 'Unexpected error');
+              setSaveError(err?.message || 'Failed to save profile');
             } finally {
               setSaveLoading(false);
             }
@@ -195,7 +201,16 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
       <div>
         <h3 className="text-xl font-semibold text-primary mb-4">Security Settings</h3>
         <div className="space-y-4">
-          <ChangePasswordCard />
+          <div className="p-4 border border-gray-600 rounded-lg">
+            <h4 className="text-lg font-medium text-primary mb-2">Password Management</h4>
+            <p className="text-secondary mb-4">Password changes are managed through Clerk. Use the user menu to update your password.</p>
+            <button
+              onClick={() => window.open('https://clerk.com/docs/users/management', '_blank')}
+              className="text-emerald-400 hover:text-emerald-300 underline"
+            >
+              Learn more about Clerk security
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -206,143 +221,46 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
       <div>
         <h3 className="text-xl font-semibold text-primary mb-4">Notification Preferences</h3>
         <div className="space-y-4">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-primary">Email Notifications</h4>
-                <p className="text-sm text-secondary">Receive updates via email</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  name="email"
-                  checked={formData.notifications.email}
-                  onChange={handleInputChange}
-                  className="sr-only peer" 
-                />
-                <div className="w-11 h-6 bg-surface-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-primary"></div>
-              </label>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-primary">Push Notifications</h4>
-                <p className="text-sm text-secondary">Receive browser notifications</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  name="push"
-                  checked={formData.notifications.push}
-                  onChange={handleInputChange}
-                  className="sr-only peer" 
-                />
-                <div className="w-11 h-6 bg-surface-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-primary"></div>
-              </label>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-primary">Weekly Reports</h4>
-                <p className="text-sm text-secondary">Get weekly analysis summaries</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  name="weekly"
-                  checked={formData.notifications.weekly}
-                  onChange={handleInputChange}
-                  className="sr-only peer" 
-                />
-                <div className="w-11 h-6 bg-surface-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-primary"></div>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderBilling = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-xl font-semibold text-primary mb-4">Billing & Subscription</h3>
-        
-        {loading ? (
-          <div className="card">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="loading-spinner w-5 h-5" />
-              <span className="text-secondary">Loading subscription details...</span>
-            </div>
-          </div>
-        ) : (
-        <div className="card mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h4 className="font-semibold text-primary">Current Plan</h4>
-              <p className="text-secondary">
-                {isSubscribed && subscriptionDetails ? `${subscriptionDetails.name} Plan` : 'Free Plan'}
-              </p>
-            </div>
-            {!isSubscribed && (
-              <button className="btn-primary">Upgrade</button>
-            )}
-            {isSubscribed && (
-              <div className="text-right">
-                <div className="text-lg font-bold text-success">
-                  ${subscriptionDetails?.price}/month
-                </div>
-                <div className="text-sm text-success">Active</div>
-              </div> 
-            )}
-          </div>
-          <div className="text-sm text-secondary">
-            {isSubscribed && subscriptionDetails ? (
-              <>
-                <p>0/{subscriptionDetails.description.split(' ')[0]} analyses used this month</p>
-                <p>Subscription status: {subscription.subscription_status?.replace('_', ' ')}</p>
-              </>
-            ) : (
-              <>
-                <p>2/2 analyses used this month</p>
-              </>
-            )}
-            <p>Resets on January 1, 2025</p>
-          </div>
-        </div>
-        )}
-
-        {isSubscribed && (
-          <div className="card">
-            <h4 className="font-semibold text-primary mb-4">Payment Method</h4>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <CreditCard className="w-5 h-5 text-secondary" />
-                <span className="text-secondary">
-                  PayPal Subscription
-                </span>
-              </div>
-              <button className="btn-secondary">Update</button>
-            </div>
-          </div>
-        )}
-
-        {!isSubscribed && (
-        <div className="card">
-          <h4 className="font-semibold text-primary mb-4">Payment Method</h4>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <CreditCard className="w-5 h-5 text-secondary" />
-              <span className="text-secondary">No payment method on file</span>
+            <div>
+              <label className="text-primary font-medium">Email Notifications</label>
+              <p className="text-secondary text-sm">Receive updates via email</p>
             </div>
-            <button className="btn-secondary">Subscribe</button>
+            <input
+              type="checkbox"
+              name="email"
+              checked={formData.notifications.email}
+              onChange={handleInputChange}
+              className="w-4 h-4 text-emerald-500 bg-gray-800 border-gray-600 rounded focus:ring-emerald-500 focus:ring-2"
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-primary font-medium">Push Notifications</label>
+              <p className="text-secondary text-sm">Receive browser notifications</p>
+            </div>
+            <input
+              type="checkbox"
+              name="push"
+              checked={formData.notifications.push}
+              onChange={handleInputChange}
+              className="w-4 h-4 text-emerald-500 bg-gray-800 border-gray-600 rounded focus:ring-emerald-500 focus:ring-2"
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-primary font-medium">Weekly Reports</label>
+              <p className="text-secondary text-sm">Receive weekly usage summaries</p>
+            </div>
+            <input
+              type="checkbox"
+              name="weekly"
+              checked={formData.notifications.weekly}
+              onChange={handleInputChange}
+              className="w-4 h-4 text-emerald-500 bg-gray-800 border-gray-600 rounded focus:ring-emerald-500 focus:ring-2"
+            />
           </div>
         </div>
-        )}
       </div>
     </div>
   );
@@ -350,39 +268,35 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
   const renderDataPrivacy = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-primary mb-4">Data & Privacy</h3>
+        <h3 className="text-xl font-semibold text-primary mb-4">Data Privacy</h3>
         <div className="space-y-4">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Download className="w-5 h-5 text-accent-primary" />
-                <div>
-                  <h4 className="font-medium text-primary">Export Data</h4>
-                  <p className="text-sm text-secondary">Download all your account data</p>
-                </div>
-              </div>
-              <button className="btn-secondary">Export</button>
-            </div>
+          <div className="p-4 border border-gray-600 rounded-lg">
+            <h4 className="text-lg font-medium text-primary mb-2">Data Usage</h4>
+            <p className="text-secondary mb-4">Your data is stored securely and used only to provide our services. We never share your personal information with third parties.</p>
           </div>
-
-          <div className="card border-error/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Trash2 className="w-5 h-5 text-error" />
-                <div>
-                  <h4 className="font-medium text-error">Delete Account</h4>
-                  <p className="text-sm text-secondary">Permanently delete your account and all data</p>
-                </div>
-              </div>
-              <button className="bg-error hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                Delete
-              </button>
-            </div>
+          <div className="p-4 border border-gray-600 rounded-lg">
+            <h4 className="text-lg font-medium text-primary mb-2">Data Export</h4>
+            <p className="text-secondary mb-4">You can export your data at any time. Contact support for assistance.</p>
           </div>
         </div>
       </div>
     </div>
   );
+
+  const sections = [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'notifications', label: 'Notifications', icon: Mail },
+    { id: 'privacy', label: 'Privacy', icon: Lock }
+  ];
+
+  if (!isLoaded || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -404,8 +318,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 text-left ${
                     activeSection === section.id
-                      ? 'text-accent-primary bg-surface-secondary'
-                      : 'text-secondary hover:text-primary hover:bg-surface-secondary'
+                      ? 'text-emerald-400 bg-emerald-500/20 border border-emerald-500/30'
+                      : 'text-secondary hover:text-primary hover:bg-gray-800/50'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -415,8 +329,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
             })}
             
             <button
-              onClick={onLogout}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-error hover:bg-red-500/10 transition-all duration-200 text-left mt-8"
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-all duration-200 text-left mt-8"
             >
               <span>Sign Out</span>
             </button>
@@ -425,76 +339,14 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
 
         {/* Content */}
         <div className="lg:col-span-3">
-          <div className="card">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
             {activeSection === 'profile' && renderProfile()}
             {activeSection === 'security' && renderSecurity()}
-            {/* removed extra sections for simplicity */}
+            {activeSection === 'notifications' && renderNotifications()}
+            {activeSection === 'privacy' && renderDataPrivacy()}
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-// Change Password Card Component
-const ChangePasswordCard: React.FC = () => {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  const handleChange = async () => {
-    setError(null);
-    setSuccess(false);
-    if (!newPassword || newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    try {
-      setLoading(true);
-      // Supabase لا يدعم تغيير الباسورد إلا عبر updateUser في الجلسة الحالية
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('Not authenticated');
-        return;
-      }
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) setError(error.message);
-      else setSuccess(true);
-    } catch (e: any) {
-      setError(e?.message || 'Unexpected error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <Lock className="w-5 h-5 text-accent-primary" />
-          <div>
-            <h4 className="font-medium text-primary">Change Password</h4>
-            <p className="text-sm text-secondary">Update your account password</p>
-          </div>
-        </div>
-      </div>
-      {error && <div className="p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm mb-4">{error}</div>}
-      {success && <div className="p-3 bg-success/10 border border-success/30 rounded-lg text-success text-sm mb-4">Password updated successfully</div>}
-      <div className="grid md:grid-cols-3 gap-4">
-        <input type="password" placeholder="Current password" className="input-primary" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-        <input type="password" placeholder="New password" className="input-primary" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-        <input type="password" placeholder="Confirm new password" className="input-primary" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-      </div>
-      <button className={`btn-primary mt-4 ${loading ? 'opacity-70' : ''}`} disabled={loading} onClick={handleChange}>
-        {loading ? 'Saving...' : 'Change Password'}
-      </button>
     </div>
   );
 };
