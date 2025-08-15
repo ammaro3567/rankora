@@ -12,12 +12,9 @@ import {
   Infinity,
   Folder
 } from 'lucide-react';
-import { getUserSubscription } from '../lib/paypal';
 import { supabase } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
-import { getMonthlyUsageCounts } from '../lib/supabase';
-import { getProductByPayPalPlanId } from '../paypal-config';
-import { getPlanMonthlyLimit, getPlanProjectLimit } from '../utils/limits';
+import { getMonthlyUsageCounts, getUserSubscriptionInfo, checkUserLimits } from '../lib/supabase';
 import { listProjects } from '../lib/supabase';
 
 export const DashboardOverview: React.FC = () => {
@@ -29,24 +26,24 @@ export const DashboardOverview: React.FC = () => {
   const [memberSince, setMemberSince] = useState<string>('');
   const [comparisonsUsed, setComparisonsUsed] = useState<number>(0);
   const [monthlyLimit, setMonthlyLimit] = useState<number | undefined>(undefined);
-  const [isOwner, setIsOwner] = useState(false);
   const [projectsCount, setProjectsCount] = useState<number>(0);
   const [projectLimit, setProjectLimit] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
-        const sub = await getUserSubscription(user?.id);
+        if (!user?.id) return;
+        
+        // Get subscription info using new functions
+        const sub = await getUserSubscriptionInfo(user.id);
         setSubscription(sub);
         
-        // Get plan limits
-        const { limit, isOwner: owner } = await getPlanMonthlyLimit(user?.id);
-        setMonthlyLimit(limit);
-        setIsOwner(owner);
-        
-        // Get project info
-        const { limit: projLimit } = await getPlanProjectLimit(user?.id);
-        setProjectLimit(projLimit);
+        // Get user limits
+        const limits = await checkUserLimits(user.id);
+        if (limits) {
+          setMonthlyLimit(limits.analyses_limit);
+          setProjectLimit(limits.projects_limit);
+        }
         
         // Get projects count
         const projects = await listProjects();
@@ -75,29 +72,29 @@ export const DashboardOverview: React.FC = () => {
     };
     fetchUsage();
 
-    // Fetch user analyses stats for average score calculation (last 30 days)
-    const fetchAnalysesStats = async () => {
-      if (!user?.id) return;
-      
-      const since = new Date();
-      since.setDate(since.getDate() - 30);
-      const { data, error } = await supabase
-        .from('user_analyses')
-        .select('result, created_at')
-        .eq('clerk_user_id', user.id)
-        .gte('created_at', since.toISOString())
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.warn('Failed to fetch analyses for stats', error);
-        return;
-      }
-      if (data && data.length) {
-        const scores = data.map((row: any) => {
-          const r = row.result || {};
-          const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
-            .map((v: any) => (typeof v === 'number' ? v : 0));
-          const valid = vals.filter((v: number) => v > 0);
-          if (!valid.length) return 0;
+            // Fetch user analyses stats for average score calculation (last 30 days)
+        const fetchAnalysesStats = async () => {
+          if (!user?.id) return;
+          
+          const since = new Date();
+          since.setDate(since.getDate() - 30);
+          const { data, error } = await supabase
+            .from('user_analyses')
+            .select('analysis_results, created_at')
+            .eq('clerk_user_id', user.id)
+            .gte('created_at', since.toISOString())
+            .order('created_at', { ascending: false });
+          if (error) {
+            console.warn('Failed to fetch analyses for stats', error);
+            return;
+          }
+          if (data && data.length) {
+            const scores = data.map((row: any) => {
+              const r = row.analysis_results || {};
+              const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
+                .map((v: any) => (typeof v === 'number' ? v : 0));
+              const valid = vals.filter((v: number) => v > 0);
+              if (!valid.length) return 0;
           return Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length);
         });
         const validScores = scores.filter((s) => s > 0);
@@ -119,12 +116,12 @@ export const DashboardOverview: React.FC = () => {
 
   const getSubscriptionDetails = () => {
     if (!subscription?.price_id) return null;
-    return getProductByPayPalPlanId(subscription.price_id);
+            return subscription?.plan_name || 'Free';
   };
 
   const subscriptionDetails = getSubscriptionDetails();
-  const isSubscribed = (subscription && subscription.subscription_status === 'active') || isOwner;
-  const planName = isOwner ? 'Owner' : (subscriptionDetails?.name || 'Free');
+  const isSubscribed = subscription && subscription.status === 'active';
+  const planName = subscription?.plan_name || 'Free';
   const limitReached = monthlyLimit !== undefined && analysesUsed >= monthlyLimit;
 
   const stats = [
@@ -167,7 +164,7 @@ export const DashboardOverview: React.FC = () => {
     {
       title: 'Projects Used',
       value: `${projectsCount}${projectLimit !== undefined ? `/${projectLimit}` : ''}`,
-      subtitle: isOwner ? 'Unlimited projects' : `${projectsCount} of ${projectLimit || 1} projects`,
+              subtitle: `${projectsCount} of ${projectLimit || 1} projects`,
       icon: Folder,
       color: 'text-info',
       bgColor: 'bg-info/10',
@@ -256,7 +253,7 @@ export const DashboardOverview: React.FC = () => {
       )}
 
       {/* Active Subscription Banner */}
-      {isSubscribed && !isOwner && subscriptionDetails && (
+      {isSubscribed && subscriptionDetails && (
         <div className="surface-primary border border-success/30 rounded-xl p-6 animate-scaleIn mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center space-x-4">
@@ -277,7 +274,7 @@ export const DashboardOverview: React.FC = () => {
       )}
       
       {/* Owner Banner */}
-      {isOwner && (
+      {false && (
         <div className="surface-primary border border-accent-primary/30 rounded-xl p-6 animate-scaleIn mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center space-x-4">

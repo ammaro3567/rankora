@@ -175,28 +175,26 @@ export const usageService = {
     console.log('💾 Saving user analysis...')
 
     try {
-      const { data, error } = await supabase
-        .from('user_analyses')
-        .insert({
-          clerk_user_id: clerkUserId,
-          url: analysisData.url,
-          content: analysisData.content || '',
-          ai_overview_potential: analysisData.ai_overview_potential || 0,
-          recommendations: analysisData.recommendations || [],
-          analysis_results: analysisData,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('❌ Failed to save analysis:', error.message)
-        throw error
+      // استخدام Function الجديد مع التحقق من الحدود
+      const analysisId = await enhancedService.createAnalysisWithLimitCheck(
+        clerkUserId, 
+        analysisData.url, 
+        analysisData, 
+        analysisData.projectId
+      );
+      
+      console.log('✅ Analysis saved successfully with limit check:', analysisId)
+      return { id: analysisId }
+    } catch (error: any) {
+      if (error.message.includes('Monthly analysis limit reached')) {
+        console.warn('⚠️ Analysis limit reached:', error.message)
+        return { 
+          error: { 
+            message: 'Monthly analysis limit reached. Please upgrade your plan.',
+            code: 'LIMIT_EXCEEDED'
+          } 
+        }
       }
-
-      console.log('✅ Analysis saved successfully:', data.id)
-      return data
-    } catch (error) {
       console.error('💥 Error saving analysis:', error)
       throw error
     }
@@ -211,26 +209,25 @@ export const usageService = {
     console.log('📁 Creating new project...')
 
     try {
-  const { data, error } = await supabase
-        .from('projects')
-        .insert({
-          clerk_user_id: clerkUserId,
-          name: projectData.name,
-          description: projectData.description || '',
-          website_url: projectData.website_url || '',
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('❌ Failed to create project:', error.message)
-        throw error
+      // استخدام Function الجديد مع التحقق من الحدود
+      const projectId = await enhancedService.createProjectWithLimitCheck(
+        clerkUserId,
+        projectData.name,
+        projectData.description
+      );
+      
+      console.log('✅ Project created successfully with limit check:', projectId)
+      return { id: projectId }
+    } catch (error: any) {
+      if (error.message.includes('Project limit reached')) {
+        console.warn('⚠️ Project limit reached:', error.message)
+        return { 
+          error: { 
+            message: 'Project limit reached. Please upgrade your plan.',
+            code: 'LIMIT_EXCEEDED'
+          } 
+        }
       }
-
-      console.log('✅ Project created successfully:', data.id)
-      return data
-    } catch (error) {
       console.error('💥 Error creating project:', error)
       throw error
     }
@@ -568,6 +565,122 @@ export const profileService = {
   }
 }
 
+// 💳 Subscription and Plan Management Functions
+export const subscriptionService = {
+  // الحصول على معلومات الاشتراك
+  async getUserSubscriptionInfo(clerkUserId: string) {
+    await setClerkUserIdForRLS(clerkUserId);
+    
+    const { data, error } = await supabase.rpc('get_user_subscription_info', {
+      p_clerk_user_id: clerkUserId
+    });
+    
+    if (error) throw error;
+    return data[0] || null;
+  },
+
+  // إنشاء اشتراك جديد
+  async createUserSubscription(
+    clerkUserId: string,
+    planId: number,
+    paypalSubscriptionId: string,
+    paypalOrderId: string
+  ) {
+    await setClerkUserIdForRLS(clerkUserId);
+    
+    const { data, error } = await supabase.rpc('create_user_subscription', {
+      p_clerk_user_id: clerkUserId,
+      p_plan_id: planId,
+      p_paypal_subscription_id: paypalSubscriptionId,
+      p_paypal_order_id: paypalOrderId
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // التحقق من حدود المستخدم
+  async checkUserLimits(clerkUserId: string) {
+    await setClerkUserIdForRLS(clerkUserId);
+    
+    const { data, error } = await supabase.rpc('check_user_limits', {
+      p_clerk_user_id: clerkUserId
+    });
+    
+    if (error) throw error;
+    return data[0] || null;
+  },
+
+  // تحديث حالة الاشتراك
+  async updateSubscriptionStatus(
+    subscriptionId: number,
+    newStatus: string,
+    paypalData?: any
+  ) {
+    const { data, error } = await supabase.rpc('update_subscription_status', {
+      p_subscription_id: subscriptionId,
+      p_new_status: newStatus,
+      p_paypal_data: paypalData || {}
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // الحصول على جميع الخطط المتاحة
+  async getAvailablePlans() {
+    const { data, error } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('price_monthly', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  }
+};
+
+// 🔒 Enhanced Analysis and Project Creation with Limit Checks
+export const enhancedService = {
+  // إنشاء تحليل مع التحقق من الحدود
+  async createAnalysisWithLimitCheck(
+    clerkUserId: string,
+    url: string,
+    analysisResults: any,
+    projectId?: number
+  ) {
+    await setClerkUserIdForRLS(clerkUserId);
+    
+    const { data, error } = await supabase.rpc('create_analysis_with_limit_check', {
+      p_clerk_user_id: clerkUserId,
+      p_url: url,
+      p_analysis_results: analysisResults,
+      p_project_id: projectId
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // إنشاء مشروع مع التحقق من الحدود
+  async createProjectWithLimitCheck(
+    clerkUserId: string,
+    name: string,
+    description?: string
+  ) {
+    await setClerkUserIdForRLS(clerkUserId);
+    
+    const { data, error } = await supabase.rpc('create_project_with_limit_check', {
+      p_clerk_user_id: clerkUserId,
+      p_name: name,
+      p_description: description
+    });
+    
+    if (error) throw error;
+    return data;
+  }
+};
+
 // Export for backward compatibility (will remove later)
 // تمت إزالة واجهات Supabase Auth
 export const getUserProfile = profileService.getUserProfile
@@ -584,3 +697,12 @@ export const getAllUsers = usageService.getAllUsers
 export const updateUserRole = usageService.updateUserRole
 export const getRoleAssignments = usageService.getRoleAssignments
 export const upsertUserProfile = profileService.upsertUserProfile
+
+// 🆕 New subscription and enhanced service exports
+export const getUserSubscriptionInfo = subscriptionService.getUserSubscriptionInfo
+export const createUserSubscription = subscriptionService.createUserSubscription
+export const checkUserLimits = subscriptionService.checkUserLimits
+export const updateSubscriptionStatus = subscriptionService.updateSubscriptionStatus
+export const getAvailablePlans = subscriptionService.getAvailablePlans
+export const createAnalysisWithLimitCheck = enhancedService.createAnalysisWithLimitCheck
+export const createProjectWithLimitCheck = enhancedService.createProjectWithLimitCheck

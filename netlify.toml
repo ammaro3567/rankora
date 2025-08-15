@@ -68,3 +68,8 @@
 # Functions directory (if using Netlify Functions)
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Environment variables for functions
+[functions.environment]
+  NODE_VERSION = "20"

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Folder, Link2, Eye, Trash2, Calendar, FileText, BarChart3, Target, ArrowLeft, X } from 'lucide-react';
-import { createProject, listProjects, getProjectAnalyses, deleteProject, ProjectAnalysis } from '../lib/supabase';
-import { getPlanProjectLimit } from '../utils/limits';
+import { createProject, listProjects, getProjectAnalyses, deleteProject, ProjectAnalysis, checkUserLimits } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
 
 export const ProjectsPage: React.FC = () => {
@@ -10,7 +9,7 @@ export const ProjectsPage: React.FC = () => {
   const [newProjectName, setNewProjectName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [limitInfo, setLimitInfo] = useState<{ limit?: number; isOwner: boolean }>({ limit: 1, isOwner: false });
+  const [userLimits, setUserLimits] = useState<any>(null);
   const [selectedProject, setSelectedProject] = useState<{ id: number; name: string; created_at: string } | null>(null);
   const [projectAnalyses, setProjectAnalyses] = useState<ProjectAnalysis[]>([]);
   const [loadingAnalyses, setLoadingAnalyses] = useState(false);
@@ -26,17 +25,21 @@ export const ProjectsPage: React.FC = () => {
 
   useEffect(() => {
     if (isLoaded && user?.id) {
-    refresh();
-    (async () => {
-        const info = await getPlanProjectLimit(user.id);
-      setLimitInfo(info);
-    })();
+      refresh();
+      (async () => {
+        try {
+          const limits = await checkUserLimits(user.id);
+          setUserLimits(limits);
+        } catch (error) {
+          console.error('Error fetching user limits:', error);
+        }
+      })();
     }
   }, [isLoaded, user?.id]);
 
   const canCreate = () => {
-    if (limitInfo.isOwner || typeof limitInfo.limit === 'undefined') return true; // unlimited for owner
-    return projects.length < (limitInfo.limit ?? 1);
+    if (!userLimits) return true; // Allow if limits not loaded yet
+    return userLimits.can_create_project;
   };
 
   const handleCreate = async () => {
@@ -330,10 +333,10 @@ export const ProjectsPage: React.FC = () => {
           <p className="text-secondary">Organize analyses into projects and keep your workspace clean.</p>
         </div>
         <div className="text-sm text-secondary">
-          {limitInfo.isOwner || typeof limitInfo.limit === 'undefined' ? (
-            <span className="text-accent-primary font-semibold">∞ Unlimited projects</span>
+          {userLimits ? (
+            <span>Projects: <span className="text-primary font-semibold">{userLimits.projects_used}/{userLimits.projects_limit}</span></span>
           ) : (
-            <span>Projects: <span className="text-primary font-semibold">{projects.length}/{limitInfo.limit}</span></span>
+            <span>Projects: <span className="text-primary font-semibold">Loading...</span></span>
           )}
         </div>
       </div>
