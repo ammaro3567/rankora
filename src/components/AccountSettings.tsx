@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { User, Mail, Lock, Shield, Save } from 'lucide-react';
 import { getUserSubscription } from '../lib/paypal';
 import { supabase, getUserProfile, upsertUserProfile } from '../lib/supabase';
-import { getProductByPayPalPlanId } from '../paypal-config';
 import { useUser, useClerk } from '@clerk/clerk-react';
 
 interface AccountSettingsProps {
