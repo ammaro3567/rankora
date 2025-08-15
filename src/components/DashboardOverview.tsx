@@ -95,15 +95,15 @@ export const DashboardOverview: React.FC = () => {
                 .map((v: any) => (typeof v === 'number' ? v : 0));
               const valid = vals.filter((v: number) => v > 0);
               if (!valid.length) return 0;
-          return Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length);
-        });
-        const validScores = scores.filter((s) => s > 0);
-        const avg = validScores.length ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
-        setAverageScore(avg);
-              } else {
-          setAverageScore(0);
-        }
-    };
+              return Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length);
+            });
+            const validScores = scores.filter((s) => s > 0);
+            const avg = validScores.length ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
+            setAverageScore(avg);
+          } else {
+            setAverageScore(0);
+          }
+        };
 
     fetchAnalysesStats();
 

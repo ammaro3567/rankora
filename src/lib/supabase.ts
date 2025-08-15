@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 // 📝 Type definitions
 export interface ProjectAnalysis {
   id: string
-  user_id: string
+  clerk_user_id: string
   project_id: string | null
   url: string
   content: string
@@ -16,7 +16,7 @@ export interface ProjectAnalysis {
 export type UserRole = 'starter' | 'business' | 'enterprise' | 'owner'
 
 export interface UserRoleSummary {
-  user_id: string
+  clerk_user_id: string
   email: string
   role: UserRole
   created_at: string
@@ -27,7 +27,7 @@ export interface UserRoleSummary {
 
 export interface RoleAssignment {
   id: string
-  user_id: string
+  clerk_user_id: string
   role: UserRole
   assigned_at: string
   assigned_by: string
@@ -172,29 +172,27 @@ export const usageService = {
     // Set Clerk user ID for RLS
     await setClerkUserIdForRLS(clerkUserId);
 
-    console.log('💾 Saving user analysis...')
+    console.log('📊 Saving user analysis:', analysisData.url)
 
     try {
-      // استخدام Function الجديد مع التحقق من الحدود
-      const analysisId = await enhancedService.createAnalysisWithLimitCheck(
-        clerkUserId, 
-        analysisData.url, 
-        analysisData, 
-        analysisData.projectId
-      );
-      
-      console.log('✅ Analysis saved successfully with limit check:', analysisId)
-      return { id: analysisId }
-    } catch (error: any) {
-      if (error.message.includes('Monthly analysis limit reached')) {
-        console.warn('⚠️ Analysis limit reached:', error.message)
-        return { 
-          error: { 
-            message: 'Monthly analysis limit reached. Please upgrade your plan.',
-            code: 'LIMIT_EXCEEDED'
-          } 
+      // Use the new enhanced service with limit checking
+      const { data, error } = await supabase.rpc('create_analysis_with_limit_check', {
+        p_clerk_user_id: clerkUserId,
+        p_url: analysisData.url,
+        p_analysis_results: analysisData.result,
+        p_project_id: analysisData.projectId || null
+      });
+
+      if (error) {
+        if (error.message?.includes('LIMIT_EXCEEDED')) {
+          throw new Error('Monthly analysis limit reached. Please upgrade your plan.');
         }
+        throw error;
       }
+
+      console.log('✅ Analysis saved successfully:', data)
+      return data
+    } catch (error) {
       console.error('💥 Error saving analysis:', error)
       throw error
     }
@@ -269,7 +267,7 @@ export const usageService = {
     // Set Clerk user ID for RLS
     await setClerkUserIdForRLS(clerkUserId);
 
-    console.log('⚔️ Saving competitor comparison...')
+    console.log('📊 Saving user comparison:', comparisonData.userUrl, 'vs', comparisonData.competitorUrl)
 
     try {
       const { data, error } = await supabase
@@ -278,23 +276,17 @@ export const usageService = {
           clerk_user_id: clerkUserId,
           user_url: comparisonData.userUrl,
           competitor_url: comparisonData.competitorUrl,
-          user_content: comparisonData.userContent || '',
-          competitor_content: comparisonData.competitorContent || '',
-          user_score: comparisonData.userScore || 0,
-          competitor_score: comparisonData.competitorScore || 0,
-          comparison_results: comparisonData,
-          recommendations: comparisonData.recommendations || [],
-          created_at: new Date().toISOString()
+          comparison_results: comparisonData.result
         })
         .select()
         .single()
 
       if (error) {
-        console.error('❌ Failed to save comparison:', error.message)
+        console.error('💥 Error saving comparison:', error)
         throw error
       }
 
-      console.log('✅ Comparison saved successfully:', data.id)
+      console.log('✅ Comparison saved successfully:', data)
       return data
     } catch (error) {
       console.error('💥 Error saving comparison:', error)
@@ -311,9 +303,9 @@ export const usageService = {
     console.log('📊 Getting project analyses for project:', projectId)
 
     try {
-  const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('user_analyses')
-    .select('*')
+        .select('*')
         .eq('clerk_user_id', clerkUserId)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false })
@@ -337,36 +329,22 @@ export const usageService = {
     // Set Clerk user ID for RLS
     await setClerkUserIdForRLS(clerkUserId);
 
-    console.log('🗑️ Deleting project:', projectId)
+    console.log('📁 Deleting project:', projectId)
 
     try {
-      // First, remove project reference from analyses
-      const { error: updateError } = await supabase
-        .from('user_analyses')
-        .update({ project_id: null })
-        .eq('project_id', projectId)
-        .eq('clerk_user_id', clerkUserId)
-
-      if (updateError) {
-        console.warn('⚠️ Failed to update analyses:', updateError.message)
-      }
-
-      // Then delete the project
-  const { data, error } = await supabase
+      const { error } = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId)
         .eq('clerk_user_id', clerkUserId)
-        .select()
-        .single()
-    
-  if (error) {
-        console.error('❌ Failed to delete project:', error.message)
+
+      if (error) {
+        console.error('💥 Error deleting project:', error)
         throw error
       }
 
       console.log('✅ Project deleted successfully')
-      return data
+      return true
     } catch (error) {
       console.error('💥 Error deleting project:', error)
       throw error
@@ -412,7 +390,7 @@ export const usageService = {
         ])
 
         usersWithStats.push({
-          user_id: profile.user_id,
+          clerk_user_id: profile.clerk_user_id,
           email: profile.email || 'N/A',
           role: profile.role || 'starter',
           created_at: profile.created_at,
@@ -447,7 +425,7 @@ export const usageService = {
       const { data, error } = await supabase
         .from('profiles')
         .update({ role: newRole })
-        .eq('user_id', userId)
+        .eq('clerk_user_id', userId)
         .select()
         .single()
 
@@ -460,7 +438,7 @@ export const usageService = {
       const { error: assignmentError } = await supabase
         .from('role_assignments')
         .insert({
-          user_id: userId,
+          clerk_user_id: userId,
           role: newRole,
           assigned_by: clerkUser.id,
           assigned_at: new Date().toISOString()

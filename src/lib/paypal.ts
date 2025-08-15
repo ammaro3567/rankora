@@ -35,16 +35,21 @@ export const getUserSubscription = async (clerkUserId?: string) => {
     return null;
   }
 
-  const { data, error } = await supabase
-    .from('stripe_user_subscriptions')
-    .select('*')
-    .eq('clerk_user_id', clerkUserId)
-    .maybeSingle();
+  try {
+    // Use the new subscription system with RPC function
+    const { data, error } = await supabase.rpc('get_user_subscription_info', {
+      p_clerk_user_id: clerkUserId
+    });
 
-  if (error) {
+    if (error) {
+      console.error('Error fetching subscription:', error);
+      return null;
+    }
+
+    // Return the first subscription info
+    return data && data.length > 0 ? data[0] : null;
+  } catch (error) {
     console.error('Error fetching subscription:', error);
     return null;
   }
-
-  return data;
 };
