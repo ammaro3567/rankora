@@ -62,9 +62,16 @@ export const DashboardOverview: React.FC = () => {
     
     // Fetch usage counts (current month)
     const fetchUsage = async () => {
-      const usage = await getMonthlyUsageCounts();
-      setAnalysesUsed(usage.total); // Total includes both analyses and comparisons
-      setComparisonsUsed(usage.comparisons);
+      try {
+        const usage = await getMonthlyUsageCounts();
+        console.log('📊 Dashboard usage data:', usage);
+        setAnalysesUsed(usage.analyses); // Use analyses count, not total
+        setComparisonsUsed(usage.comparisons);
+      } catch (error) {
+        console.error('Error fetching usage:', error);
+        setAnalysesUsed(0);
+        setComparisonsUsed(0);
+      }
     };
     fetchUsage();
 

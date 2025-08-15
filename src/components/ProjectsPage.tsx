@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Folder, Link2, Eye, Trash2, Calendar, FileText, BarChart3, Target, ArrowLeft, X } from 'lucide-react';
 import { createProject, listProjects, getProjectAnalyses, deleteProject, ProjectAnalysis } from '../lib/supabase';
 import { getPlanProjectLimit } from '../utils/limits';
+import { useUser } from '@clerk/clerk-react';
 
 export const ProjectsPage: React.FC = () => {
+  const { user, isLoaded } = useUser();
   const [projects, setProjects] = useState<Array<{ id: number; name: string; created_at: string }>>([]);
   const [newProjectName, setNewProjectName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [limitInfo, setLimitInfo] = useState<{ limit?: number; isOwner: boolean }>({});
+  const [limitInfo, setLimitInfo] = useState<{ limit?: number; isOwner: boolean }>({ limit: 1, isOwner: false });
   const [selectedProject, setSelectedProject] = useState<{ id: number; name: string; created_at: string } | null>(null);
   const [projectAnalyses, setProjectAnalyses] = useState<ProjectAnalysis[]>([]);
   const [loadingAnalyses, setLoadingAnalyses] = useState(false);
@@ -16,17 +18,21 @@ export const ProjectsPage: React.FC = () => {
   const [selectedAnalysis, setSelectedAnalysis] = useState<ProjectAnalysis | null>(null);
 
   const refresh = async () => {
+    if (isLoaded && user?.id) {
     const list = await listProjects();
     setProjects(list);
+    }
   };
 
   useEffect(() => {
+    if (isLoaded && user?.id) {
     refresh();
     (async () => {
-      const info = await getPlanProjectLimit();
+        const info = await getPlanProjectLimit(user.id);
       setLimitInfo(info);
     })();
-  }, []);
+    }
+  }, [isLoaded, user?.id]);
 
   const canCreate = () => {
     if (limitInfo.isOwner || typeof limitInfo.limit === 'undefined') return true; // unlimited for owner
@@ -57,7 +63,7 @@ export const ProjectsPage: React.FC = () => {
     setSelectedProject(project);
     setLoadingAnalyses(true);
     try {
-      const analyses = await getProjectAnalyses(project.id);
+      const analyses = await getProjectAnalyses(project.id.toString());
       setProjectAnalyses(analyses);
     } catch (error) {
       console.error('Error loading project analyses:', error);
@@ -68,7 +74,7 @@ export const ProjectsPage: React.FC = () => {
 
   const handleDeleteProject = async (projectId: number) => {
     try {
-      const { error } = await deleteProject(projectId);
+      const { error } = await deleteProject(projectId.toString());
       if (error) {
         setError(error.message);
       } else {
@@ -83,11 +89,13 @@ export const ProjectsPage: React.FC = () => {
     }
   };
 
-  const renderAnalysisResult = (result: any) => {
-    if (!result) return null;
+  const renderAnalysisResult = (analysis: ProjectAnalysis) => {
+    if (!analysis) return null;
+
+    const result = analysis.analysis_results;
 
     // Handle single analysis results
-    if (result.readability !== undefined) {
+    if (result && result.readability !== undefined) {
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {Object.entries(result).map(([key, value]) => {
@@ -104,7 +112,7 @@ export const ProjectsPage: React.FC = () => {
     }
 
     // Handle comparison results
-    if (result.userAnalysis || result.competitorAnalysis) {
+    if (result && (result.userAnalysis || result.competitorAnalysis)) {
       return (
         <div className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
@@ -141,7 +149,12 @@ export const ProjectsPage: React.FC = () => {
       );
     }
 
-    return <div className="text-secondary">Analysis data available</div>;
+    // Fallback for other result formats
+    return (
+      <div className="text-center py-4">
+        <div className="text-secondary">Analysis data not available</div>
+      </div>
+    );
   };
 
   // If viewing a specific project
@@ -217,7 +230,7 @@ export const ProjectsPage: React.FC = () => {
                           <span>{new Date(analysis.created_at).toLocaleString()}</span>
                         </div>
                       </div>
-                      {renderAnalysisResult(analysis.result)}
+                      {renderAnalysisResult(analysis)}
                     </div>
                     <button 
                       onClick={() => setSelectedAnalysis(analysis)}
@@ -288,13 +301,13 @@ export const ProjectsPage: React.FC = () => {
                   Analyzed on {new Date(selectedAnalysis.created_at).toLocaleString()}
                 </div>
                 <div className="border-t border-primary pt-4">
-                  {renderAnalysisResult(selectedAnalysis.result)}
+                  {renderAnalysisResult(selectedAnalysis)}
                 </div>
-                {selectedAnalysis.result?.suggestions && (
+                {selectedAnalysis.analysis_results?.suggestions && (
                   <div className="border-t border-primary pt-4">
                     <h4 className="font-semibold text-primary mb-3">Suggestions</h4>
                     <ul className="space-y-2">
-                      {selectedAnalysis.result.suggestions.map((suggestion: string, index: number) => (
+                      {selectedAnalysis.analysis_results.suggestions.map((suggestion: string, index: number) => (
                         <li key={index} className="text-secondary text-sm">• {suggestion}</li>
                       ))}
                     </ul>

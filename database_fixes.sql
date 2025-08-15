@@ -61,7 +61,59 @@ GRANT ALL ON user_analyses TO authenticated;
 GRANT ALL ON projects TO authenticated;
 GRANT ALL ON stripe_user_subscriptions TO authenticated;
 
--- 10. Verify the final structure
+-- 10. Fix RLS policies for Clerk integration
+-- Drop old policies that use auth.uid()
+DROP POLICY IF EXISTS "Users can manage their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can upsert their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
+
+DROP POLICY IF EXISTS "Users can manage their own analyses" ON user_analyses;
+DROP POLICY IF EXISTS "Users can view their own analyses" ON user_analyses;
+DROP POLICY IF EXISTS "Users can insert their own analyses" ON user_analyses;
+
+DROP POLICY IF EXISTS "Users can manage their own comparisons" ON competitor_comparisons;
+DROP POLICY IF EXISTS "Users can view their own comparisons" ON competitor_comparisons;
+DROP POLICY IF EXISTS "Users can insert their own comparisons" ON competitor_comparisons;
+
+DROP POLICY IF EXISTS "Users can manage their own projects" ON projects;
+DROP POLICY IF EXISTS "Users can view their own projects" ON projects;
+DROP POLICY IF EXISTS "Users can insert their own projects" ON projects;
+
+-- 11. Create new RLS policies for Clerk
+-- Profiles policies
+CREATE POLICY "Users can manage their own profile" ON profiles
+  FOR ALL TO authenticated
+  USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text)
+  WITH CHECK (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
+
+-- User analyses policies
+CREATE POLICY "Users can manage their own analyses" ON user_analyses
+  FOR ALL TO authenticated
+  USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text)
+  WITH CHECK (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
+
+-- Competitor comparisons policies
+CREATE POLICY "Users can manage their own comparisons" ON competitor_comparisons
+  FOR ALL TO authenticated
+  USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text)
+  WITH CHECK (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
+
+-- Projects policies
+CREATE POLICY "Users can manage their own projects" ON projects
+  FOR ALL TO authenticated
+  USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text)
+  WITH CHECK (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
+
+-- 12. Create function to set Clerk user ID for RLS
+CREATE OR REPLACE FUNCTION set_clerk_user_id(clerk_id text)
+RETURNS void AS $$
+BEGIN
+  PERFORM set_config('app.clerk_user_id', clerk_id, false);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 13. Verify the final structure
 SELECT 
   table_name,
   column_name,
@@ -73,7 +125,7 @@ WHERE table_schema = 'public'
   AND column_name = 'clerk_user_id'
 ORDER BY table_name;
 
--- 11. Show sample data to verify (separate queries to avoid syntax issues)
+-- 14. Show sample data to verify (separate queries to avoid syntax issues)
 SELECT 'profiles' as table_name, clerk_user_id FROM profiles LIMIT 3;
 
 SELECT 'competitor_comparisons' as table_name, clerk_user_id FROM competitor_comparisons LIMIT 3;

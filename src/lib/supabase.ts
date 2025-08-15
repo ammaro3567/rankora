@@ -67,10 +67,22 @@ const requireClerkUserId = (): string => {
   return clerkUser.id as string
 }
 
+// Helper function to set Clerk user ID for RLS
+const setClerkUserIdForRLS = async (clerkUserId: string) => {
+  try {
+    await supabase.rpc('set_clerk_user_id', { clerk_id: clerkUserId });
+  } catch (error) {
+    console.warn('⚠️ Failed to set Clerk user ID for RLS:', error);
+  }
+};
+
 // 📊 Usage tracking functions
 export const usageService = {
   async getMonthlyUsageCounts() {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -131,6 +143,9 @@ export const usageService = {
 
   async listProjects() {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     try {
       const { data, error } = await supabase
@@ -153,6 +168,9 @@ export const usageService = {
 
   async saveUserAnalysis(analysisData: any) {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     console.log('💾 Saving user analysis...')
 
@@ -186,6 +204,9 @@ export const usageService = {
 
   async createProject(projectData: any) {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     console.log('📁 Creating new project...')
 
@@ -217,6 +238,9 @@ export const usageService = {
 
   async saveAnalysisToProject(projectId: string, analysisId: string) {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     console.log('🔗 Linking analysis to project...')
 
@@ -244,6 +268,9 @@ export const usageService = {
 
   async saveUserComparison(comparisonData: any) {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     console.log('⚔️ Saving competitor comparison...')
 
@@ -280,6 +307,9 @@ export const usageService = {
 
   async getProjectAnalyses(projectId: string) {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     console.log('📊 Getting project analyses for project:', projectId)
 
@@ -306,6 +336,9 @@ export const usageService = {
 
   async deleteProject(projectId: string) {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
 
     console.log('🗑️ Deleting project:', projectId)
 
@@ -485,6 +518,10 @@ export const usageService = {
 export const profileService = {
   async getUserProfile() {
     const clerkUserId = requireClerkUserId()
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUserId);
+  
   const { data, error } = await supabase
       .from('profiles')
     .select('*')
@@ -509,6 +546,10 @@ export const profileService = {
   async upsertUserProfile(partial: { full_name?: string; company?: string }) {
     const clerkUser = getClerkUser()
     if (!clerkUser?.id) throw new Error('User not authenticated')
+    
+    // Set Clerk user ID for RLS
+    await setClerkUserIdForRLS(clerkUser.id);
+    
     const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || null
     const payload: any = {
       clerk_user_id: clerkUser.id,
