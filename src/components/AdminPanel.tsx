@@ -24,7 +24,13 @@ import {
   getUserProfile,
   upsertUserProfile
 } from '../lib/supabase';
-import { PAYPAL_PRODUCTS } from '../paypal-config';
+
+// Define plans locally
+const PLANS = [
+  { id: 'starter', name: 'Starter', price: 10, limit: '30 analyses/month' },
+  { id: 'pro', name: 'Pro', price: 30, limit: '100 analyses/month' },
+  { id: 'business', name: 'Business', price: 70, limit: '300 analyses/month' }
+];
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -369,7 +375,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                     Current Plan Experience
                   </label>
                   <div className="space-y-3">
-                    {PAYPAL_PRODUCTS.map((product) => {
+                    {PLANS.map((product) => {
                       const Icon = product.name === 'Business' ? Building2 : 
                                    product.name === 'Pro' ? Zap : Star;
                       return (
@@ -387,7 +393,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                             <Icon className={`w-4 h-4 ${roleColors[product.id as keyof typeof roleColors]}`} />
                             <span className="text-primary font-medium">{product.name}</span>
                             <span className="text-sm text-secondary">
-                              ({product.monthlyLimit === -1 ? 'Unlimited' : product.monthlyLimit} analyses/month)
+                              ({product.limit})
                             </span>
                           </label>
                         </div>
