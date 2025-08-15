@@ -103,18 +103,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 </a>
               ) : (
                 <>
-                  <button
-                    onClick={onLogin}
-                    className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
-                  >
-                    Login
-                  </button>
-                  <button
-                    onClick={onSignup}
-                    className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 shadow-lg shadow-accent/20"
-                  >
-                    Sign Up Free
-                  </button>
+                  <SignInButton mode="modal">
+                    <button className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
+                      Login
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 shadow-lg shadow-accent/20">
+                      Sign Up Free
+                    </button>
+                  </SignUpButton>
                 </>
               )}
             </div>
@@ -158,18 +156,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                   </a>
                 ) : (
                   <>
-                    <button
-                      onClick={onLogin}
-                      className="text-left text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
-                    >
-                      Login
-                    </button>
-                    <button
-                      onClick={onSignup}
-                      className="text-left bg-accent text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 mx-3 shadow-lg shadow-accent/20"
-                    >
-                      Sign Up Free
-                    </button>
+                    <SignInButton mode="modal">
+                      <button className="text-left text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
+                        Login
+                      </button>
+                    </SignInButton>
+                    <SignUpButton mode="modal">
+                      <button className="text-left bg-accent text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 mx-3 shadow-lg shadow-accent/20">
+                        Sign Up Free
+                      </button>
+                    </SignUpButton>
                   </>
                 )}
               </div>
@@ -203,18 +199,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 </a>
               ) : (
                 <>
-                  <button
-                    onClick={onSignup}
-                    className="w-full sm:w-auto bg-accent text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-accent/90 transform hover:scale-105 transition duration-200 shadow-lg shadow-accent/20"
-                  >
-                    Start Ranking Free
-                  </button>
-                  <button
-                    onClick={onLogin}
-                    className="w-full sm:w-auto border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:border-gray-500 hover:bg-gray-800/50 transition duration-200"
-                  >
-                    Sign In
-                  </button>
+                  <SignUpButton mode="modal">
+                    <button className="w-full sm:w-auto bg-accent text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-accent/90 transform hover:scale-105 transition duration-200 shadow-lg shadow-accent/20">
+                      Start Ranking Free
+                    </button>
+                  </SignUpButton>
+                  <SignInButton mode="modal">
+                    <button className="w-full sm:w-auto border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:border-gray-500 hover:bg-gray-800/50 transition duration-200">
+                      Sign In
+                    </button>
+                  </SignInButton>
                 </>
               )}
             </div>
@@ -392,12 +386,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button
-              onClick={onSignup}
-              className="w-full sm:w-auto bg-white text-emerald-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transform hover:scale-105 transition duration-200 shadow-lg"
-            >
-              Get Started Free
-            </button>
+            <SignUpButton mode="modal">
+              <button className="w-full sm:w-auto bg-white text-emerald-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transform hover:scale-105 transition duration-200 shadow-lg">
+                Get Started Free
+              </button>
+            </SignUpButton>
             <button
               onClick={onPricing}
               className="w-full sm:w-auto border-2 border-white text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white hover:text-emerald-600 transition duration-200"
@@ -434,8 +427,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             <div>
               <h3 className="text-lg font-semibold mb-4">Account</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><button onClick={onLogin} className="hover:text-accent transition duration-200">Login</button></li>
-                <li><button onClick={onSignup} className="hover:text-accent transition duration-200">Sign Up</button></li>
+                <li><SignInButton mode="modal"><button className="hover:text-accent transition duration-200">Login</button></SignInButton></li>
+                <li><SignUpButton mode="modal"><button className="hover:text-accent transition duration-200">Sign Up</button></SignUpButton></li>
               </ul>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { 
   BarChart3, 
   Target, 
@@ -14,7 +15,6 @@ import {
   Folder,
   Crown
 } from 'lucide-react';
-import { getCurrentUser } from '../lib/supabase';
 import { getUserSubscription } from '../lib/paypal';
 
 interface SidebarProps {
@@ -25,7 +25,6 @@ interface SidebarProps {
   onToggle: () => void;
   showAdminAccess?: boolean;
   onOpenAdmin?: () => void;
-
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -37,39 +36,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   showAdminAccess,
   onOpenAdmin
 }) => {
-  const [userEmail, setUserEmail] = useState<string>('Guest');
+  const { user, isLoaded } = useUser();
   const [planLabel, setPlanLabel] = useState<string>('Free Plan');
 
   useEffect(() => {
     const init = async () => {
-      // 🎯 Always check if user is authenticated (Dashboard only loads for authenticated users now)
-      try {
-        const user = await getCurrentUser();
-        console.log('👤 Sidebar: Got user =', user?.email);
-        
-        if (user?.email) {
-          setUserEmail(user.email);
-        } else {
-          console.log('⚠️ No email found, retrying...');
-          // Retry after a brief delay (sometimes Supabase needs a moment)
-          setTimeout(async () => {
-            try {
-              const retryUser = await getCurrentUser();
-              if (retryUser?.email) {
-                setUserEmail(retryUser.email);
-              } else {
-                setUserEmail('Loading...');
-              }
-            } catch (error) {
-              console.error('❌ Retry failed:', error);
-              setUserEmail('Error');
-            }
-          }, 1000);
-        }
-        
-        // Get subscription status
+      // 🎯 Get subscription status from Clerk user
+      if (isLoaded && user) {
         try {
-          const sub = await getUserSubscription();
+          const sub = await getUserSubscription(user?.id);
           if (sub?.subscription_status === 'active') {
             setPlanLabel('Paid Plan');
           } else {
@@ -79,15 +54,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           console.log('💰 No subscription found, using Free Plan');
           setPlanLabel('Free Plan');
         }
-      } catch (error) {
-        console.error('❌ Sidebar: Error getting user:', error);
-        setUserEmail('Loading...');
-        setPlanLabel('Free Plan');
       }
     };
     
     init();
-  }, []);
+  }, [isLoaded, user]);
+
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: Home },
     { id: 'analyzer', label: 'AI Analyzer', icon: BarChart3 },
@@ -141,75 +113,71 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* Navigation */}
+          {/* User Info */}
+          <div className="p-4 border-b border-primary/30">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-accent-primary/20 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-accent-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-primary truncate">
+                  {isLoaded && user ? user.primaryEmailAddress?.emailAddress || 'User' : 'Loading...'}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-tertiary">{planLabel}</span>
+                  {planLabel === 'Paid Plan' && (
+                    <Crown className="w-3 h-3 text-yellow-500" />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Menu */}
           <nav className="flex-1 p-4 space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              
               return (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    onTabChange(item.id);
-                    if (window.innerWidth < 1024) onToggle();
-                  }}
+                  onClick={() => onTabChange(item.id)}
                   className={`
-                    w-full flex items-center space-x-3 px-4 py-3 rounded-lg
-                    transition-all duration-200 text-left
-                    ${activeTab === item.id 
-                      ? 'text-accent-primary bg-surface-secondary' 
-                      : 'text-secondary hover:text-primary hover:bg-surface-secondary'
+                    w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200
+                    ${isActive 
+                      ? 'bg-accent-primary/20 text-accent-primary border border-accent-primary/30' 
+                      : 'text-primary hover:bg-primary/10 hover:text-accent-primary'
                     }
                   `}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-accent-primary' : 'text-tertiary'}`} />
                   <span className="font-medium">{item.label}</span>
                 </button>
               );
             })}
+
+            {/* Admin Access */}
+            {showAdminAccess && (
+              <button
+                onClick={onOpenAdmin}
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
+              >
+                <Crown className="w-5 h-5 text-purple-400" />
+                <span className="font-medium">Admin Panel</span>
+              </button>
+            )}
           </nav>
 
-          {/* User section */}
-          <div className="p-4 border-t border-primary">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-surface-tertiary rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-secondary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-primary truncate">{userEmail}</p>
-                <p className="text-xs text-tertiary truncate">{planLabel}</p>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              {showAdminAccess && onOpenAdmin && (
-                <button
-                  onClick={() => {
-                    onOpenAdmin();
-                    if (window.innerWidth < 1024) onToggle();
-                  }}
-                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-accent-primary hover:bg-accent-primary/10 transition-all duration-200 border border-accent-primary/30"
-                >
-                  <Crown className="w-4 h-4" />
-                  <span className="text-sm font-medium">Admin Panel</span>
-                </button>
-              )}
-              
-              <button
-                onClick={() => onTabChange('settings')}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-secondary hover:text-primary hover:bg-surface-secondary transition-all duration-200"
-              >
-                <Settings className="w-4 h-4" />
-                <span className="text-sm">Settings</span>
-              </button>
-              
-              <button
-                onClick={onLogout}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-error hover:bg-red-500/10 transition-all duration-200"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm">Logout</span>
-              </button>
-            </div>
+          {/* Bottom Actions */}
+          <div className="p-4 border-t border-primary/30 space-y-2">
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+            >
+              <LogOut className="w-5 h-5 text-red-400" />
+              <span className="font-medium">Sign Out</span>
+            </button>
           </div>
         </div>
       </div>

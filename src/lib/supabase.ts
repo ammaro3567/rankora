@@ -51,13 +51,26 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Helper to return the current authenticated user object (not the whole session)
 export const getCurrentUser = async () => null
 
+// 🔎 Clerk helpers (frontend-only)
+const getClerkUser = () => {
+  try {
+    const anyWindow = window as any
+    return anyWindow?.Clerk?.user || null
+  } catch {
+    return null
+  }
+}
+
+const requireClerkUserId = (): string => {
+  const clerkUser = getClerkUser()
+  if (!clerkUser?.id) throw new Error('User not authenticated')
+  return clerkUser.id as string
+}
+
 // 📊 Usage tracking functions
 export const usageService = {
   async getMonthlyUsageCounts() {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) {
-      return { total: 0, analyses: 0, comparisons: 0 }
-    }
+    const clerkUserId = requireClerkUserId()
 
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -68,7 +81,7 @@ export const usageService = {
       const { data: analyses, error: analysesError } = await supabase
         .from('user_analyses')
         .select('id')
-        .eq('user_id', session.user.id)
+        .eq('clerk_user_id', clerkUserId)
         .gte('created_at', startOfMonth.toISOString())
         .lte('created_at', endOfMonth.toISOString())
 
@@ -82,7 +95,7 @@ export const usageService = {
         const { data: comparisons, error: comparisonsError } = await supabase
           .from('competitor_comparisons')
           .select('id')
-          .eq('user_id', session.user.id)
+          .eq('clerk_user_id', clerkUserId)
           .gte('created_at', startOfMonth.toISOString())
           .lte('created_at', endOfMonth.toISOString())
 
@@ -117,15 +130,13 @@ export const usageService = {
   },
 
   async listProjects() {
-    // TODO: بدّل إلى Clerk user id
-    const session = null as any
-    if (!session?.user) return []
+    const clerkUserId = requireClerkUserId()
 
     try {
       const { data, error } = await supabase
         .from('projects')
     .select('*')
-        .eq('user_id', session.user.id)
+        .eq('clerk_user_id', clerkUserId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -141,9 +152,7 @@ export const usageService = {
   },
 
   async saveUserAnalysis(analysisData: any) {
-    // TODO: استخدم Clerk User ID
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUserId = requireClerkUserId()
 
     console.log('💾 Saving user analysis...')
 
@@ -151,7 +160,7 @@ export const usageService = {
       const { data, error } = await supabase
         .from('user_analyses')
         .insert({
-          user_id: session.user.id,
+          clerk_user_id: clerkUserId,
           url: analysisData.url,
           content: analysisData.content || '',
           ai_overview_potential: analysisData.ai_overview_potential || 0,
@@ -176,9 +185,7 @@ export const usageService = {
   },
 
   async createProject(projectData: any) {
-    // TODO: استخدم Clerk User ID
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUserId = requireClerkUserId()
 
     console.log('📁 Creating new project...')
 
@@ -186,7 +193,7 @@ export const usageService = {
   const { data, error } = await supabase
         .from('projects')
         .insert({
-          user_id: session.user.id,
+          clerk_user_id: clerkUserId,
           name: projectData.name,
           description: projectData.description || '',
           website_url: projectData.website_url || '',
@@ -209,9 +216,7 @@ export const usageService = {
   },
 
   async saveAnalysisToProject(projectId: string, analysisId: string) {
-    // TODO: استخدم Clerk User ID
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUserId = requireClerkUserId()
 
     console.log('🔗 Linking analysis to project...')
 
@@ -220,7 +225,7 @@ export const usageService = {
         .from('user_analyses')
         .update({ project_id: projectId })
         .eq('id', analysisId)
-        .eq('user_id', session.user.id)
+        .eq('clerk_user_id', clerkUserId)
         .select()
         .single()
 
@@ -238,9 +243,7 @@ export const usageService = {
   },
 
   async saveUserComparison(comparisonData: any) {
-    // TODO: استخدم Clerk User ID
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUserId = requireClerkUserId()
 
     console.log('⚔️ Saving competitor comparison...')
 
@@ -248,7 +251,7 @@ export const usageService = {
       const { data, error } = await supabase
         .from('competitor_comparisons')
         .insert({
-          user_id: session.user.id,
+          clerk_user_id: clerkUserId,
           user_url: comparisonData.userUrl,
           competitor_url: comparisonData.competitorUrl,
           user_content: comparisonData.userContent || '',
@@ -276,9 +279,7 @@ export const usageService = {
   },
 
   async getProjectAnalyses(projectId: string) {
-    // TODO: استخدم Clerk User ID
-    const session = null as any
-    if (!session?.user) return []
+    const clerkUserId = requireClerkUserId()
 
     console.log('📊 Getting project analyses for project:', projectId)
 
@@ -286,7 +287,7 @@ export const usageService = {
   const { data, error } = await supabase
         .from('user_analyses')
     .select('*')
-        .eq('user_id', session.user.id)
+        .eq('clerk_user_id', clerkUserId)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false })
 
@@ -304,9 +305,7 @@ export const usageService = {
   },
 
   async deleteProject(projectId: string) {
-    // TODO: استخدم Clerk User ID
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUserId = requireClerkUserId()
 
     console.log('🗑️ Deleting project:', projectId)
 
@@ -316,7 +315,7 @@ export const usageService = {
         .from('user_analyses')
         .update({ project_id: null })
         .eq('project_id', projectId)
-        .eq('user_id', session.user.id)
+        .eq('clerk_user_id', clerkUserId)
 
       if (updateError) {
         console.warn('⚠️ Failed to update analyses:', updateError.message)
@@ -327,7 +326,7 @@ export const usageService = {
         .from('projects')
         .delete()
         .eq('id', projectId)
-        .eq('user_id', session.user.id)
+        .eq('clerk_user_id', clerkUserId)
         .select()
         .single()
     
@@ -345,9 +344,8 @@ export const usageService = {
   },
 
   async getAllUsers(): Promise<UserRoleSummary[]> {
-    // TODO: تحقّق عبر Clerk owner
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUser = getClerkUser()
+    if (!clerkUser) throw new Error('User not authenticated')
 
     console.log('👥 Getting all users for admin panel...')
 
@@ -360,7 +358,7 @@ export const usageService = {
 
       // Get all users with their profiles and stats
       const { data: profiles, error: profileError } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .order('created_at', { ascending: false })
 
@@ -376,15 +374,15 @@ export const usageService = {
           supabase
             .from('user_analyses')
             .select('id', { count: 'exact' })
-            .eq('user_id', profile.id),
+            .eq('clerk_user_id', profile.clerk_user_id),
           supabase
             .from('competitor_comparisons')
             .select('id', { count: 'exact' })
-            .eq('user_id', profile.id)
+            .eq('clerk_user_id', profile.clerk_user_id)
         ])
 
         usersWithStats.push({
-          user_id: profile.id,
+          user_id: profile.user_id,
           email: profile.email || 'N/A',
           role: profile.role || 'starter',
           created_at: profile.created_at,
@@ -403,9 +401,8 @@ export const usageService = {
   },
 
   async updateUserRole(userId: string, newRole: UserRole) {
-    // TODO: تحقّق عبر Clerk owner
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUser = getClerkUser()
+    if (!clerkUser) throw new Error('User not authenticated')
 
     console.log(`🔄 Updating user ${userId} role to ${newRole}...`)
 
@@ -418,9 +415,9 @@ export const usageService = {
 
       // Update user profile
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({ role: newRole })
-        .eq('id', userId)
+        .eq('user_id', userId)
         .select()
         .single()
 
@@ -435,7 +432,7 @@ export const usageService = {
         .insert({
           user_id: userId,
           role: newRole,
-          assigned_by: session.user.id,
+          assigned_by: clerkUser.id,
           assigned_at: new Date().toISOString()
         })
 
@@ -452,9 +449,8 @@ export const usageService = {
   },
 
   async getRoleAssignments(): Promise<RoleAssignment[]> {
-    // TODO: تحقّق عبر Clerk owner
-    const session = null as any
-    if (!session?.user) throw new Error('User not authenticated')
+    const clerkUser = getClerkUser()
+    if (!clerkUser) throw new Error('User not authenticated')
 
     console.log('📋 Getting role assignments...')
 
@@ -488,13 +484,11 @@ export const usageService = {
 // 👤 User profile functions
 export const profileService = {
   async getUserProfile() {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) return null
-  
+    const clerkUserId = requireClerkUserId()
   const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
     .select('*')
-      .eq('user_id', session.user.id)
+      .eq('clerk_user_id', clerkUserId)
       .single()
 
     if (error) {
@@ -506,10 +500,30 @@ export const profileService = {
   },
 
   async isOwner() {
-    const { session } = await authService.getCurrentSession()
-    if (!session?.user) return false
+    const clerkUser = getClerkUser()
+    const ownerEmail = import.meta.env.VITE_OWNER_EMAIL as string | undefined
+    const email = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress
+    return !!(ownerEmail && email && email.toLowerCase() === ownerEmail.toLowerCase())
+  },
 
-    return session.user.email === 'ammarragab256@gmail.com'
+  async upsertUserProfile(partial: { full_name?: string; company?: string }) {
+    const clerkUser = getClerkUser()
+    if (!clerkUser?.id) throw new Error('User not authenticated')
+    const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || null
+    const payload: any = {
+      clerk_user_id: clerkUser.id,
+      full_name: partial.full_name ?? (clerkUser.fullName || null),
+      company: partial.company ?? null,
+      updated_at: new Date().toISOString()
+    }
+    if (email) payload.email = email
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(payload, { onConflict: 'clerk_user_id' })
+      .select()
+      .single()
+    if (error) throw error
+    return data
   }
 }
 

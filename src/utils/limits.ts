@@ -1,4 +1,3 @@
-import { getCurrentUser } from '../lib/supabase';
 import { getUserSubscription } from '../lib/paypal';
 import { getProductByPayPalPlanId } from '../paypal-config';
 import { getMonthlyUsageCounts } from '../lib/supabase';
@@ -12,18 +11,19 @@ export interface AllowanceResult {
   shouldConsumeLocal?: boolean; // for guests
 }
 
-export const getPlanMonthlyLimit = async (): Promise<{ limit?: number; isSubscribed: boolean; isOwner: boolean }> => {
+export const getPlanMonthlyLimit = async (clerkUserId?: string): Promise<{ limit?: number; isSubscribed: boolean; isOwner: boolean }> => {
   const ownerEmail = import.meta.env.VITE_OWNER_EMAIL as string | undefined;
-  const user = await getCurrentUser();
-  const isOwner = !!(ownerEmail && user?.email && user.email.toLowerCase() === ownerEmail.toLowerCase());
-  if (!user) {
+  
+  if (!clerkUserId) {
     return { limit: 2, isSubscribed: false, isOwner: false };
   }
-  if (isOwner) {
-    return { limit: undefined, isSubscribed: true, isOwner: true };
-  }
+  
+  // For now, we'll need to get user email from Clerk context
+  // This will be passed from the component
+  const isOwner = false; // Will be determined by the calling component
+  
   try {
-    const sub = await getUserSubscription();
+    const sub = await getUserSubscription(clerkUserId);
     const isSubscribed = sub?.subscription_status === 'active';
     if (!isSubscribed) {
       return { limit: 2, isSubscribed: false, isOwner: false };
@@ -48,9 +48,8 @@ export const getPlanMonthlyLimit = async (): Promise<{ limit?: number; isSubscri
   }
 };
 
-export const evaluateAnalysisAllowance = async (): Promise<AllowanceResult> => {
-  const user = await getCurrentUser();
-  if (!user) {
+export const evaluateAnalysisAllowance = async (clerkUserId?: string): Promise<AllowanceResult> => {
+  if (!clerkUserId) {
     // Guest: use local 2 attempts per month
     const allowed = canUseFreeAnalysis();
     return {
@@ -62,7 +61,7 @@ export const evaluateAnalysisAllowance = async (): Promise<AllowanceResult> => {
     };
   }
 
-  const { limit, isOwner } = await getPlanMonthlyLimit();
+  const { limit, isOwner } = await getPlanMonthlyLimit(clerkUserId);
   const usage = await getMonthlyUsageCounts();
   // Unlimited for owner
   if (isOwner || typeof limit === 'undefined') {
@@ -85,14 +84,17 @@ export const consumeIfGuest = (should: boolean) => {
 
 
 // Projects allowance
-export const getPlanProjectLimit = async (): Promise<{ limit?: number; isOwner: boolean }> => {
+export const getPlanProjectLimit = async (clerkUserId?: string): Promise<{ limit?: number; isOwner: boolean }> => {
   const ownerEmail = import.meta.env.VITE_OWNER_EMAIL as string | undefined;
-  const user = await getCurrentUser();
-  const isOwner = !!(ownerEmail && user?.email && user.email.toLowerCase() === ownerEmail.toLowerCase());
-  if (!user) return { limit: 0, isOwner: false };
-  if (isOwner) return { limit: undefined, isOwner: true };
+  
+  if (!clerkUserId) return { limit: 0, isOwner: false };
+  
+  // For now, we'll need to get user email from Clerk context
+  // This will be determined by the calling component
+  const isOwner = false; // Will be determined by the calling component
+  
   try {
-    const sub = await getUserSubscription();
+    const sub = await getUserSubscription(clerkUserId);
     const isSubscribed = sub?.subscription_status === 'active';
     if (!isSubscribed) return { limit: 1, isOwner: false };
     const prod = sub?.price_id ? getProductByPayPalPlanId(sub.price_id) : undefined;

@@ -29,10 +29,16 @@ export const updatePayPalSubscription = async (params: UpdateSubscriptionParams)
   return response.json();
 };
 
-export const getUserSubscription = async () => {
+export const getUserSubscription = async (clerkUserId?: string) => {
+  if (!clerkUserId) {
+    console.warn('No Clerk user ID provided for subscription lookup');
+    return null;
+  }
+
   const { data, error } = await supabase
     .from('stripe_user_subscriptions')
     .select('*')
+    .eq('clerk_user_id', clerkUserId)
     .maybeSingle();
 
   if (error) {

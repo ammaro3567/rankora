@@ -13,13 +13,15 @@ import {
   Folder
 } from 'lucide-react';
 import { getUserSubscription } from '../lib/paypal';
-import { supabase, getCurrentUser } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { useUser } from '@clerk/clerk-react';
 import { getMonthlyUsageCounts } from '../lib/supabase';
 import { getProductByPayPalPlanId } from '../paypal-config';
 import { getPlanMonthlyLimit, getPlanProjectLimit } from '../utils/limits';
 import { listProjects } from '../lib/supabase';
 
 export const DashboardOverview: React.FC = () => {
+  const { user, isLoaded } = useUser();
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [analysesUsed, setAnalysesUsed] = useState<number>(0);
@@ -34,16 +36,16 @@ export const DashboardOverview: React.FC = () => {
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
-        const sub = await getUserSubscription();
+        const sub = await getUserSubscription(user?.id);
         setSubscription(sub);
         
         // Get plan limits
-        const { limit, isOwner: owner } = await getPlanMonthlyLimit();
+        const { limit, isOwner: owner } = await getPlanMonthlyLimit(user?.id);
         setMonthlyLimit(limit);
         setIsOwner(owner);
         
         // Get project info
-        const { limit: projLimit } = await getPlanProjectLimit();
+        const { limit: projLimit } = await getPlanProjectLimit(user?.id);
         setProjectLimit(projLimit);
         
         // Get projects count
@@ -68,11 +70,14 @@ export const DashboardOverview: React.FC = () => {
 
     // Fetch user analyses stats for average score calculation (last 30 days)
     const fetchAnalysesStats = async () => {
+      if (!user?.id) return;
+      
       const since = new Date();
       since.setDate(since.getDate() - 30);
       const { data, error } = await supabase
         .from('user_analyses')
         .select('result, created_at')
+        .eq('clerk_user_id', user.id)
         .gte('created_at', since.toISOString())
         .order('created_at', { ascending: false });
       if (error) {
@@ -91,24 +96,19 @@ export const DashboardOverview: React.FC = () => {
         const validScores = scores.filter((s) => s > 0);
         const avg = validScores.length ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
         setAverageScore(avg);
-      } else {
-        setAverageScore(0);
-      }
+              } else {
+          setAverageScore(0);
+        }
     };
 
     fetchAnalysesStats();
 
-    // Member since from auth user metadata
-    (async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.created_at) {
-          const d = new Date(user.created_at);
-          setMemberSince(d.toLocaleDateString());
-        }
-      } catch {}
-    })();
-  }, []);
+    // Member since from Clerk user metadata
+    if (user?.createdAt) {
+      const d = new Date(user.createdAt);
+      setMemberSince(d.toLocaleDateString());
+    }
+  }, [user?.id]);
 
   const getSubscriptionDetails = () => {
     if (!subscription?.price_id) return null;
@@ -172,9 +172,12 @@ export const DashboardOverview: React.FC = () => {
 
   useEffect(() => {
     const loadRecent = async () => {
+      if (!user?.id) return;
+      
       const { data, error } = await supabase
         .from('user_analyses')
         .select('url, result, created_at')
+        .eq('clerk_user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
       if (!error && data) {
@@ -195,7 +198,7 @@ export const DashboardOverview: React.FC = () => {
       }
     };
     loadRecent();
-  }, []);
+  }, [user?.id]);
 
   return (
     <div className="space-y-8">

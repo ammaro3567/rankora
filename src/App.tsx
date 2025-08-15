@@ -57,19 +57,34 @@ function App() {
   // 🎧 React to Clerk state and enforce routing
   useEffect(() => {
     if (!isLoaded) return
+    
     const path = window.location.pathname
+    const ownerEmail = import.meta.env.VITE_OWNER_EMAIL as string | undefined;
+    const isOwnerUser = user?.primaryEmailAddress?.emailAddress === ownerEmail;
+    
     if (isSignedIn) {
-      updateState({ isAuthenticated: true, currentUser: user, isLoading: false })
+      updateState({ 
+        isAuthenticated: true, 
+        currentUser: user, 
+        isLoading: false,
+        isOwner: isOwnerUser
+      })
+      
       if (path === '/' || path === '/home' || ['/login','/signup','/verify-email'].includes(path)) {
         navigateTo('dashboard', true)
       } else if (path === '/dashboard') {
         navigateTo('dashboard', false)
       } else if (path === '/admin') {
-        // مؤقتًا: السماح فقط لو كان isOwner=true لاحقًا بعد تكييف قواعد البيانات مع Clerk
-        if (!state.isOwner) navigateTo('dashboard', true)
+        if (!isOwnerUser) navigateTo('dashboard', true)
       }
     } else {
-      updateState({ isAuthenticated: false, currentUser: null, isLoading: false })
+      updateState({ 
+        isAuthenticated: false, 
+        currentUser: null, 
+        isLoading: false,
+        isOwner: false
+      })
+      
       if (path === '/dashboard' || path === '/admin') {
         navigateTo('home', true)
       } else if (path === '/') {
@@ -123,7 +138,7 @@ function App() {
             />
           )
         case 'dashboard':
-          console.log('🎨 Rendering Dashboard - User:', state.currentUser?.email)
+          console.log('🎨 Rendering Dashboard - User:', state.currentUser?.primaryEmailAddress?.emailAddress)
           return (
             <Dashboard 
               onLogout={handleLogout}
@@ -167,7 +182,7 @@ function App() {
         )
 
       case 'login':
-        return (
+    return (
           <div className="p-6 flex items-center justify-center">
             <SignedOut>
               <SignInButton />
@@ -180,7 +195,7 @@ function App() {
         )
 
       case 'signup':
-        return (
+    return (
           <div className="p-6 flex items-center justify-center">
             <SignedOut>
               <SignUpButton />
