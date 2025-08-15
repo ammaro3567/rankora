@@ -28,34 +28,34 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
   }, [localAuth])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
-      {/* Enhanced Star Field Background with Movement */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Emerald aura */}
-        <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
-        <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
-        {/* Moving gradient orbs for atmosphere */}
-        <div className="absolute w-96 h-96 bg-gradient-to-r from-accent/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
-        <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
+          <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
+        {/* Enhanced Star Field Background with Movement */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Emerald aura */}
+          <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
+          <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
+          {/* Moving gradient orbs for atmosphere */}
+          <div className="absolute w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
+          <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
         
         {/* Animated stars */}
         <div className="absolute w-1 h-1 bg-white rounded-full opacity-20 animate-pulse" style={{top: '10%', left: '20%'}}></div>
-        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-30 animate-pulse" style={{top: '20%', right: '15%', animationDelay: '1s'}}></div>
+        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-30 animate-pulse" style={{top: '20%', right: '15%', animationDelay: '1s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '30%', left: '70%', animationDelay: '0.5s'}}></div>
         <div className="absolute w-1 h-1 bg-white rounded-full opacity-25 animate-pulse" style={{top: '40%', left: '10%', animationDelay: '2s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-purple-400 rounded-full opacity-35 animate-pulse" style={{top: '50%', right: '25%', animationDelay: '1.5s'}}></div>
-        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-20 animate-pulse" style={{top: '60%', left: '85%', animationDelay: '1.5s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full opacity-35 animate-pulse" style={{top: '50%', right: '25%', animationDelay: '1.5s'}}></div>
+        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-20 animate-pulse" style={{top: '60%', left: '85%', animationDelay: '1.5s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-30" style={{top: '70%', left: '30%'}}></div>
         <div className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '80%', right: '40%', animationDelay: '0.5s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-25" style={{top: '90%', left: '60%'}}></div>
-        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-35 animate-pulse" style={{top: '15%', left: '50%', animationDelay: '2.5s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-purple-400 rounded-full opacity-20 animate-pulse" style={{top: '25%', right: '60%', animationDelay: '3s'}}></div>
+        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-35 animate-pulse" style={{top: '15%', left: '50%', animationDelay: '2.5s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full opacity-20 animate-pulse" style={{top: '25%', right: '60%', animationDelay: '3s'}}></div>
         <div className="absolute w-1 h-1 bg-white rounded-full opacity-30 animate-pulse" style={{top: '35%', left: '5%', animationDelay: '1.8s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '45%', right: '10%', animationDelay: '2.2s'}}></div>
-        <div className="absolute w-1 h-1 bg-accent rounded-full opacity-25 animate-pulse" style={{top: '55%', left: '75%', animationDelay: '0.8s'}}></div>
+        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-25 animate-pulse" style={{top: '55%', left: '75%', animationDelay: '0.8s'}}></div>
         <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-35" style={{top: '65%', right: '50%'}}></div>
-        <div className="absolute w-1 h-1 bg-purple-400 rounded-full opacity-20 animate-pulse" style={{top: '75%', left: '15%', animationDelay: '2.2s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-accent rounded-full opacity-30 animate-pulse" style={{top: '85%', right: '20%', animationDelay: '1.7s'}}></div>
+        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-20 animate-pulse" style={{top: '75%', left: '15%', animationDelay: '2.2s'}}></div>
+        <div className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full opacity-30 animate-pulse" style={{top: '85%', right: '20%', animationDelay: '1.7s'}}></div>
         <div className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '95%', left: '40%', animationDelay: '1.2s'}}></div>
       </div>
 
@@ -109,7 +109,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                     </button>
                   </SignInButton>
                   <SignUpButton mode="modal">
-                    <button className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 shadow-lg shadow-accent/20">
+                    <button className="bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 shadow-lg shadow-emerald-500/20">
                       Sign Up Free
                     </button>
                   </SignUpButton>
@@ -162,7 +162,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                       </button>
                     </SignInButton>
                     <SignUpButton mode="modal">
-                      <button className="text-left bg-accent text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition duration-200 mx-3 shadow-lg shadow-accent/20">
+                      <button className="text-left bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 mx-3 shadow-lg shadow-emerald-500/20">
                         Sign Up Free
                       </button>
                     </SignUpButton>
@@ -180,7 +180,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
               Transform Your Ideas Into
-              <span className="bg-gradient-to-r from-accent to-blue-400 bg-clip-text text-transparent"> Ranked Success</span>
+              <span className="bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent"> Ranked Success</span>
             </h1>
             
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
@@ -200,7 +200,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
               ) : (
                 <>
                   <SignUpButton mode="modal">
-                    <button className="w-full sm:w-auto bg-accent text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-accent/90 transform hover:scale-105 transition duration-200 shadow-lg shadow-accent/20">
+                    <button className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transform hover:scale-105 transition duration-200 shadow-lg shadow-emerald-500/20">
                       Start Ranking Free
                     </button>
                   </SignUpButton>
@@ -234,9 +234,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-accent/10 transition duration-300">
-              <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-emerald-500/10 transition duration-300">
+              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -260,9 +260,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-green-400/10 transition duration-300">
-              <div className="w-12 h-12 bg-green-400/20 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-emerald-400/10 transition duration-300">
+              <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
@@ -273,9 +273,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-purple-400/10 transition duration-300">
-              <div className="w-12 h-12 bg-purple-400/20 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-emerald-400/10 transition duration-300">
+              <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                 </svg>
               </div>
@@ -286,9 +286,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             </div>
 
             {/* Feature 5 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-yellow-400/10 transition duration-300">
-              <div className="w-12 h-12 bg-yellow-400/20 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-emerald-400/10 transition duration-300">
+              <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
@@ -418,17 +418,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             <div>
               <h3 className="text-lg font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><a href="#features" className="hover:text-accent transition duration-200">Features</a></li>
-                <li><button onClick={onPricing} className="hover:text-accent transition duration-200">Pricing</button></li>
-                <li><a href="#faq" className="hover:text-accent transition duration-200">FAQ</a></li>
+                <li><a href="#features" className="hover:text-emerald-400 transition duration-200">Features</a></li>
+                <li><button onClick={onPricing} className="hover:text-emerald-400 transition duration-200">Pricing</button></li>
+                <li><a href="#faq" className="hover:text-emerald-400 transition duration-200">FAQ</a></li>
               </ul>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold mb-4">Account</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><SignInButton mode="modal"><button className="hover:text-accent transition duration-200">Login</button></SignInButton></li>
-                <li><SignUpButton mode="modal"><button className="hover:text-accent transition duration-200">Sign Up</button></SignUpButton></li>
+                <li><SignInButton mode="modal"><button className="hover:text-emerald-400 transition duration-200">Login</button></SignInButton></li>
+                <li><SignUpButton mode="modal"><button className="hover:text-emerald-400 transition duration-200">Sign Up</button></SignUpButton></li>
               </ul>
             </div>
           </div>
