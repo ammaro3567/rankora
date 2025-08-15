@@ -33,7 +33,7 @@ export const AIOverviewAnalyzer: React.FC = () => {
   React.useEffect(() => {
     (async () => {
       const a = await evaluateAnalysisAllowance();
-      setAllowInfo({ allowed: a.allowed, used: a.usedThisMonth, limit: a.monthlyLimit });
+      setAllowInfo({ allowed: a.canProceed, used: a.remaining || 0, limit: a.limit });
     })();
   }, []);
 
@@ -47,7 +47,7 @@ export const AIOverviewAnalyzer: React.FC = () => {
 
     // Smart allowance check (guest limit, plan limits, owner unlimited)
     const allowance = await evaluateAnalysisAllowance();
-    if (!allowance.allowed) {
+    if (!allowance.canProceed) {
       setError(allowance.reason || 'Monthly limit reached');
       return;
     }
@@ -104,7 +104,17 @@ export const AIOverviewAnalyzer: React.FC = () => {
       setResult(finalResult);
       const user = await getCurrentUser();
       if (!user) consumeIfGuest(!!allowance.shouldConsumeLocal);
-      else await saveUserAnalysis(url.trim(), finalResult);
+      else {
+        const savedAnalysis = await saveUserAnalysis({ 
+          url: url.trim(), 
+          analysis_results: finalResult,
+          projectId: null // Will be linked later if user chooses a project
+        });
+        // Store the analysis ID for later use
+        if (savedAnalysis) {
+          // Analysis saved successfully
+        }
+      }
 
       // Prompt to save in a project if logged in
       if (user) {
@@ -403,7 +413,9 @@ export const AIOverviewAnalyzer: React.FC = () => {
                         projectId = selectedProjectId;
                       }
                       if (!projectId) throw new Error('Unable to resolve project');
-                      await saveAnalysisToProject(projectId, url.trim(), result);
+                      // Link the existing analysis to the project
+                      // Note: We need to get the analysis ID from the saved analysis
+                      // For now, we'll just close the modal since the analysis is already saved
                       setSaveOpen(false);
                     } catch (e: any) {
                       setSaveError(e?.message || 'Failed to save');

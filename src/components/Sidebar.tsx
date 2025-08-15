@@ -45,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       if (isLoaded && user) {
         try {
           const sub = await getUserSubscription(user?.id);
-          if (sub?.subscription_status === 'active') {
+          if (sub?.status === 'active') {
             setPlanLabel('Paid Plan');
           } else {
             setPlanLabel('Free Plan');

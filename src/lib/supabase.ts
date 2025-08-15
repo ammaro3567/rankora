@@ -179,7 +179,7 @@ export const usageService = {
       const { data, error } = await supabase.rpc('create_analysis_with_limit_check', {
         p_clerk_user_id: clerkUserId,
         p_url: analysisData.url,
-        p_analysis_results: analysisData.result,
+        p_analysis_results: analysisData.analysis_results,
         p_project_id: analysisData.projectId || null
       });
 
@@ -263,7 +263,7 @@ export const usageService = {
 
   async saveUserComparison(comparisonData: any) {
     const clerkUserId = requireClerkUserId()
-    
+
     // Set Clerk user ID for RLS
     await setClerkUserIdForRLS(clerkUserId);
 
@@ -276,7 +276,7 @@ export const usageService = {
           clerk_user_id: clerkUserId,
           user_url: comparisonData.userUrl,
           competitor_url: comparisonData.competitorUrl,
-          comparison_results: comparisonData.result
+          comparison_results: comparisonData.comparison_results
         })
         .select()
         .single()
@@ -303,9 +303,9 @@ export const usageService = {
     console.log('📊 Getting project analyses for project:', projectId)
 
     try {
-      const { data, error } = await supabase
+  const { data, error } = await supabase
         .from('user_analyses')
-        .select('*')
+    .select('*')
         .eq('clerk_user_id', clerkUserId)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false })
@@ -337,8 +337,8 @@ export const usageService = {
         .delete()
         .eq('id', projectId)
         .eq('clerk_user_id', clerkUserId)
-
-      if (error) {
+    
+  if (error) {
         console.error('💥 Error deleting project:', error)
         throw error
       }
