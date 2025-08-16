@@ -1,7 +1,17 @@
 -- Complete Database Setup for Rankora AI Analysis System
 -- This script creates all necessary tables, functions, and RLS policies
 
--- 1. Drop existing tables if they exist
+-- 1. Drop existing functions first to avoid conflicts
+DROP FUNCTION IF EXISTS create_user_subscription(TEXT, BIGINT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS update_subscription_status(BIGINT, TEXT, JSONB) CASCADE;
+DROP FUNCTION IF EXISTS get_user_subscription_info(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS check_user_limits(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS create_analysis_with_limit_check(TEXT, TEXT, JSONB, BIGINT) CASCADE;
+DROP FUNCTION IF EXISTS create_project_with_limit_check(TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS set_clerk_user_id(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
+-- 2. Drop existing tables if they exist
 DROP TABLE IF EXISTS user_analyses CASCADE;
 DROP TABLE IF EXISTS competitor_comparisons CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
@@ -11,7 +21,7 @@ DROP TABLE IF EXISTS user_subscriptions CASCADE;
 DROP TABLE IF EXISTS subscription_plans CASCADE;
 DROP TABLE IF EXISTS subscription_history CASCADE;
 
--- 2. Create core tables
+-- 3. Create core tables
 CREATE TABLE profiles (
   id BIGSERIAL PRIMARY KEY,
   clerk_user_id TEXT UNIQUE NOT NULL,
@@ -84,7 +94,7 @@ CREATE TABLE competitor_comparisons (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. Create indexes for performance
+-- 4. Create indexes for performance
 CREATE INDEX idx_profiles_clerk_user_id ON profiles(clerk_user_id);
 CREATE INDEX idx_user_subscriptions_clerk_user_id ON user_subscriptions(clerk_user_id);
 CREATE INDEX idx_user_subscriptions_status ON user_subscriptions(status);
@@ -94,14 +104,14 @@ CREATE INDEX idx_user_analyses_created_at ON user_analyses(created_at);
 CREATE INDEX idx_competitor_comparisons_clerk_user_id ON competitor_comparisons(clerk_user_id);
 CREATE INDEX idx_competitor_comparisons_created_at ON competitor_comparisons(created_at);
 
--- 4. Insert default subscription plans
+-- 5. Insert default subscription plans
 INSERT INTO subscription_plans (name, description, price_monthly, price_yearly, monthly_analysis_limit, monthly_comparison_limit, project_limit, features) VALUES
 ('Free', 'Basic plan for getting started', 0.00, 0.00, 5, 2, 1, '{"export_formats": ["JSON"], "api_access": false, "priority_support": false}'),
 ('Starter', 'Perfect for small businesses', 29.99, 299.99, 50, 20, 10, '{"export_formats": ["JSON", "CSV"], "api_access": false, "priority_support": false}'),
 ('Pro', 'For growing businesses', 79.99, 799.99, 200, 100, 50, '{"export_formats": ["JSON", "CSV", "PDF"], "api_access": true, "priority_support": true}'),
 ('Business', 'Enterprise-grade solution', 199.99, 1999.99, -1, -1, -1, '{"export_formats": ["JSON", "CSV", "PDF", "XLSX"], "api_access": true, "priority_support": true, "white_label": true, "team_management": true}');
 
--- 5. Enable Row Level Security (RLS)
+-- 6. Enable Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
@@ -110,7 +120,7 @@ ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitor_comparisons ENABLE ROW LEVEL SECURITY;
 
--- 6. Create function to set Clerk user ID for RLS
+-- 7. Create function to set Clerk user ID for RLS
 CREATE OR REPLACE FUNCTION set_clerk_user_id(clerk_id TEXT)
 RETURNS VOID AS $$
 BEGIN
@@ -118,7 +128,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 7. Create RLS policies
+-- 8. Create RLS policies
 -- Profiles policy
 CREATE POLICY "Users can view and update their own profile" ON profiles
   FOR ALL USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
@@ -155,7 +165,7 @@ CREATE POLICY "Users can view their own analyses" ON user_analyses
 CREATE POLICY "Users can view their own comparisons" ON competitor_comparisons
   FOR ALL USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
 
--- 8. Create RPC functions for subscription management
+-- 9. Create RPC functions for subscription management
 CREATE OR REPLACE FUNCTION create_user_subscription(
   p_clerk_user_id TEXT,
   p_plan_id BIGINT,
@@ -250,7 +260,7 @@ CREATE OR REPLACE FUNCTION check_user_limits(p_clerk_user_id TEXT)
 RETURNS TABLE (
   can_proceed BOOLEAN,
   remaining INTEGER,
-  limit INTEGER,
+  analysis_limit INTEGER,
   can_create_project BOOLEAN,
   project_remaining INTEGER,
   project_limit INTEGER
@@ -318,7 +328,7 @@ BEGIN
       WHEN v_plan_analysis_limit = -1 THEN -1
       ELSE GREATEST(0, v_plan_analysis_limit - v_current_analyses)
     END as remaining,
-    v_plan_analysis_limit as limit,
+    v_plan_analysis_limit as analysis_limit,
     CASE 
       WHEN v_plan_project_limit = -1 THEN true
       ELSE v_current_projects < v_plan_project_limit
@@ -406,13 +416,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 9. Grant necessary permissions
+-- 10. Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated;
 
--- 10. Create updated_at trigger function
+-- 11. Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -421,7 +431,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 11. Create triggers for updated_at
+-- 12. Create triggers for updated_at
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -431,5 +441,5 @@ CREATE TRIGGER update_user_subscriptions_updated_at BEFORE UPDATE ON user_subscr
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- 12. Final verification
+-- 13. Final verification
 SELECT 'Database setup completed successfully!' as status;

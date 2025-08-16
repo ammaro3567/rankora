@@ -28,13 +28,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
   }, [localAuth])
 
   return (
-          <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
-        {/* Enhanced Star Field Background with Movement */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Emerald aura */}
-          <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
-          <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
-          {/* Moving gradient orbs for atmosphere */}
+    <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
+      {/* Enhanced Star Field Background with Movement */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Emerald aura */}
+        <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
+        <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
+        {/* Moving gradient orbs for atmosphere */}
           <div className="absolute w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
           <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
         
@@ -105,13 +105,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 <>
                   <SignInButton mode="modal">
                     <button className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
-                      Login
-                    </button>
+                    Login
+                  </button>
                   </SignInButton>
                   <SignUpButton mode="modal">
                     <button className="bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 shadow-lg shadow-emerald-500/20">
-                      Sign Up Free
-                    </button>
+                    Sign Up Free
+                  </button>
                   </SignUpButton>
                 </>
               )}
@@ -158,13 +158,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                   <>
                     <SignInButton mode="modal">
                       <button className="text-left text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
-                        Login
-                      </button>
+                      Login
+                    </button>
                     </SignInButton>
                     <SignUpButton mode="modal">
                       <button className="text-left bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition duration-200 mx-3 shadow-lg shadow-emerald-500/20">
-                        Sign Up Free
-                      </button>
+                      Sign Up Free
+                    </button>
                     </SignUpButton>
                   </>
                 )}
@@ -201,13 +201,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 <>
                   <SignUpButton mode="modal">
                     <button className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transform hover:scale-105 transition duration-200 shadow-lg shadow-emerald-500/20">
-                      Start Ranking Free
-                    </button>
+                    Start Ranking Free
+                  </button>
                   </SignUpButton>
                   <SignInButton mode="modal">
                     <button className="w-full sm:w-auto border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:border-gray-500 hover:bg-gray-800/50 transition duration-200">
-                      Sign In
-                    </button>
+                    Sign In
+                  </button>
                   </SignInButton>
                 </>
               )}
@@ -388,8 +388,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <SignUpButton mode="modal">
               <button className="w-full sm:w-auto bg-white text-emerald-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transform hover:scale-105 transition duration-200 shadow-lg">
-                Get Started Free
-              </button>
+              Get Started Free
+            </button>
             </SignUpButton>
             <button
               onClick={onPricing}

@@ -208,24 +208,28 @@ export const usageService = {
 
     try {
       // استخدام Function الجديد مع التحقق من الحدود
-      const projectId = await enhancedService.createProjectWithLimitCheck(
-        clerkUserId,
-        projectData.name,
-        projectData.description
-      );
+      const { data, error } = await supabase.rpc('create_project_with_limit_check', {
+        p_clerk_user_id: clerkUserId,
+        p_name: projectData.name,
+        p_description: projectData.description
+      });
       
-      console.log('✅ Project created successfully with limit check:', projectId)
-      return { id: projectId }
-    } catch (error: any) {
-      if (error.message.includes('Project limit reached')) {
-        console.warn('⚠️ Project limit reached:', error.message)
-        return { 
-          error: { 
-            message: 'Project limit reached. Please upgrade your plan.',
-            code: 'LIMIT_EXCEEDED'
-          } 
+      if (error) {
+        if (error.message?.includes('Project limit exceeded')) {
+          console.warn('⚠️ Project limit reached:', error.message)
+          return { 
+            error: { 
+              message: 'Project limit reached. Please upgrade your plan.',
+              code: 'LIMIT_EXCEEDED'
+            } 
+          }
         }
+        throw error;
       }
+      
+      console.log('✅ Project created successfully with limit check:', data)
+      return { id: data }
+    } catch (error: any) {
       console.error('💥 Error creating project:', error)
       throw error
     }
