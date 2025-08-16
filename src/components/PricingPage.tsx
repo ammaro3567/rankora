@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Star, Crown, Zap, Target, X } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 // Define the plan structure directly in the component
 interface Plan {
@@ -7,7 +8,7 @@ interface Plan {
   name: string;
   description: string;
   price: number;
-  hostedButtonId: string;
+  planId: number; // Internal plan ID for Supabase
   features: string[];
   icon: React.ReactNode;
 }
@@ -15,6 +16,7 @@ interface Plan {
 declare global {
   interface Window {
     paypal: any;
+    Clerk: any;
   }
 }
 
@@ -33,11 +35,25 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
   // Define plans directly in the component
   const plans: Plan[] = [
     {
+      id: 'free',
+      name: 'Free',
+      description: '2 Analyses/month',
+      price: 0,
+      planId: 1, // Free plan ID
+      features: [
+        'AI-powered content analysis',
+        'Basic scoring reports',
+        '1 project limit',
+        'Community support'
+      ],
+      icon: <Target className="w-6 h-6" />
+    },
+    {
       id: 'starter',
       name: 'Starter',
       description: '30 Analyses/month',
       price: 10,
-      hostedButtonId: 'QGMSH6CSQNBD6',
+      planId: 2, // Starter plan ID
       features: [
         'AI-powered content analysis',
         'Detailed scoring reports',
@@ -52,7 +68,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
       name: 'Pro',
       description: '100 Analyses/month',
       price: 30,
-      hostedButtonId: 'VUK8HZK8RAK6E',
+      planId: 3, // Pro plan ID
       features: [
         'AI-powered content analysis',
         'Detailed scoring reports',
@@ -70,7 +86,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
       name: 'Business',
       description: '300 Analyses/month',
       price: 70,
-      hostedButtonId: 'XSY3PB8G6TEUS',
+      planId: 4, // Business plan ID
       features: [
         'AI-powered content analysis',
         'Detailed scoring reports',
@@ -119,7 +135,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
       }
 
       const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=hosted-buttons&disable-funding=venmo&currency=USD`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
       script.crossOrigin = 'anonymous';
       script.async = true;
       script.onload = () => {
@@ -138,16 +154,90 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
     loadPayPalSDK();
   }, []);
 
-  // Render PayPal hosted button when modal opens
+  // Handle PayPal payment success
+  const handlePaymentSuccess = async (orderID: string, planId: number) => {
+    try {
+      setLoading(true);
+      
+      // Get current user from Clerk
+      const clerkUser = window.Clerk?.user;
+      if (!clerkUser) {
+        throw new Error('User not authenticated');
+      }
+
+      const clerkUserId = clerkUser.id;
+      
+      // Create subscription in Supabase
+      const { data, error } = await supabase.rpc('create_user_subscription', {
+        p_clerk_user_id: clerkUserId,
+        p_plan_id: planId,
+        p_payment_method: 'PayPal',
+        p_external_subscription_id: orderID
+      });
+
+      if (error) {
+        console.error('Error creating subscription:', error);
+        throw new Error('Failed to create subscription');
+      }
+
+      console.log('Subscription created successfully:', data);
+      
+      // Close modal and show success message
+      setShowModal(false);
+      alert('Subscription activated successfully! 🎉');
+      
+      // Optionally redirect to dashboard
+      window.location.href = '/dashboard';
+      
+    } catch (error) {
+      console.error('Payment success handler error:', error);
+      alert('Payment successful but failed to activate subscription. Please contact support.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Render PayPal button when modal opens
   useEffect(() => {
-    if (showModal && selectedPlan?.hostedButtonId && paypalLoaded && window.paypal && window.paypal.HostedButtons) {
-      const containerId = `paypal-hosted-button-container-${selectedPlan.hostedButtonId}`;
+    if (showModal && selectedPlan && paypalLoaded && window.paypal && window.paypal.Buttons) {
+      const containerId = `paypal-button-container-${selectedPlan.id}`;
       const container = document.getElementById(containerId);
       if (container) {
         container.innerHTML = ''; // Clear previous buttons
+        
         try {
-          window.paypal.HostedButtons({
-            hostedButtonId: selectedPlan.hostedButtonId
+          window.paypal.Buttons({
+            style: {
+              layout: "vertical",
+              color: "blue",
+              shape: "rect",
+              label: "paypal"
+            },
+            createOrder: (data: any, actions: any) => {
+              return actions.order.create({
+                purchase_units: [{
+                  amount: {
+                    value: selectedPlan.price.toString()
+                  },
+                  description: `${selectedPlan.name} Plan - ${selectedPlan.description}`,
+                  custom_id: selectedPlan.planId.toString()
+                }]
+              });
+            },
+            onApprove: async (data: any, actions: any) => {
+              try {
+                const order = await actions.order.capture();
+                console.log('Payment successful:', order);
+                await handlePaymentSuccess(order.id, selectedPlan.planId);
+              } catch (error) {
+                console.error('Payment capture error:', error);
+                alert('Payment failed. Please try again.');
+              }
+            },
+            onError: (err: any) => {
+              console.error('PayPal error:', err);
+              setPaypalError('PayPal payment failed. Please try again.');
+            }
           }).render(`#${containerId}`);
         } catch (error) {
           console.error('Failed to render PayPal button:', error);
@@ -187,7 +277,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-12">
           {plans.map((plan) => (
             <div
               key={plan.id}
@@ -232,14 +322,16 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
                 </ul>
 
                 <button
-                  onClick={() => openPayPalModal(plan)}
+                  onClick={() => plan.id === 'free' ? window.location.href = '/dashboard' : openPayPalModal(plan)}
                   className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                    plan.id === 'pro'
+                    plan.id === 'free'
+                      ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                      : plan.id === 'pro'
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                   }`}
                 >
-                  Choose this plan
+                  {plan.id === 'free' ? 'Get Started Free' : 'Choose this plan'}
                 </button>
               </div>
             </div>
@@ -272,7 +364,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
                 </p>
               </div>
 
-              {paypalError ? (
+              {loading ? (
+                <div className="text-center p-4">
+                  <div className="loading-spinner w-8 h-8 mx-auto mb-2"></div>
+                  <p className="text-gray-500 text-sm">Processing payment...</p>
+                </div>
+              ) : paypalError ? (
                 <div className="text-center p-4">
                   <p className="text-red-500 text-sm mb-2">{paypalError}</p>
                   <button
@@ -289,7 +386,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
                 </div>
               ) : (
                 <div
-                  id={`paypal-hosted-button-container-${selectedPlan.hostedButtonId}`}
+                  id={`paypal-button-container-${selectedPlan.id}`}
                   className="w-full"
                 />
               )}
