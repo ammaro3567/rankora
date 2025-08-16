@@ -42,7 +42,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // 🚀 Clean Supabase client configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  // لم نعد نستخدم Supabase Auth لإدارة الجلسات
+  auth: { 
+    persistSession: false 
+  }
 })
 
 // 🔐 Authentication functions - simple and clean
