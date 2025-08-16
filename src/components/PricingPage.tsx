@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Star, Crown, Zap, Target, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useUser } from '@clerk/clerk-react';
 
 // Define the plan structure directly in the component
 interface Plan {
@@ -25,6 +26,7 @@ interface PricingPageProps {
 }
 
 export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
+  const { user, isLoaded } = useUser();
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -106,6 +108,12 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
   ];
 
   const openPayPalModal = (plan: Plan) => {
+    // Check if user is authenticated
+    if (!user) {
+      alert('Please sign in to subscribe to a plan.');
+      return;
+    }
+    
     setSelectedPlan(plan);
     setShowModal(true);
   };
@@ -159,20 +167,19 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
     try {
       setLoading(true);
       
-      // Get current user from Clerk
-      const clerkUser = window.Clerk?.user;
-      if (!clerkUser) {
+      // Get current user from Clerk using the hook
+      if (!user) {
         throw new Error('User not authenticated');
       }
 
-      const clerkUserId = clerkUser.id;
+      const clerkUserId = user.id;
       
-      // Create subscription in Supabase
+      // Create subscription in Supabase using the correct function signature
       const { data, error } = await supabase.rpc('create_user_subscription', {
         p_clerk_user_id: clerkUserId,
         p_plan_id: planId,
-        p_payment_method: 'PayPal',
-        p_external_subscription_id: orderID
+        p_paypal_subscription_id: null, // For one-time payments, this is null
+        p_paypal_order_id: orderID
       });
 
       if (error) {
@@ -199,6 +206,11 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
 
   // Render PayPal button when modal opens
   useEffect(() => {
+    // Don't render PayPal button if Clerk is not loaded or user is not authenticated
+    if (!isLoaded || !user) {
+      return;
+    }
+    
     if (showModal && selectedPlan && paypalLoaded && window.paypal && window.paypal.Buttons) {
       const containerId = `paypal-button-container-${selectedPlan.id}`;
       const container = document.getElementById(containerId);
@@ -215,20 +227,32 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
             },
             createOrder: (data: any, actions: any) => {
               return actions.order.create({
+                intent: "CAPTURE",
                 purchase_units: [{
                   amount: {
                     value: selectedPlan.price.toString()
                   },
                   description: `${selectedPlan.name} Plan - ${selectedPlan.description}`,
                   custom_id: selectedPlan.planId.toString()
-                }]
+                }],
+                application_context: {
+                  return_url: `${window.location.origin}/dashboard`,
+                  cancel_url: `${window.location.origin}/pricing`
+                }
               });
             },
             onApprove: async (data: any, actions: any) => {
               try {
+                console.log('Payment approved, capturing order...', data);
                 const order = await actions.order.capture();
-                console.log('Payment successful:', order);
-                await handlePaymentSuccess(order.id, selectedPlan.planId);
+                console.log('Payment captured successfully:', order);
+                
+                // Check if payment was actually captured
+                if (order.status === 'COMPLETED') {
+                  await handlePaymentSuccess(order.id, selectedPlan.planId);
+                } else {
+                  throw new Error(`Payment not completed. Status: ${order.status}`);
+                }
               } catch (error) {
                 console.error('Payment capture error:', error);
                 alert('Payment failed. Please try again.');
@@ -237,6 +261,10 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
             onError: (err: any) => {
               console.error('PayPal error:', err);
               setPaypalError('PayPal payment failed. Please try again.');
+            },
+            onCancel: (data: any) => {
+              console.log('Payment cancelled by user');
+              setShowModal(false);
             }
           }).render(`#${containerId}`);
         } catch (error) {
@@ -251,7 +279,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
         }
       }
     }
-  }, [showModal, selectedPlan, paypalLoaded]);
+  }, [showModal, selectedPlan, paypalLoaded, isLoaded, user]);
 
   if (!mounted) return null;
 
@@ -260,23 +288,23 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          {onBack && (
-            <button
-              onClick={onBack}
+            {onBack && (
+              <button
+                onClick={onBack}
               className="inline-flex items-center text-emerald-600 hover:text-emerald-700 mb-4"
-            >
+              >
               ← Back
-            </button>
-          )}
+              </button>
+            )}
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Choose Your Plan
-          </h1>
+        </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Unlock the full potential of AI-powered content analysis with our flexible subscription plans
-          </p>
-        </div>
+        </p>
+      </div>
 
-        {/* Pricing Cards */}
+      {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-12">
           {plans.map((plan) => (
             <div
@@ -336,9 +364,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
               </div>
             </div>
           ))}
-        </div>
+      </div>
 
-        {/* PayPal Modal */}
+      {/* PayPal Modal */}
         {showModal && selectedPlan && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6">
@@ -346,8 +374,8 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
                 <h3 className="text-xl font-semibold text-gray-900">
                   Complete Your {selectedPlan.name} Subscription
                 </h3>
-                <button
-                  onClick={() => setShowModal(false)}
+            <button
+              onClick={() => setShowModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-6 h-6" />
@@ -362,13 +390,28 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
                 <p className="text-sm text-gray-500">
                   Click the PayPal button below to complete your payment securely.
                 </p>
-              </div>
+          </div>
 
-              {loading ? (
+              {!isLoaded ? (
+                <div className="text-center p-4">
+                  <div className="loading-spinner w-8 h-8 mx-auto mb-2"></div>
+                  <p className="text-gray-500 text-sm">Loading user...</p>
+                </div>
+              ) : !user ? (
+                <div className="text-center p-4">
+                  <p className="text-red-500 text-sm mb-2">Please sign in to continue</p>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-emerald-600 hover:text-emerald-700 text-sm underline"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : loading ? (
                 <div className="text-center p-4">
                   <div className="loading-spinner w-8 h-8 mx-auto mb-2"></div>
                   <p className="text-gray-500 text-sm">Processing payment...</p>
-                </div>
+        </div>
               ) : paypalError ? (
                 <div className="text-center p-4">
                   <p className="text-red-500 text-sm mb-2">{paypalError}</p>
@@ -378,19 +421,19 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
                   >
                     Refresh page
                   </button>
-                </div>
+          </div>
               ) : !paypalLoaded ? (
                 <div className="text-center p-4">
                   <div className="loading-spinner w-8 h-8 mx-auto mb-2"></div>
                   <p className="text-gray-500 text-sm">Loading PayPal...</p>
-                </div>
+        </div>
               ) : (
                 <div
                   id={`paypal-button-container-${selectedPlan.id}`}
                   className="w-full"
                 />
               )}
-            </div>
+        </div>
           </div>
         )}
       </div>
