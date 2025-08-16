@@ -143,10 +143,11 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
       }
 
       const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture&components=buttons`;
       script.crossOrigin = 'anonymous';
       script.async = true;
       script.onload = () => {
+        console.log('PayPal SDK loaded successfully');
         setPaypalLoaded(true);
         setPaypalError(null);
       };
@@ -161,6 +162,46 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
     setMounted(true);
     loadPayPalSDK();
   }, []);
+
+  // Function to reload PayPal SDK if needed
+  const reloadPayPalSDK = () => {
+    console.log('Reloading PayPal SDK...');
+    setPaypalLoaded(false);
+    setPaypalError(null);
+    
+    const existingScript = document.querySelector('script[src*="paypal.com/sdk/js"]');
+    if (existingScript) {
+      existingScript.remove();
+    }
+    
+    // Clear any existing PayPal buttons
+    const containers = document.querySelectorAll('[id^="paypal-button-container-"]');
+    containers.forEach(container => {
+      container.innerHTML = '';
+    });
+    
+    // Reload SDK
+    const loadPayPalSDK = () => {
+      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture&components=buttons`;
+      script.crossOrigin = 'anonymous';
+      script.async = true;
+      script.onload = () => {
+        console.log('PayPal SDK reloaded successfully');
+        setPaypalLoaded(true);
+        setPaypalError(null);
+      };
+      script.onerror = () => {
+        console.error('Failed to reload PayPal SDK');
+        setPaypalError('Failed to reload PayPal SDK. Please refresh the page.');
+      };
+      
+      document.head.appendChild(script);
+    };
+    
+    loadPayPalSDK();
+  };
 
   // Handle PayPal payment success
   const handlePaymentSuccess = async (orderID: string, planId: number) => {
@@ -226,36 +267,58 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
               label: "paypal"
             },
             createOrder: (data: any, actions: any) => {
+              console.log('Creating PayPal order for plan:', selectedPlan);
               return actions.order.create({
                 intent: "CAPTURE",
                 purchase_units: [{
                   amount: {
-                    value: selectedPlan.price.toString()
+                    value: selectedPlan.price.toString(),
+                    currency_code: "USD"
                   },
                   description: `${selectedPlan.name} Plan - ${selectedPlan.description}`,
-                  custom_id: selectedPlan.planId.toString()
+                  custom_id: selectedPlan.planId.toString(),
+                  invoice_id: `rankora-${Date.now()}-${selectedPlan.id}`
                 }],
                 application_context: {
                   return_url: `${window.location.origin}/dashboard`,
-                  cancel_url: `${window.location.origin}/pricing`
+                  cancel_url: `${window.location.origin}/pricing`,
+                  brand_name: "Rankora AI",
+                  landing_page: "BILLING",
+                  user_action: "PAY_NOW",
+                  shipping_preference: "NO_SHIPPING"
                 }
               });
             },
             onApprove: async (data: any, actions: any) => {
               try {
                 console.log('Payment approved, capturing order...', data);
+                
+                // Add a small delay to ensure order is fully authorized
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 const order = await actions.order.capture();
                 console.log('Payment captured successfully:', order);
                 
                 // Check if payment was actually captured
                 if (order.status === 'COMPLETED') {
+                  console.log('Order completed, processing subscription...');
                   await handlePaymentSuccess(order.id, selectedPlan.planId);
                 } else {
+                  console.warn('Order not completed, status:', order.status);
                   throw new Error(`Payment not completed. Status: ${order.status}`);
                 }
               } catch (error) {
                 console.error('Payment capture error:', error);
-                alert('Payment failed. Please try again.');
+                
+                // More specific error handling
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                if (errorMessage.includes('unauthorized order')) {
+                  alert('Payment authorization failed. Please try again or refresh the page.');
+                } else if (errorMessage.includes('not completed')) {
+                  alert('Payment was not completed. Please try again.');
+                } else {
+                  alert('Payment failed. Please try again.');
+                }
               }
             },
             onError: (err: any) => {
@@ -265,6 +328,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
             onCancel: (data: any) => {
               console.log('Payment cancelled by user');
               setShowModal(false);
+            },
+            onInit: (data: any, actions: any) => {
+              console.log('PayPal button initialized');
             }
           }).render(`#${containerId}`);
         } catch (error) {
@@ -415,13 +481,21 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
               ) : paypalError ? (
                 <div className="text-center p-4">
                   <p className="text-red-500 text-sm mb-2">{paypalError}</p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="text-emerald-600 hover:text-emerald-700 text-sm underline"
-                  >
-                    Refresh page
-                  </button>
-          </div>
+                  <div className="space-y-2">
+                    <button
+                      onClick={reloadPayPalSDK}
+                      className="text-emerald-600 hover:text-emerald-700 text-sm underline mr-4"
+                    >
+                      Reload PayPal
+                    </button>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="text-emerald-600 hover:text-emerald-700 text-sm underline"
+                    >
+                      Refresh page
+                    </button>
+                  </div>
+                </div>
               ) : !paypalLoaded ? (
                 <div className="text-center p-4">
                   <div className="loading-spinner w-8 h-8 mx-auto mb-2"></div>
