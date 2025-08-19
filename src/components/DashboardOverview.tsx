@@ -39,9 +39,10 @@ export const DashboardOverview: React.FC = () => {
           const subscriptionData = await getUserSubscriptionInfo(user.id);
 
           setSubscription(subscriptionData);
-          setMonthlyLimit(subscriptionData?.monthly_analysis_limit || 2);
-          setProjectLimit(subscriptionData?.project_limit || 1);
-          setComparisonLimit(subscriptionData?.monthly_comparison_limit || 2);
+          setMonthlyLimit(subscriptionData?.monthly_analysis_limit ?? subscriptionData?.analysis_limit ?? 2);
+          setProjectLimit(subscriptionData?.project_limit ?? subscriptionData?.projectLimit ?? 1);
+          // support both field names: monthly_comparison_limit or comparison_limit
+          setComparisonLimit(subscriptionData?.monthly_comparison_limit ?? subscriptionData?.comparison_limit ?? 2);
 
           // جلب المشاريع باستخدام wrapper
           const projects = await listProjects();
