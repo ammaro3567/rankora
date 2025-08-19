@@ -6,7 +6,7 @@
 
 1. **خطأ 404 في إنشاء المشاريع:**
    ```
-   POST https://cpyurkebefjgyymcppag.supabase.co/rest/v1/rpc/create_project...
+   POST https://mpjpdgjrafjexniivzln.supabase.co/rest/v1/rpc/create_project...
    404 (Not Found)
    ```
 
