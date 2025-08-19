@@ -3,8 +3,8 @@ import { Search, Loader2, FileText, CheckCircle, BarChart3, HelpCircle, Database
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { sendToN8nWebhook } from '../config/webhooks';
 import { consumeIfGuest, evaluateAnalysisAllowance } from '../utils/limits';
-import { getCurrentUser, saveUserAnalysis, listProjects, createProject, saveAnalysisToProject } from '../lib/supabase';
-import { getUserSubscription } from '../lib/paypal';
+import { saveUserAnalysis, listProjects, createProject, saveAnalysisToProject, supabase } from '../lib/supabase';
+import { useUser } from '@clerk/clerk-react';
 import { handleError } from '../utils/error-handler';
 
 interface AnalysisResult {
@@ -18,24 +18,28 @@ interface AnalysisResult {
 }
 
 export const AIOverviewAnalyzer: React.FC = () => {
+  const { user } = useUser();
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [allowInfo, setAllowInfo] = useState<{ allowed: boolean; used: number; limit?: number } | null>(null);
+  const [allowInfo, setAllowInfo] = useState<{ canProceed: boolean; remaining: number; limit?: number } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | 'new' | ''>('');
   const [newProjectName, setNewProjectName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastAnalysisId, setLastAnalysisId] = useState<number | null>(null);
 
   React.useEffect(() => {
     (async () => {
-      const a = await evaluateAnalysisAllowance();
-      setAllowInfo({ allowed: a.canProceed, used: a.remaining || 0, limit: a.limit });
+      if (user?.id) {
+        const a = await evaluateAnalysisAllowance(user.id);
+        setAllowInfo({ canProceed: a.canProceed, remaining: a.remaining || 0, limit: a.limit });
+      }
     })();
-  }, []);
+  }, [user?.id]);
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +50,7 @@ export const AIOverviewAnalyzer: React.FC = () => {
     }
 
     // Smart allowance check (guest limit, plan limits, owner unlimited)
-    const allowance = await evaluateAnalysisAllowance();
+    const allowance = await evaluateAnalysisAllowance(user.id);
     if (!allowance.canProceed) {
       setError(allowance.reason || 'Monthly limit reached');
       return;
@@ -102,17 +106,25 @@ export const AIOverviewAnalyzer: React.FC = () => {
       }
 
       setResult(finalResult);
-      const user = await getCurrentUser();
       if (!user) consumeIfGuest(!!allowance.shouldConsumeLocal);
       else {
-        const savedAnalysis = await saveUserAnalysis({ 
-          url: url.trim(), 
+        // Save analysis using RPC that accepts clerk_user_id to avoid session issues
+        const savedAnalysis = await saveUserAnalysis({
+          url: url.trim(),
           analysis_results: finalResult,
           projectId: null // Will be linked later if user chooses a project
         });
         // Store the analysis ID for later use
         if (savedAnalysis) {
+          try { setLastAnalysisId(typeof savedAnalysis === 'number' ? savedAnalysis : Number(savedAnalysis)); } catch {}
           // Analysis saved successfully
+          // Dispatch event to update Dashboard
+          window.dispatchEvent(new CustomEvent('analysis-completed'));
+          // Refresh local allowance banner to reflect new usage
+          try {
+            const a2 = await evaluateAnalysisAllowance(user.id);
+            setAllowInfo({ canProceed: a2.canProceed, remaining: a2.remaining || 0, limit: a2.limit });
+          } catch {}
         }
       }
 
@@ -205,7 +217,7 @@ export const AIOverviewAnalyzer: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isAnalyzing || !url.trim() || (allowInfo && !allowInfo.allowed)}
+            disabled={isAnalyzing || !url.trim() || (allowInfo && !allowInfo.canProceed)}
             className="btn-primary w-full"
           >
             {isAnalyzing ? (
@@ -222,18 +234,21 @@ export const AIOverviewAnalyzer: React.FC = () => {
 
       {/* Allowance Banner */}
       {allowInfo && (
-        <div className={`card ${allowInfo.allowed ? 'border-accent-primary/30' : 'border-error/30'} `}>
+        <div className={`card ${allowInfo.canProceed ? 'border-accent-primary/30' : 'border-error/30'} `}>
           <div className="flex items-center justify-between">
             <div className="text-sm text-secondary">
-              {typeof allowInfo.limit === 'number' ? (
-                <span>
-                  Monthly usage: <span className="text-primary font-semibold">{allowInfo.used}/{allowInfo.limit}</span>
-                </span>
-              ) : (
+              {typeof allowInfo.limit === 'number' ? (() => {
+                const used = Math.max(0, (allowInfo.limit || 0) - (allowInfo.remaining || 0));
+                return (
+                  <span>
+                    Monthly usage: <span className="text-primary font-semibold">{used}/{allowInfo.limit}</span>
+                  </span>
+                );
+              })() : (
                 <span>Unlimited usage</span>
               )}
             </div>
-            {!allowInfo.allowed && (
+            {!allowInfo.canProceed && (
               <button className="btn-primary" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>Upgrade</button>
             )}
           </div>
@@ -368,7 +383,7 @@ export const AIOverviewAnalyzer: React.FC = () => {
 
       {/* Save to project modal */}
       {saveOpen && (
-        <div className="fixed inset-0 modal-backdrop z-50">
+        <div className="fixed inset-0 modal-backdrop z-[70]">
           <div className="min-h-full flex items-center justify-center p-4">
             <div className="card glass card-shadow max-w-md w-full relative animate-scaleIn">
               <button className="absolute top-3 right-3 text-secondary hover:text-primary" onClick={() => setSaveOpen(false)}>✕</button>
@@ -404,8 +419,8 @@ export const AIOverviewAnalyzer: React.FC = () => {
                           setSaving(false);
                           return;
                         }
-                        const { error } = await createProject(newProjectName.trim());
-                        if (error) throw new Error(error.message);
+                        const created = await createProject({ name: newProjectName.trim(), description: '' });
+                        if ((created as any)?.error) throw new Error((created as any).error.message);
                         const list = await listProjects();
                         setProjects(list);
                         projectId = list[0]?.id || null;
@@ -413,9 +428,24 @@ export const AIOverviewAnalyzer: React.FC = () => {
                         projectId = selectedProjectId;
                       }
                       if (!projectId) throw new Error('Unable to resolve project');
-                      // Link the existing analysis to the project
-                      // Note: We need to get the analysis ID from the saved analysis
-                      // For now, we'll just close the modal since the analysis is already saved
+                      // Link the just-created analysis id directly when available
+                      if (lastAnalysisId) {
+                        await saveAnalysisToProject(String(projectId), String(lastAnalysisId));
+                      } else {
+                        // Fallback: try to locate by URL
+                        try {
+                          const { data: recent } = await supabase
+                            .from('user_analyses')
+                            .select('id')
+                            .eq('clerk_user_id', user!.id)
+                            .eq('url', url.trim())
+                            .order('created_at', { ascending: false })
+                            .limit(1);
+                          if (recent && recent[0]?.id) {
+                            await saveAnalysisToProject(String(projectId), String(recent[0].id));
+                          }
+                        } catch {}
+                      }
                       setSaveOpen(false);
                     } catch (e: any) {
                       setSaveError(e?.message || 'Failed to save');

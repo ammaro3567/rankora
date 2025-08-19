@@ -1,6 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Shield, Eye, Database, Lock, Globe, Mail, FileText } from 'lucide-react';
-import { StarField } from './StarField';
+import { ArrowRight, Shield, Eye, Database, Lock, Globe, Mail, FileText } from 'lucide-react';
 import { AnimatedBackground } from './AnimatedBackground';
 
 interface PrivacyPageProps {
@@ -12,29 +11,28 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack }) => {
   
   return (
     <div className="min-h-screen bg-primary relative overflow-hidden">
-      <StarField />
       <AnimatedBackground />
       
       {/* Navigation */}
       <nav className="glass border-b border-primary fixed top-0 left-0 right-0 z-50">
         <div className="container mx-auto flex items-center justify-between py-4">
+          {/* Left: Logo */}
+          <div className="flex items-center space-x-2">
+            <img src="/logo32.png" alt="Rankora" className="w-8 h-8 rounded-lg" />
+            <span className="text-xl font-bold text-primary">
+              RANK<span className="text-accent-primary">ORA</span>
+            </span>
+          </div>
+
+          {/* Right: Back button */}
           <div className="flex items-center space-x-4">
             <button 
               onClick={onBack}
               className="flex items-center space-x-2 text-secondary hover:text-accent-primary transition-colors"
             >
-              <ArrowLeft className="w-5 h-5" />
               <span>Back to Home</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-accent-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">R</span>
-            </div>
-            <span className="text-xl font-bold text-primary">
-              RANK<span className="text-accent-primary">ORA</span>
-            </span>
           </div>
         </div>
       </nav>

@@ -1,4 +1,4 @@
-import { getUserSubscription } from '../lib/paypal';
+import { getUserSubscriptionInfo, checkUserLimits, getMonthlyUsageCounts } from '../lib/supabase';
 
 export interface AllowanceResult {
   canProceed: boolean;
@@ -20,29 +20,15 @@ export const getPlanMonthlyLimit = async (clerkUserId?: string): Promise<{ limit
   const isOwner = false; // Will be determined by the calling component
   
   try {
-    const sub = await getUserSubscription(clerkUserId);
+    const sub = await getUserSubscriptionInfo(clerkUserId);
     const isSubscribed = sub?.status === 'active';
+    
     if (!isSubscribed) {
       return { limit: 2, isSubscribed: false, isOwner: false };
     }
     
-    // Map plan IDs to limits
-    let limit: number | undefined;
-    if (sub?.plan_id) {
-      switch (sub.plan_id) {
-        case 2: // Starter
-          limit = 30;
-          break;
-        case 3: // Pro
-          limit = 100;
-          break;
-        case 4: // Business
-          limit = 300;
-          break;
-        default:
-          limit = 2;
-      }
-    }
+    // Use the actual plan limits from subscription
+    const limit = sub?.monthly_analysis_limit || 2;
     
     return { limit, isSubscribed: true, isOwner: false };
   } catch {
@@ -62,8 +48,32 @@ export const evaluateAnalysisAllowance = async (clerkUserId?: string): Promise<A
       return { canProceed: true, limit: undefined, remaining: undefined };
     }
     
-    // For now, we'll assume the limit hasn't been reached
-    // In a real implementation, you'd check the current usage
+    // Check current usage
+    if (clerkUserId) {
+      // Prefer computing remaining from actual monthly counts for consistency
+      try {
+        const usage = await getMonthlyUsageCounts();
+        const usedAnalyses = usage?.analyses || 0;
+        const remaining = Math.max(0, (limit || 0) - usedAnalyses);
+        const canProceed = remaining > 0;
+        return {
+          canProceed,
+          limit,
+          remaining,
+          reason: canProceed ? undefined : 'Monthly limit reached'
+        };
+      } catch (err) {
+        // Fallback to RPC checkUserLimits if counts fail
+        const limits = await checkUserLimits(clerkUserId).catch(() => null);
+        if (limits) {
+          const remaining = limits.remaining ?? 0;
+          const canProceed = !!limits.can_proceed;
+          return { canProceed, limit, remaining, reason: canProceed ? undefined : 'Monthly limit reached' };
+        }
+      }
+    }
+    
+    // Fallback: assume limit not reached
     return { canProceed: true, limit, remaining: limit };
   } catch (error) {
     console.error('Error evaluating analysis allowance:', error);
@@ -73,6 +83,27 @@ export const evaluateAnalysisAllowance = async (clerkUserId?: string): Promise<A
 
 export const consumeIfGuest = (should: boolean) => {
   if (should) consumeFreeAnalysis();
+};
+
+// New: Comparison allowance based on subscription's monthly_comparison_limit
+export const evaluateComparisonAllowance = async (clerkUserId?: string): Promise<AllowanceResult> => {
+  try {
+    if (!clerkUserId) {
+      return { canProceed: true, limit: 2, remaining: 2 };
+    }
+
+    const sub = await getUserSubscriptionInfo(clerkUserId);
+    const limit = sub?.monthly_comparison_limit ?? 2;
+
+    const usage = await getMonthlyUsageCounts();
+    const usedComparisons = usage?.comparisons || 0;
+    const remaining = Math.max(0, (limit || 0) - usedComparisons);
+    const canProceed = remaining > 0;
+    return { canProceed, limit, remaining, reason: canProceed ? undefined : 'Monthly limit reached' };
+  } catch (error) {
+    console.error('Error evaluating comparison allowance:', error);
+    return { canProceed: false, reason: 'Error checking limits' };
+  }
 };
 
 // Projects allowance
@@ -86,29 +117,14 @@ export const getPlanProjectLimit = async (clerkUserId?: string): Promise<{ limit
   const isOwner = false; // Will be determined by the calling component
   
   try {
-    const sub = await getUserSubscription(clerkUserId);
+    const sub = await getUserSubscriptionInfo(clerkUserId);
     const isSubscribed = sub?.status === 'active';
     if (!isSubscribed) return { limit: 1, isOwner: false };
     
-    // Map plan IDs to project limits
-    let limit: number | undefined;
-    if (sub?.plan_id) {
-      switch (sub.plan_id) {
-        case 2: // Starter
-          limit = 3;
-          break;
-        case 3: // Pro
-          limit = 10;
-          break;
-        case 4: // Business
-          limit = 25;
-          break;
-        default:
-          limit = 1;
-      }
-    }
+    // Use the actual project limit from subscription
+    const limit = sub?.project_limit || 1;
     
-    return { limit: limit || 5, isOwner: false }; // default 5 for paid plans
+    return { limit, isOwner: false };
   } catch {
     return { limit: 1, isOwner: false };
   }

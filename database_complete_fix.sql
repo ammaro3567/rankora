@@ -1,8 +1,17 @@
 -- 🔧 إصلاح شامل لقاعدة البيانات - Complete Database Fix
 -- Run this in your Supabase SQL editor to fix all database issues
 
--- 1. إنشاء جميع الجداول المطلوبة
-CREATE TABLE IF NOT EXISTS profiles (
+-- 1. حذف الجداول الموجودة أولاً لتجنب التعارضات
+DROP TABLE IF EXISTS competitor_comparisons CASCADE;
+DROP TABLE IF EXISTS user_analyses CASCADE;
+DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS subscription_history CASCADE;
+DROP TABLE IF EXISTS user_subscriptions CASCADE;
+DROP TABLE IF EXISTS subscription_plans CASCADE;
+DROP TABLE IF EXISTS profiles CASCADE;
+
+-- 2. إنشاء جميع الجداول المطلوبة
+CREATE TABLE profiles (
   id BIGSERIAL PRIMARY KEY,
   clerk_user_id TEXT UNIQUE NOT NULL,
   full_name TEXT,
@@ -11,9 +20,9 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS subscription_plans (
+CREATE TABLE subscription_plans (
   id BIGSERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
+  name TEXT UNIQUE NOT NULL,
   description TEXT,
   price_monthly DECIMAL(10,2) NOT NULL,
   price_yearly DECIMAL(10,2),
@@ -25,7 +34,7 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS user_subscriptions (
+CREATE TABLE user_subscriptions (
   id BIGSERIAL PRIMARY KEY,
   clerk_user_id TEXT NOT NULL,
   plan_id BIGINT REFERENCES subscription_plans(id),
@@ -38,7 +47,7 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS subscription_history (
+CREATE TABLE subscription_history (
   id BIGSERIAL PRIMARY KEY,
   subscription_id BIGINT REFERENCES user_subscriptions(id),
   status TEXT NOT NULL,
@@ -46,7 +55,7 @@ CREATE TABLE IF NOT EXISTS subscription_history (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS projects (
+CREATE TABLE projects (
   id BIGSERIAL PRIMARY KEY,
   clerk_user_id TEXT NOT NULL,
   name TEXT NOT NULL,
@@ -55,7 +64,7 @@ CREATE TABLE IF NOT EXISTS projects (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS user_analyses (
+CREATE TABLE user_analyses (
   id BIGSERIAL PRIMARY KEY,
   clerk_user_id TEXT NOT NULL,
   url TEXT NOT NULL,
@@ -64,7 +73,7 @@ CREATE TABLE IF NOT EXISTS user_analyses (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS competitor_comparisons (
+CREATE TABLE competitor_comparisons (
   id BIGSERIAL PRIMARY KEY,
   clerk_user_id TEXT NOT NULL,
   user_url TEXT NOT NULL,
@@ -74,7 +83,7 @@ CREATE TABLE IF NOT EXISTS competitor_comparisons (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. إنشاء جميع الدوال المطلوبة
+-- 3. إنشاء جميع الدوال المطلوبة
 CREATE OR REPLACE FUNCTION set_clerk_user_id(clerk_id TEXT)
 RETURNS VOID AS $$
 BEGIN
@@ -90,7 +99,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 3. إنشاء دالة create_user_subscription
+-- 4. إنشاء دالة create_user_subscription
 CREATE OR REPLACE FUNCTION create_user_subscription(
   p_clerk_user_id TEXT,
   p_plan_id BIGINT,
@@ -105,8 +114,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM profiles WHERE clerk_user_id = p_clerk_user_id) THEN
     -- إنشاء ملف شخصي للمستخدم إذا لم يكن موجوداً
     INSERT INTO profiles (clerk_user_id, full_name) 
-    VALUES (p_clerk_user_id, 'User') 
-    ON CONFLICT (clerk_user_id) DO NOTHING;
+    VALUES (p_clerk_user_id, 'User');
   END IF;
   
   -- إنشاء الاشتراك
@@ -140,7 +148,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4. إنشاء دالة get_user_subscription_info
+-- 5. إنشاء دالة get_user_subscription_info
 CREATE OR REPLACE FUNCTION get_user_subscription_info(p_clerk_user_id TEXT)
 RETURNS TABLE (
   subscription_id BIGINT,
@@ -174,7 +182,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 5. إنشاء دالة update_subscription_status
+-- 6. إنشاء دالة update_subscription_status
 CREATE OR REPLACE FUNCTION update_subscription_status(
   p_subscription_id BIGINT,
   p_new_status TEXT,
@@ -193,7 +201,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. إنشاء دالة check_user_limits
+-- 7. إنشاء دالة check_user_limits
 CREATE OR REPLACE FUNCTION check_user_limits(p_clerk_user_id TEXT)
 RETURNS TABLE (
   can_proceed BOOLEAN,
@@ -276,7 +284,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 7. إنشاء دالة create_analysis_with_limit_check
+-- 8. إنشاء دالة create_analysis_with_limit_check
 CREATE OR REPLACE FUNCTION create_analysis_with_limit_check(
   p_clerk_user_id TEXT,
   p_url TEXT,
@@ -313,7 +321,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 8. إنشاء دالة create_project_with_limit_check
+-- 9. إنشاء دالة create_project_with_limit_check
 CREATE OR REPLACE FUNCTION create_project_with_limit_check(
   p_clerk_user_id TEXT,
   p_name TEXT,
@@ -347,7 +355,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 9. إنشاء دالة get_monthly_usage
+-- 10. إنشاء دالة get_monthly_usage
 CREATE OR REPLACE FUNCTION get_monthly_usage(p_clerk_user_id TEXT)
 RETURNS TABLE (
   total_analyses INTEGER,
@@ -370,7 +378,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 10. إنشاء دالة list_user_projects
+-- 11. إنشاء دالة list_user_projects
 CREATE OR REPLACE FUNCTION list_user_projects(p_clerk_user_id TEXT)
 RETURNS TABLE (
   id BIGINT,
@@ -391,7 +399,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 11. إنشاء دالة get_project_analyses
+-- 12. إنشاء دالة get_project_analyses
 CREATE OR REPLACE FUNCTION get_project_analyses(p_project_id BIGINT, p_clerk_user_id TEXT)
 RETURNS TABLE (
   id BIGINT,
@@ -414,7 +422,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 12. إنشاء دالة delete_user_project
+-- 13. إنشاء دالة delete_user_project
 CREATE OR REPLACE FUNCTION delete_user_project(p_project_id BIGINT, p_clerk_user_id TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -431,26 +439,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 13. إنشاء triggers لتحديث updated_at
-DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
+-- 14. إنشاء triggers لتحديث updated_at
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_user_subscriptions_updated_at ON user_subscriptions;
 CREATE TRIGGER update_user_subscriptions_updated_at
   BEFORE UPDATE ON user_subscriptions
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
 CREATE TRIGGER update_projects_updated_at
   BEFORE UPDATE ON projects
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- 14. إضافة RLS policies
+-- 15. إضافة RLS policies
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
@@ -459,24 +464,19 @@ ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitor_comparisons ENABLE ROW LEVEL SECURITY;
 
--- 15. إنشاء RLS policies
-DROP POLICY IF EXISTS "Users can view and update their own profile" ON profiles;
+-- 16. إنشاء RLS policies
 CREATE POLICY "Users can view and update their own profile" ON profiles
   FOR ALL USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
 
-DROP POLICY IF EXISTS "Anyone can view subscription plans" ON subscription_plans;
 CREATE POLICY "Anyone can view subscription plans" ON subscription_plans
   FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Users can view their own subscriptions" ON user_subscriptions;
 CREATE POLICY "Users can view their own subscriptions" ON user_subscriptions
   FOR SELECT USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
 
-DROP POLICY IF EXISTS "Users can insert their own subscriptions" ON user_subscriptions;
 CREATE POLICY "Users can insert their own subscriptions" ON user_subscriptions
   FOR INSERT WITH CHECK (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
 
-DROP POLICY IF EXISTS "Users can view their subscription history" ON subscription_history;
 CREATE POLICY "Users can view their subscription history" ON subscription_history
   FOR SELECT USING (
     subscription_id IN (
@@ -485,44 +485,40 @@ CREATE POLICY "Users can view their subscription history" ON subscription_histor
     )
   );
 
-DROP POLICY IF EXISTS "Users can view their own projects" ON projects;
 CREATE POLICY "Users can view their own projects" ON projects
   FOR ALL USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
 
-DROP POLICY IF EXISTS "Users can view their own analyses" ON user_analyses;
 CREATE POLICY "Users can view their own analyses" ON user_analyses
   FOR ALL USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
 
-DROP POLICY IF EXISTS "Users can view their own comparisons" ON competitor_comparisons;
 CREATE POLICY "Users can view their own comparisons" ON competitor_comparisons
   FOR ALL USING (clerk_user_id = current_setting('app.clerk_user_id', true)::text);
 
--- 16. منح الصلاحيات المطلوبة
+-- 17. منح الصلاحيات المطلوبة
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated;
 
--- 17. إدراج الخطط الافتراضية
+-- 18. إدراج الخطط الافتراضية
 INSERT INTO subscription_plans (name, description, price_monthly, price_yearly, monthly_analysis_limit, monthly_comparison_limit, project_limit, features) 
 VALUES
 ('Free', 'Basic plan for getting started', 0.00, 0.00, 5, 2, 1, '{"export_formats": ["JSON"], "api_access": false, "priority_support": false}'),
 ('Starter', 'Perfect for small businesses', 10.00, 100.00, 30, 10, 5, '{"export_formats": ["JSON", "CSV"], "api_access": false, "priority_support": false}'),
 ('Pro', 'For growing businesses', 30.00, 300.00, 100, 50, 20, '{"export_formats": ["JSON", "CSV", "PDF"], "api_access": true, "priority_support": true}'),
-('Business', 'Enterprise-grade solution', 70.00, 700.00, 300, 150, 100, '{"export_formats": ["JSON", "CSV", "PDF", "XLSX"], "api_access": true, "priority_support": true, "white_label": true, "team_management": true}')
-ON CONFLICT (name) DO NOTHING;
+('Business', 'Enterprise-grade solution', 70.00, 700.00, 300, 150, 100, '{"export_formats": ["JSON", "CSV", "PDF", "XLSX"], "api_access": true, "priority_support": true, "white_label": true, "team_management": true}');
 
--- 18. إنشاء indexes للأداء
-CREATE INDEX IF NOT EXISTS idx_profiles_clerk_user_id ON profiles(clerk_user_id);
-CREATE INDEX IF NOT EXISTS idx_user_subscriptions_clerk_user_id ON user_subscriptions(clerk_user_id);
-CREATE INDEX IF NOT EXISTS idx_user_subscriptions_status ON user_subscriptions(status);
-CREATE INDEX IF NOT EXISTS idx_projects_clerk_user_id ON projects(clerk_user_id);
-CREATE INDEX IF NOT EXISTS idx_user_analyses_clerk_user_id ON user_analyses(clerk_user_id);
-CREATE INDEX IF NOT EXISTS idx_user_analyses_created_at ON user_analyses(created_at);
-CREATE INDEX IF NOT EXISTS idx_competitor_comparisons_clerk_user_id ON competitor_comparisons(clerk_user_id);
-CREATE INDEX IF NOT EXISTS idx_competitor_comparisons_created_at ON competitor_comparisons(created_at);
+-- 19. إنشاء indexes للأداء
+CREATE INDEX idx_profiles_clerk_user_id ON profiles(clerk_user_id);
+CREATE INDEX idx_user_subscriptions_clerk_user_id ON user_subscriptions(clerk_user_id);
+CREATE INDEX idx_user_subscriptions_status ON user_subscriptions(status);
+CREATE INDEX idx_projects_clerk_user_id ON projects(clerk_user_id);
+CREATE INDEX idx_user_analyses_clerk_user_id ON user_analyses(clerk_user_id);
+CREATE INDEX idx_user_analyses_created_at ON user_analyses(created_at);
+CREATE INDEX idx_competitor_comparisons_clerk_user_id ON competitor_comparisons(clerk_user_id);
+CREATE INDEX idx_competitor_comparisons_created_at ON competitor_comparisons(created_at);
 
--- 19. التحقق من إنشاء كل شيء بنجاح
+-- 20. التحقق من إنشاء كل شيء بنجاح
 DO $$
 BEGIN
   RAISE NOTICE '✅ Database setup completed successfully!';

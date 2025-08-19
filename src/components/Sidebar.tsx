@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Overlay for mobile */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40"
           onClick={onToggle}
         />
       )}
@@ -101,9 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Logo */}
           <div className="p-6 border-b border-primary">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">R</span>
-              </div>
+              <img src="/logo32.png" alt="Rankora" className="w-10 h-10 rounded-lg" />
               <div>
                 <h1 className="text-xl font-bold text-primary">
                   RANK<span className="text-emerald-400">ORA</span>

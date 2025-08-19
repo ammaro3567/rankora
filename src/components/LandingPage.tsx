@@ -413,6 +413,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
               <p className="text-gray-300 mb-4">
                 Transform your ideas into ranked success with AI-powered ranking and analysis tools.
               </p>
+              <div className="flex items-center space-x-2 text-sm text-gray-300">
+                <span>Contact:</span>
+                <a href="mailto:contact@rankora.online" className="hover:text-emerald-400 transition duration-200">contact@rankora.online</a>
+              </div>
             </div>
             
             <div>
@@ -429,12 +433,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
               <ul className="space-y-2 text-gray-300">
                 <li><SignInButton mode="modal"><button className="hover:text-emerald-400 transition duration-200">Login</button></SignInButton></li>
                 <li><SignUpButton mode="modal"><button className="hover:text-emerald-400 transition duration-200">Sign Up</button></SignUpButton></li>
+                <li><a href="/terms" className="hover:text-emerald-400 transition duration-200">Terms & Conditions</a></li>
+                <li><a href="/privacy" className="hover:text-emerald-400 transition duration-200">Data Privacy</a></li>
               </ul>
             </div>
           </div>
           
           <div className="border-t border-gray-700/50 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Rankora. All rights reserved.</p>
+            <p>&copy; 2025 Rankora. All rights reserved.</p>
           </div>
         </div>
       </footer>

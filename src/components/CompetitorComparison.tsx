@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Loader2, TrendingUp, TrendingDown, Minus, Lightbulb, Target } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
-import { getCurrentUser, saveUserComparison, listProjects, createProject, saveAnalysisToProject } from '../lib/supabase';
-import { evaluateAnalysisAllowance, consumeIfGuest } from '../utils/limits';
+import { saveUserComparison, listProjects, createProject, saveAnalysisToProject, supabase } from '../lib/supabase';
+import { useUser } from '@clerk/clerk-react';
+import { evaluateAnalysisAllowance, evaluateComparisonAllowance, consumeIfGuest } from '../utils/limits';
 import { analyzeComparison } from '../config/webhooks';
 import { handleError } from '../utils/error-handler';
 
@@ -84,25 +85,29 @@ const ScoreCard: React.FC<{
 };
 
 export const CompetitorComparison: React.FC = () => {
+  const { user } = useUser();
   const [userUrl, setUserUrl] = useState('');
   const [competitorUrl, setCompetitorUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [allowInfo, setAllowInfo] = useState<{ allowed: boolean; used: number; limit?: number } | null>(null);
+  const [allowInfo, setAllowInfo] = useState<{ canProceed: boolean; remaining: number; limit?: number } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | 'new' | ''>('');
   const [newProjectName, setNewProjectName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [createdComparisonAnalysisId, setCreatedComparisonAnalysisId] = useState<number | null>(null);
 
   React.useEffect(() => {
     (async () => {
-      const a = await evaluateAnalysisAllowance();
-      setAllowInfo({ allowed: a.allowed, used: a.usedThisMonth, limit: a.monthlyLimit });
+      if (user?.id) {
+        const a = await evaluateComparisonAllowance(user.id);
+        setAllowInfo({ canProceed: a.canProceed, remaining: a.remaining || 0, limit: a.limit });
+      }
     })();
-  }, []);
+  }, [user?.id]);
 
   const handleCompare = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,12 +118,12 @@ export const CompetitorComparison: React.FC = () => {
     }
 
     // Smart allowance check
-    const allowance = await evaluateAnalysisAllowance();
-    if (!allowance.allowed) {
+    const allowance = await evaluateComparisonAllowance(user.id);
+    if (!allowance.canProceed) {
       setError(allowance.reason || 'Monthly limit reached');
       return;
     }
-    const user = await getCurrentUser();
+    // user is already available from useUser hook
 
     setIsAnalyzing(true);
     setError(null);
@@ -199,7 +204,40 @@ export const CompetitorComparison: React.FC = () => {
       };
       setComparisonData(data);
       if (user) {
-        await saveUserComparison(userUrl.trim(), competitorUrl.trim(), data);
+        // Save comparison record (competitor_comparisons)
+        await saveUserComparison({
+          userUrl: userUrl.trim(),
+          competitorUrl: competitorUrl.trim(),
+          comparison_results: data
+        });
+
+        // Create a lightweight analysis row so it appears in Recent Analyses and can be linked to projects
+        try {
+          const summary = {
+            readability: data.userArticle?.readability ?? 0,
+            factuality: data.userArticle?.factuality ?? 0,
+            structure: data.userArticle?.structure ?? 0,
+            qa_format: data.userArticle?.qa_format ?? 0,
+            structured_data: data.userArticle?.structured_data ?? 0,
+            authority: data.userArticle?.authority ?? 0,
+            suggestions: data.suggestions ?? []
+          } as any;
+          const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
+            p_clerk_user_id: user.id,
+            p_url: `${userUrl.trim()} (comparison)` ,
+            p_analysis_results: summary,
+            p_project_id: null
+          });
+          if (typeof createdId === 'number') {
+            setCreatedComparisonAnalysisId(createdId);
+            // notify dashboard to refresh recent analyses
+            window.dispatchEvent(new CustomEvent('analysis-completed'));
+          }
+        } catch (e) {
+          console.warn('Failed to create comparison summary analysis:', e);
+        }
+        // Dispatch event to update Dashboard
+        window.dispatchEvent(new CustomEvent('comparison-completed'));
         try {
           const list = await listProjects();
           setProjects(list);
@@ -363,7 +401,7 @@ export const CompetitorComparison: React.FC = () => {
           <div className="text-center">
             <button
               type="submit"
-              disabled={isAnalyzing || !userUrl.trim() || !competitorUrl.trim() || (allowInfo && !allowInfo.allowed)}
+              disabled={isAnalyzing || !userUrl.trim() || !competitorUrl.trim() || (allowInfo && !allowInfo.canProceed)}
               className="btn-primary"
             >
               {isAnalyzing ? (
@@ -381,16 +419,19 @@ export const CompetitorComparison: React.FC = () => {
 
       {/* Allowance banner */}
       {allowInfo && (
-        <div className={`card ${allowInfo.allowed ? 'border-accent-primary/30' : 'border-error/30'}`}>
+        <div className={`card ${allowInfo.canProceed ? 'border-accent-primary/30' : 'border-error/30'}`}>
           <div className="flex items-center justify-between">
             <div className="text-sm text-secondary">
-              {typeof allowInfo.limit === 'number' ? (
-                <span>Monthly usage: <span className="text-primary font-semibold">{allowInfo.used}/{allowInfo.limit}</span></span>
-              ) : (
+              {typeof allowInfo.limit === 'number' ? (() => {
+                const used = Math.max(0, (allowInfo.limit || 0) - (allowInfo.remaining || 0));
+                return (
+                  <span>Monthly usage: <span className="text-primary font-semibold">{used}/{allowInfo.limit}</span></span>
+                );
+              })() : (
                 <span>Unlimited usage</span>
               )}
             </div>
-            {!allowInfo.allowed && (
+            {!allowInfo.canProceed && (
               <button className="btn-primary" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>Upgrade</button>
             )}
           </div>
@@ -553,7 +594,7 @@ export const CompetitorComparison: React.FC = () => {
 
       {/* Save to project modal */}
       {saveOpen && comparisonData && (
-        <div className="fixed inset-0 modal-backdrop z-50">
+        <div className="fixed inset-0 modal-backdrop z-[70]">
           <div className="min-h-full flex items-center justify-center p-4">
             <div className="card glass card-shadow max-w-md w-full relative animate-scaleIn">
               <button className="absolute top-3 right-3 text-secondary hover:text-primary" onClick={() => setSaveOpen(false)}>✕</button>
@@ -589,8 +630,8 @@ export const CompetitorComparison: React.FC = () => {
                           setSaving(false);
                           return;
                         }
-                        const { error } = await createProject(newProjectName.trim());
-                        if (error) throw new Error(error.message);
+                        const created = await createProject({ name: newProjectName.trim(), description: '' });
+                        if ((created as any)?.error) throw new Error((created as any).error.message);
                         const list = await listProjects();
                         setProjects(list);
                         projectId = list[0]?.id || null;
@@ -598,7 +639,34 @@ export const CompetitorComparison: React.FC = () => {
                         projectId = selectedProjectId;
                       }
                       if (!projectId) throw new Error('Unable to resolve project');
-                      await saveAnalysisToProject(projectId, userUrl.trim() + ' vs ' + competitorUrl.trim(), comparisonData);
+                      // Option A: if we created a synthetic analysis id earlier, attach it
+                      if (createdComparisonAnalysisId) {
+                        await saveAnalysisToProject(String(projectId), String(createdComparisonAnalysisId));
+                        window.dispatchEvent(new CustomEvent('project-updated'));
+                      } else {
+                        // Option B: create a lightweight analysis row now and link it
+                        try {
+                          const summary = {
+                            readability: comparisonData.userArticle?.readability ?? 0,
+                            factuality: comparisonData.userArticle?.factuality ?? 0,
+                            structure: comparisonData.userArticle?.structure ?? 0,
+                            qa_format: comparisonData.userArticle?.qa_format ?? 0,
+                            structured_data: comparisonData.userArticle?.structured_data ?? 0,
+                            authority: comparisonData.userArticle?.authority ?? 0,
+                            suggestions: comparisonData.suggestions ?? []
+                          } as any;
+                          const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
+                            p_clerk_user_id: user!.id,
+                            p_url: userUrl.trim() + ' (comparison)',
+                            p_analysis_results: summary,
+                            p_project_id: Number(projectId)
+                          });
+                          if (typeof createdId === 'number') {
+                            await saveAnalysisToProject(String(projectId), String(createdId));
+                            window.dispatchEvent(new CustomEvent('project-updated'));
+                          }
+                        } catch {}
+                      }
                       setSaveOpen(false);
                     } catch (e: any) {
                       setSaveError(e?.message || 'Failed to save');

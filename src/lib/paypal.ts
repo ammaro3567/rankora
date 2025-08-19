@@ -37,7 +37,8 @@ export const getUserSubscription = async (clerkUserId?: string) => {
 
   try {
     // Use the new subscription system with RPC function
-    const { data, error } = await supabase.rpc('get_user_subscription_info', {
+    // Use RPC that accepts clerk_user_id directly to avoid session-setting issues
+    const { data, error } = await supabase.rpc('get_user_subscription_info_for', {
       p_clerk_user_id: clerkUserId
     });
 

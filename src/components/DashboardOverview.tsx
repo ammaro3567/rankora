@@ -1,134 +1,146 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
   Users, 
   Target,
-  Calendar,
   Crown,
   Zap,
   AlertCircle,
-  Infinity,
   Folder
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
-import { getMonthlyUsageCounts, getUserSubscriptionInfo, checkUserLimits } from '../lib/supabase';
-import { listProjects } from '../lib/supabase';
+import { supabase, getUserSubscriptionInfo, getMonthlyUsageCounts, listProjects, usageService } from '../lib/supabase';
+import { runSystemDiagnostics } from '../utils/system-diagnostics';
 
 export const DashboardOverview: React.FC = () => {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const [subscription, setSubscription] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [analysesUsed, setAnalysesUsed] = useState<number>(0);
   const [averageScore, setAverageScore] = useState<number>(0);
-  const [memberSince, setMemberSince] = useState<string>('');
+  // memberSince not currently used in UI
   const [comparisonsUsed, setComparisonsUsed] = useState<number>(0);
   const [monthlyLimit, setMonthlyLimit] = useState<number | undefined>(undefined);
   const [projectsCount, setProjectsCount] = useState<number>(0);
   const [projectLimit, setProjectLimit] = useState<number | undefined>(undefined);
+  const [recentAnalyses, setRecentAnalyses] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchSubscription = async () => {
-      try {
-        if (!user?.id) return;
-        
-        // Get subscription info using new functions
-        const sub = await getUserSubscriptionInfo(user.id);
-        setSubscription(sub);
-        
-        // Get user limits
-        const limits = await checkUserLimits(user.id);
-        if (limits) {
-          setMonthlyLimit(limits.analyses_limit);
-          setProjectLimit(limits.projects_limit);
-        }
-        
-        // Get projects count
-        const projects = await listProjects();
-        setProjectsCount(projects.length);
-      } catch (error) {
-        console.error('Error fetching subscription:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const fetchDashboardData = async () => {
+      if (user) {
+        // تشغيل التشخيص
+        runSystemDiagnostics(user);
 
-    fetchSubscription();
-    
-    // Fetch usage counts (current month)
-    const fetchUsage = async () => {
-      try {
-        const usage = await getMonthlyUsageCounts();
-        console.log('📊 Dashboard usage data:', usage);
-        setAnalysesUsed(usage.analyses); // Use analyses count, not total
-        setComparisonsUsed(usage.comparisons);
-      } catch (error) {
-        console.error('Error fetching usage:', error);
-        setAnalysesUsed(0);
-        setComparisonsUsed(0);
-      }
-    };
-    fetchUsage();
+        try {
+          // Prefer calling RPCs that accept clerk_user_id directly.
+          // This avoids relying on set_clerk_user_id/session persistence.
+          const subscriptionData = await getUserSubscriptionInfo(user.id);
 
-            // Fetch user analyses stats for average score calculation (last 30 days)
-        const fetchAnalysesStats = async () => {
-          if (!user?.id) return;
-          
-          const since = new Date();
-          since.setDate(since.getDate() - 30);
-          const { data, error } = await supabase
-            .from('user_analyses')
-            .select('analysis_results, created_at')
-            .eq('clerk_user_id', user.id)
-            .gte('created_at', since.toISOString())
-            .order('created_at', { ascending: false });
-          if (error) {
-            console.warn('Failed to fetch analyses for stats', error);
-            return;
-          }
-          if (data && data.length) {
-            const scores = data.map((row: any) => {
-              const r = row.analysis_results || {};
+          setSubscription(subscriptionData);
+          setMonthlyLimit(subscriptionData?.monthly_analysis_limit || 2);
+          setProjectLimit(subscriptionData?.project_limit || 1);
+
+          // جلب المشاريع باستخدام wrapper
+          const projects = await listProjects();
+          let pCount = projects.length || 0;
+          // كـ fallback، حاول استخدام check_user_limits لإظهار العد الصحيح حتى لو RLS منع القراءة
+          try {
+            const limits = await (async () => {
+              try {
+                // نستخدم خدمة الاشتراك المتاحة لدينا لتفادي تمرير RLS، ثم دالة عامة للحدود
+                const { data, error } = await supabase.rpc('check_user_limits', { p_clerk_user_id: user.id });
+                if (error) throw error;
+                return Array.isArray(data) ? data[0] : data;
+              } catch (e) {
+                return null;
+              }
+            })();
+            if (limits && typeof limits.project_limit === 'number' && typeof limits.project_remaining === 'number') {
+              const used = Math.max(0, (limits.project_limit || 0) - (limits.project_remaining || 0));
+              pCount = Math.max(pCount, used);
+            }
+          } catch {}
+          setProjectsCount(pCount);
+
+          // جلب التحليلات الأخيرة عبر RPC آمنة
+          const analyses = await usageService.getRecentAnalyses(5);
+
+          if (analyses && analyses.length) {
+            // حساب متوسط النتائج
+            const scores = analyses.map((row) => {
+              const r = (row as any).analysis_results || {};
               const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
                 .map((v: any) => (typeof v === 'number' ? v : 0));
               const valid = vals.filter((v: number) => v > 0);
-              if (!valid.length) return 0;
-              return Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length);
+              return valid.length ? Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length) : 0;
             });
+
             const validScores = scores.filter((s) => s > 0);
-            const avg = validScores.length ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
-            setAverageScore(avg);
-          } else {
-            setAverageScore(0);
+            const avgScore = validScores.length 
+              ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) 
+              : 0;
+            
+            setAverageScore(avgScore);
+
+            // إعداد التحليلات الحديثة للعرض
+            const recentItems = analyses.map((row: any) => ({
+              title: 'Content Analysis',
+              url: row.url || 'N/A',
+              score: (() => {
+                const r = row.analysis_results || {};
+                const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
+                  .map((v: any) => (typeof v === 'number' ? v : 0));
+                const valid = vals.filter((v: number) => v > 0);
+                return valid.length ? Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length) : 0;
+              })(),
+              time: new Date(row.created_at).toLocaleString(),
+              type: 'analysis'
+            }));
+
+            setRecentAnalyses(recentItems);
           }
-        };
 
-    fetchAnalysesStats();
+          // جلب عدد التحليلات والمقارنات عبر wrapper
+          const usageCounts = await getMonthlyUsageCounts();
+          setAnalysesUsed(usageCounts?.analyses || 0);
+          setComparisonsUsed(usageCounts?.comparisons || 0);
 
-    // Member since from Clerk user metadata
-    if (user?.createdAt) {
-      const d = new Date(user.createdAt);
-      setMemberSince(d.toLocaleDateString());
-    }
-  }, [user?.id]);
+          // تاريخ الانضمام (not used)
 
-  const getSubscriptionDetails = () => {
-    if (!subscription?.price_id) return null;
-            return subscription?.plan_name || 'Free';
-  };
+        } catch (error) {
+          console.error('خطأ في جلب بيانات لوحة التحكم:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
 
-  const subscriptionDetails = getSubscriptionDetails();
-  const isSubscribed = subscription && subscription.status === 'active';
+    fetchDashboardData();
+
+    // الاستماع لأحداث إكمال التحليل والمقارنة
+    const handleAnalysisCompleted = () => fetchDashboardData();
+    const handleComparisonCompleted = () => fetchDashboardData();
+
+    window.addEventListener('analysis-completed', handleAnalysisCompleted);
+    window.addEventListener('comparison-completed', handleComparisonCompleted);
+
+    return () => {
+      window.removeEventListener('analysis-completed', handleAnalysisCompleted);
+      window.removeEventListener('comparison-completed', handleComparisonCompleted);
+    };
+  }, [user]);
+
+  // subscriptionDetails not required; use subscription directly
+  const isSubscribed = !!(subscription && subscription.status === 'active');
   const planName = subscription?.plan_name || 'Free';
-  const limitReached = monthlyLimit !== undefined && analysesUsed >= monthlyLimit;
+  const limitReached: boolean = typeof monthlyLimit === 'number' && analysesUsed >= monthlyLimit;
 
   const stats = [
     {
       title: 'Analyses Used',
       value: String(analysesUsed),
-      subtitle: 'This month',
+      subtitle: `This month (${monthlyLimit || 5} limit)`,
       icon: BarChart3,
       color: 'text-accent-primary',
       bgColor: 'bg-accent-primary/10',
@@ -137,7 +149,7 @@ export const DashboardOverview: React.FC = () => {
     {
       title: 'Comparisons Used',
       value: String(comparisonsUsed),
-      subtitle: 'This month',
+      subtitle: `This month (${subscription?.monthly_comparison_limit || 2} limit)`,
       icon: Users,
       color: 'text-info',
       bgColor: 'bg-info/10',
@@ -163,46 +175,14 @@ export const DashboardOverview: React.FC = () => {
     },
     {
       title: 'Projects Used',
-      value: `${projectsCount}${projectLimit !== undefined ? `/${projectLimit}` : ''}`,
-              subtitle: `${projectsCount} of ${projectLimit || 1} projects`,
+      value: `${projectsCount}/${projectLimit ?? (subscription?.project_limit ?? 1)}`,
+      subtitle: `${projectsCount} of ${projectLimit ?? (subscription?.project_limit ?? 1)} projects`,
       icon: Folder,
       color: 'text-info',
       bgColor: 'bg-info/10',
       trend: null
     }
   ];
-
-  const [recentAnalyses, setRecentAnalyses] = useState<any[]>([]);
-
-  useEffect(() => {
-    const loadRecent = async () => {
-      if (!user?.id) return;
-      
-      const { data, error } = await supabase
-        .from('user_analyses')
-        .select('url, analysis_results, created_at')
-        .eq('clerk_user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (!error && data) {
-        const items = data.map((row: any) => ({
-          title: 'Content Analysis',
-          url: row.url,
-          score: (() => {
-            const r = row.analysis_results || {};
-            const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
-              .map((v: any) => (typeof v === 'number' ? v : 0));
-            const valid = vals.filter((v: number) => v > 0);
-            return valid.length ? Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length) : 0;
-          })(),
-          time: new Date(row.created_at).toLocaleString(),
-          type: 'analysis'
-        }));
-        setRecentAnalyses(items);
-      }
-    };
-    loadRecent();
-  }, [user?.id]);
 
   return (
     <div className="space-y-8">
@@ -222,7 +202,7 @@ export const DashboardOverview: React.FC = () => {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-primary">Monthly Limit Reached</h3>
-              <p className="text-secondary">You've used {analysesUsed}/{monthlyLimit} analyses this month. Upgrade for more!</p>
+              <p className="text-secondary">You've used {(analysesUsed ?? 0)}/{monthlyLimit ?? 5} analyses this month. Upgrade for more!</p>
             </div>
           </div>
           <button className="btn-primary whitespace-nowrap" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>
@@ -242,7 +222,7 @@ export const DashboardOverview: React.FC = () => {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-primary">You're on the Free Plan</h3>
-              <p className="text-secondary">You've used {analysesUsed}/{monthlyLimit} analyses this month. Upgrade for more!</p>
+              <p className="text-secondary">You've used {(analysesUsed ?? 0)}/{monthlyLimit ?? 5} analyses this month. Upgrade for more!</p>
             </div>
           </div>
           <button className="btn-primary whitespace-nowrap" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>
@@ -253,7 +233,7 @@ export const DashboardOverview: React.FC = () => {
       )}
 
       {/* Active Subscription Banner */}
-      {isSubscribed && subscriptionDetails && (
+      {isSubscribed && subscription && (
         <div className="surface-primary border border-success/30 rounded-xl p-6 animate-scaleIn mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center space-x-4">
@@ -261,34 +241,12 @@ export const DashboardOverview: React.FC = () => {
                 <Crown className="w-6 h-6 text-success" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-primary">You're on the {subscriptionDetails.name} Plan</h3>
-                <p className="text-secondary">{subscriptionDetails.description} • Full access to all features</p>
+                <h3 className="text-lg font-semibold text-primary">You're on the {subscription.plan_name || 'Premium'} Plan</h3>
+                <p className="text-secondary">{subscription.plan_description || 'Premium features'} • Full access to all features</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold text-success">${subscriptionDetails.price}/month</div>
               <div className="text-sm text-secondary">Active</div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Owner Banner */}
-      {false && (
-        <div className="surface-primary border border-accent-primary/30 rounded-xl p-6 animate-scaleIn mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-accent-primary/20 rounded-lg flex items-center justify-center">
-                <Infinity className="w-6 h-6 text-accent-primary" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-primary">Owner Account</h3>
-                <p className="text-secondary">Unlimited analyses • Full system access</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-lg font-bold text-accent-primary">Unlimited</div>
-              <div className="text-sm text-secondary">Owner</div>
             </div>
           </div>
         </div>
@@ -310,7 +268,7 @@ export const DashboardOverview: React.FC = () => {
                 </div>
                 {stat.title === 'Analyses Used' && (
                   <span className="text-sm text-secondary">
-                    {analysesUsed}/{monthlyLimit === undefined ? '∞' : monthlyLimit}
+                    {(analysesUsed ?? 0)}/{monthlyLimit ?? 5}
                   </span>
                 )}
               </div>
@@ -368,41 +326,47 @@ export const DashboardOverview: React.FC = () => {
               <button className="btn-secondary" onClick={() => window.dispatchEvent(new Event('open-analyzer'))}>New Analysis</button>
             </div>
             <div className="space-y-3">
-              {recentAnalyses.map((analysis, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 surface-secondary rounded-lg hover:bg-surface-tertiary transition-colors duration-200 border border-primary"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      analysis.type === 'analysis' ? 'bg-success/20' : 'bg-info/20'
-                    }`}>
-                      {analysis.type === 'analysis' ? (
-                        <BarChart3 className="w-5 h-5 text-success" />
-                      ) : (
-                        <Target className="w-5 h-5 text-info" />
-                      )}
+              {recentAnalyses.length > 0 ? (
+                recentAnalyses.map((analysis, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 surface-secondary rounded-lg hover:bg-surface-tertiary transition-colors duration-200 border border-primary"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        analysis.type === 'analysis' ? 'bg-success/20' : 'bg-info/20'
+                      }`}>
+                        {analysis.type === 'analysis' ? (
+                          <BarChart3 className="w-5 h-5 text-success" />
+                        ) : (
+                          <Target className="w-5 h-5 text-info" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-primary">{analysis.title}</div>
+                        <div className="text-sm text-secondary">{analysis.url}</div>
+                        <div className="text-xs text-tertiary">{analysis.time}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-primary">{analysis.title}</div>
-                      <div className="text-sm text-secondary">{analysis.url}</div>
-                      <div className="text-xs text-tertiary">{analysis.time}</div>
+                    <div className="text-right">
+                      <div className={`text-2xl font-bold ${
+                        analysis.score >= 80 ? 'text-success' : 
+                        analysis.score >= 60 ? 'text-warning' : 'text-error'
+                      }`}>
+                        {analysis.score}
+                      </div>
+                      <div className="text-xs text-tertiary">Score</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className={`text-2xl font-bold ${
-                      analysis.score >= 80 ? 'text-success' : 
-                      analysis.score >= 60 ? 'text-warning' : 'text-error'
-                    }`}>
-                      {analysis.score}
-                    </div>
-                    <div className="text-xs text-tertiary">Score</div>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-secondary">
+                  <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No analyses yet.</p>
+                  <p className="text-sm mt-2">Start analyzing content to see your results here.</p>
                 </div>
-              ))}
+              )}
             </div>
-            
-            {/* Usage CTA now moved to Smart CTA Row above */}
           </div>
         </div>
 
@@ -444,10 +408,10 @@ export const DashboardOverview: React.FC = () => {
               )}
             </div>
           </div>
-
-
         </div>
       </div>
     </div>
   );
 };
+
+export default DashboardOverview;

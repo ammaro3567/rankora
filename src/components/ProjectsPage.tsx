@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Folder, Link2, Eye, Trash2, Calendar, FileText, BarChart3, Target, ArrowLeft, X } from 'lucide-react';
-import { createProject, listProjects, getProjectAnalyses, deleteProject, ProjectAnalysis, checkUserLimits } from '../lib/supabase';
+import { createProject, listProjects, getProjectAnalyses, deleteProject, ProjectAnalysis, checkUserLimits, supabase } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
 
 export const ProjectsPage: React.FC = () => {
@@ -18,8 +18,8 @@ export const ProjectsPage: React.FC = () => {
 
   const refresh = async () => {
     if (isLoaded && user?.id) {
-    const list = await listProjects();
-    setProjects(list);
+      const list = await listProjects();
+      setProjects(list);
     }
   };
 
@@ -51,7 +51,10 @@ export const ProjectsPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      const { error } = await createProject(newProjectName.trim());
+      const { error } = await createProject({
+        name: newProjectName.trim(),
+        description: ''
+      });
       if (error) setError(error.message);
       else {
         setNewProjectName('');
@@ -66,14 +69,31 @@ export const ProjectsPage: React.FC = () => {
     setSelectedProject(project);
     setLoadingAnalyses(true);
     try {
-      const analyses = await getProjectAnalyses(project.id.toString());
-      setProjectAnalyses(analyses);
+      if (user?.id) {
+        const { data, error } = await supabase.rpc('get_project_analyses_for', {
+          p_clerk_user_id: user.id,
+          p_project_id: Number(project.id)
+        });
+        if (error) throw error;
+        setProjectAnalyses((Array.isArray(data) ? data : data ? [data] : []) as ProjectAnalysis[]);
+      } else {
+        setProjectAnalyses([]);
+      }
     } catch (error) {
       console.error('Error loading project analyses:', error);
     } finally {
       setLoadingAnalyses(false);
     }
   };
+
+  // Refresh when analyses are saved/linked to a project from other pages
+  useEffect(() => {
+    const onProjectUpdated = () => {
+      if (selectedProject) viewProject(selectedProject);
+    };
+    window.addEventListener('project-updated', onProjectUpdated);
+    return () => window.removeEventListener('project-updated', onProjectUpdated);
+  }, [selectedProject]);
 
   const handleDeleteProject = async (projectId: number) => {
     try {
@@ -251,7 +271,7 @@ export const ProjectsPage: React.FC = () => {
 
         {/* Delete Confirmation Modal */}
         {deleteConfirm === selectedProject.id && (
-          <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-[70]">
             <div className="card p-6 max-w-md mx-4">
               <h3 className="text-xl font-bold text-primary mb-4">Delete Project</h3>
               <p className="text-secondary mb-6">
@@ -277,7 +297,7 @@ export const ProjectsPage: React.FC = () => {
 
         {/* Analysis Detail Modal */}
         {selectedAnalysis && (
-          <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-[70]">
             <div className="card p-6 max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-primary">Analysis Details</h3>
@@ -333,9 +353,20 @@ export const ProjectsPage: React.FC = () => {
           <p className="text-secondary">Organize analyses into projects and keep your workspace clean.</p>
         </div>
         <div className="text-sm text-secondary">
-          {userLimits ? (
-            <span>Projects: <span className="text-primary font-semibold">{userLimits.projects_used}/{userLimits.projects_limit}</span></span>
-          ) : (
+          {userLimits ? (() => {
+            const usedFromLimits = typeof userLimits.project_limit === 'number' && typeof userLimits.project_remaining === 'number'
+              ? Math.max(0, (userLimits.project_limit || 0) - (userLimits.project_remaining || 0))
+              : undefined;
+            const projectsUsed = typeof userLimits.projects_used === 'number'
+              ? userLimits.projects_used
+              : (typeof usedFromLimits === 'number' ? usedFromLimits : projects.length);
+            const projectsLimit = typeof userLimits.projects_limit === 'number'
+              ? userLimits.projects_limit
+              : (typeof userLimits.project_limit === 'number' ? userLimits.project_limit : 1);
+            return (
+              <span>Projects: <span className="text-primary font-semibold">{projectsUsed}/{projectsLimit}</span></span>
+            );
+          })() : (
             <span>Projects: <span className="text-primary font-semibold">Loading...</span></span>
           )}
         </div>
@@ -403,7 +434,7 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-[70]">
           <div className="card p-6 max-w-md mx-4">
             <h3 className="text-xl font-bold text-primary mb-4">Delete Project</h3>
             <p className="text-secondary mb-6">

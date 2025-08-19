@@ -22,8 +22,8 @@ exports.handler = async (event) => {
       
       console.log('🆕 New subscription activated:', subscription.id);
       
-      // تحديد نوع الخطة من PayPal price ID
-      const planId = getPlanIdFromPayPalPriceId(subscription.billing_info?.next_billing_time?.cycle_executions?.[0]?.tenure_type);
+      // تحديد نوع الخطة من PayPal plan_id مباشرة
+      const planId = getPlanIdFromPayPalPriceId(subscription.plan_id);
       
       if (!planId) {
         console.warn('⚠️ Could not determine plan ID from PayPal data');
@@ -53,9 +53,19 @@ exports.handler = async (event) => {
       
       console.log('❌ Subscription cancelled:', subscription.id);
       
-      // تحديث حالة الاشتراك
+      // جلب المعرّف الداخلي للاشتراك أولاً
+      const { data: us, error: findErr } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('paypal_subscription_id', subscription.id)
+        .maybeSingle();
+      if (findErr || !us?.id) {
+        console.warn('⚠️ Could not find internal subscription id for', subscription.id, findErr);
+        return { statusCode: 200, body: JSON.stringify({ success: true, note: 'no-internal-subscription' }) };
+      }
+      // تحديث حالة الاشتراك عبر المعرّف الداخلي
       await supabase.rpc('update_subscription_status', {
-        p_subscription_id: subscription.id,
+        p_subscription_id: us.id,
         p_new_status: 'cancelled',
         p_paypal_data: body
       });
@@ -70,9 +80,17 @@ exports.handler = async (event) => {
       
       console.log('⏰ Subscription expired:', subscription.id);
       
-      // تحديث حالة الاشتراك
+      const { data: us, error: findErr } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('paypal_subscription_id', subscription.id)
+        .maybeSingle();
+      if (findErr || !us?.id) {
+        console.warn('⚠️ Could not find internal subscription id for', subscription.id, findErr);
+        return { statusCode: 200, body: JSON.stringify({ success: true, note: 'no-internal-subscription' }) };
+      }
       await supabase.rpc('update_subscription_status', {
-        p_subscription_id: subscription.id,
+        p_subscription_id: us.id,
         p_new_status: 'expired',
         p_paypal_data: body
       });
@@ -87,9 +105,17 @@ exports.handler = async (event) => {
       
       console.log('💥 Payment failed for subscription:', subscription.id);
       
-      // تحديث حالة الاشتراك
+      const { data: us, error: findErr } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('paypal_subscription_id', subscription.id)
+        .maybeSingle();
+      if (findErr || !us?.id) {
+        console.warn('⚠️ Could not find internal subscription id for', subscription.id, findErr);
+        return { statusCode: 200, body: JSON.stringify({ success: true, note: 'no-internal-subscription' }) };
+      }
       await supabase.rpc('update_subscription_status', {
-        p_subscription_id: subscription.id,
+        p_subscription_id: us.id,
         p_new_status: 'past_due',
         p_paypal_data: body
       });
@@ -104,9 +130,17 @@ exports.handler = async (event) => {
       
       console.log('✅ Payment completed for subscription:', subscription.id);
       
-      // تحديث حالة الاشتراك
+      const { data: us, error: findErr } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('paypal_subscription_id', subscription.id)
+        .maybeSingle();
+      if (findErr || !us?.id) {
+        console.warn('⚠️ Could not find internal subscription id for', subscription.id, findErr);
+        return { statusCode: 200, body: JSON.stringify({ success: true, note: 'no-internal-subscription' }) };
+      }
       await supabase.rpc('update_subscription_status', {
-        p_subscription_id: subscription.id,
+        p_subscription_id: us.id,
         p_new_status: 'active',
         p_paypal_data: body
       });

@@ -47,6 +47,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
+// أثناء التطوير، اعرض العميل على نافذة المتصفح لتسهيل الاختبار من Console
+if (import.meta.env.DEV) {
+  // @ts-ignore
+  (window as any).supabase = supabase;
+}
+
 // 🔐 Authentication functions - simple and clean
 // أزلنا طبقة authService لأن Clerk يتكفّل بالمصادقة
 
@@ -70,101 +76,158 @@ const requireClerkUserId = (): string => {
 }
 
 // Helper function to set Clerk user ID for RLS
-const setClerkUserIdForRLS = async (clerkUserId: string) => {
-  try {
-    await supabase.rpc('set_clerk_user_id', { clerk_id: clerkUserId });
-  } catch (error) {
-    console.warn('⚠️ Failed to set Clerk user ID for RLS:', error);
-  }
+// NOTE: calling set_clerk_user_id from the browser often produces
+// network 404s when PostgREST schema cache doesn't match or the
+// RPC is not exposed to the Data API. To avoid spamming the console
+// we make this a no-op in the browser. Server-side callers should
+// still use a service role or call a single RPC that accepts the
+// clerk_user_id parameter directly.
+export const setClerkUserIdForRLS = async (_clerkUserId: string) => {
+  // Intentionally no-op in frontend to avoid repeated 404 POSTs.
+  return;
 };
 
 // 📊 Usage tracking functions
 export const usageService = {
   async getMonthlyUsageCounts() {
     const clerkUserId = requireClerkUserId()
-    
-    // Set Clerk user ID for RLS
-    await setClerkUserIdForRLS(clerkUserId);
 
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
-
+    // Prefer a server-side RPC that takes clerk_user_id explicitly to avoid RLS/session drift
     try {
-      // Get analyses count
-      const { data: analyses, error: analysesError } = await supabase
-        .from('user_analyses')
-        .select('id')
-        .eq('clerk_user_id', clerkUserId)
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString())
+      const { data, error } = await supabase.rpc('get_monthly_usage_counts_for', {
+        p_clerk_user_id: clerkUserId
+      })
+      if (error) throw error
 
-      if (analysesError) {
-        console.warn('⚠️ Failed to get analyses count:', analysesError.message)
-      }
+      const analysesCount = Array.isArray(data)
+        ? Number(data[0]?.analyses || 0)
+        : Number((data as any)?.analyses || 0)
+      const comparisonsCount = Array.isArray(data)
+        ? Number(data[0]?.comparisons || 0)
+        : Number((data as any)?.comparisons || 0)
+      const total = analysesCount + comparisonsCount
 
-      // Get comparisons count
-      let comparisonsCount = 0
+      console.log(`📊 Monthly usage (RPC): ${total} total (${analysesCount} analyses, ${comparisonsCount} comparisons)`)
+
+      return { total, analyses: analysesCount, comparisons: comparisonsCount }
+    } catch (rpcError) {
+      console.warn('⚠️ RPC get_monthly_usage_counts_for failed, falling back to client-side counts:', (rpcError as any)?.message)
+
+      // Fallback to client-side counting (may be affected by RLS)
+      // Set Clerk user ID for RLS (no-op on frontend, safe to call)
+      await setClerkUserIdForRLS(clerkUserId)
+
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
       try {
-        const { data: comparisons, error: comparisonsError } = await supabase
-          .from('competitor_comparisons')
+        const { data: analyses, error: analysesError } = await supabase
+          .from('user_analyses')
           .select('id')
           .eq('clerk_user_id', clerkUserId)
           .gte('created_at', startOfMonth.toISOString())
           .lte('created_at', endOfMonth.toISOString())
 
-        if (comparisonsError) {
-          // Gracefully handle missing table in schema
-          if ((comparisonsError as any).message?.includes('Could not find the table')) {
-            comparisonsCount = 0
-          } else {
-            console.warn('⚠️ Failed to get comparisons count:', comparisonsError.message)
-          }
-        } else {
-          comparisonsCount = comparisons?.length || 0
+        if (analysesError) {
+          console.warn('⚠️ Failed to get analyses count:', analysesError.message)
         }
-      } catch {
-        comparisonsCount = 0
+
+        let comparisonsCount = 0
+        try {
+          const { data: comparisons, error: comparisonsError } = await supabase
+            .from('competitor_comparisons')
+            .select('id')
+            .eq('clerk_user_id', clerkUserId)
+            .gte('created_at', startOfMonth.toISOString())
+            .lte('created_at', endOfMonth.toISOString())
+
+          if (comparisonsError) {
+            if ((comparisonsError as any).message?.includes('Could not find the table')) {
+              comparisonsCount = 0
+            } else {
+              console.warn('⚠️ Failed to get comparisons count:', comparisonsError.message)
+            }
+          } else {
+            comparisonsCount = comparisons?.length || 0
+          }
+        } catch {
+          comparisonsCount = 0
+        }
+
+        const analysesCount = analyses?.length || 0
+        const total = analysesCount + comparisonsCount
+
+        console.log(`📊 Monthly usage (fallback): ${total} total (${analysesCount} analyses, ${comparisonsCount} comparisons)`)
+
+        return { total, analyses: analysesCount, comparisons: comparisonsCount }
+      } catch (error) {
+        console.error('💥 Error getting monthly usage (fallback):', error)
+        return { total: 0, analyses: 0, comparisons: 0 }
       }
+    }
+  },
 
-      const analysesCount = analyses?.length || 0
-      const total = analysesCount + comparisonsCount
+  async getRecentAnalyses(limit: number = 5) {
+    const clerkUserId = requireClerkUserId()
 
-      console.log(`📊 Monthly usage: ${total} total (${analysesCount} analyses, ${comparisonsCount} comparisons)`)
-
-      return {
-        total,
-        analyses: analysesCount,
-        comparisons: comparisonsCount
+    // Prefer secured RPC so RLS does not hide data
+    try {
+      const { data, error } = await supabase.rpc('get_recent_analyses_for', {
+        p_clerk_user_id: clerkUserId,
+        p_limit: limit
+      })
+      if (error) throw error
+      const rows = Array.isArray(data) ? data : (data ? [data] : [])
+      return rows as Array<{ url: string; analysis_results: any; created_at: string }>
+    } catch (rpcError) {
+      console.warn('⚠️ RPC get_recent_analyses_for failed, falling back to direct select:', (rpcError as any)?.message)
+      try {
+        await setClerkUserIdForRLS(clerkUserId)
+        const { data, error } = await supabase
+          .from('user_analyses')
+          .select('url, analysis_results, created_at')
+          .eq('clerk_user_id', clerkUserId)
+          .order('created_at', { ascending: false })
+          .limit(limit)
+        if (error) throw error
+        return (data || []) as Array<{ url: string; analysis_results: any; created_at: string }>
+      } catch (e) {
+        console.error('💥 Error getting recent analyses (fallback):', e)
+        return []
       }
-    } catch (error) {
-      console.error('💥 Error getting monthly usage:', error)
-      return { total: 0, analyses: 0, comparisons: 0 }
     }
   },
 
   async listProjects() {
     const clerkUserId = requireClerkUserId()
     
-    // Set Clerk user ID for RLS
-    await setClerkUserIdForRLS(clerkUserId);
-
+    // Prefer secured RPC to avoid RLS/session drift
     try {
-      const { data, error } = await supabase
-        .from('projects')
-    .select('*')
-        .eq('clerk_user_id', clerkUserId)
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase.rpc('list_projects_for', { p_clerk_user_id: clerkUserId })
+      if (error) throw error
+      return Array.isArray(data) ? data : (data ? [data] : [])
+    } catch (rpcError) {
+      console.warn('⚠️ RPC list_projects_for failed, falling back to direct select:', (rpcError as any)?.message)
+      try {
+        // Best-effort RLS context
+        await setClerkUserIdForRLS(clerkUserId);
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('clerk_user_id', clerkUserId)
+          .order('created_at', { ascending: false })
 
-      if (error) {
-        console.warn('⚠️ Failed to get projects:', error.message)
+        if (error) {
+          console.warn('⚠️ Failed to get projects:', error.message)
+          return []
+        }
+
+        return data || []
+      } catch (error) {
+        console.error('💥 Error getting projects (fallback):', error)
         return []
       }
-
-      return data || []
-    } catch (error) {
-      console.error('💥 Error getting projects:', error)
-      return []
     }
   },
 
@@ -246,20 +309,31 @@ export const usageService = {
     console.log('🔗 Linking analysis to project...')
 
   try {
-    const { data, error } = await supabase
-        .from('user_analyses')
-        .update({ project_id: projectId })
-        .eq('id', analysisId)
-        .eq('clerk_user_id', clerkUserId)
-        .select()
-        .single()
+    // Prefer secured RPC to avoid RLS update issues
+    const { data, error } = await supabase.rpc('link_analysis_to_project', {
+      p_clerk_user_id: clerkUserId,
+      p_project_id: Number(projectId),
+      p_analysis_id: Number(analysisId)
+    })
 
       if (error) {
-        console.error('❌ Failed to link analysis to project:', error.message)
-        throw error
+        console.warn('⚠️ RPC link_analysis_to_project failed, falling back to direct update:', (error as any)?.message)
+        const fallback = await supabase
+          .from('user_analyses')
+          .update({ project_id: Number(projectId) })
+          .eq('id', Number(analysisId))
+          .eq('clerk_user_id', clerkUserId)
+          .select()
+          .single()
+        if (fallback.error) {
+          console.error('❌ Failed to link analysis to project (fallback):', fallback.error.message)
+          throw fallback.error
+        }
+        console.log('✅ Analysis linked to project successfully (fallback)')
+        return fallback.data
       }
 
-      console.log('✅ Analysis linked to project successfully')
+      console.log('✅ Analysis linked to project successfully (RPC)')
       return data
   } catch (error) {
       console.error('💥 Error linking analysis to project:', error)
@@ -276,20 +350,32 @@ export const usageService = {
     console.log('📊 Saving user comparison:', comparisonData.userUrl, 'vs', comparisonData.competitorUrl)
 
     try {
-      const { data, error } = await supabase
-        .from('competitor_comparisons')
-        .insert({
-          clerk_user_id: clerkUserId,
-          user_url: comparisonData.userUrl,
-          competitor_url: comparisonData.competitorUrl,
-          comparison_results: comparisonData.comparison_results
-        })
-        .select()
-        .single()
+      // Prefer secured RPC to avoid RLS issues with anon key
+      const { data, error } = await supabase.rpc('create_user_comparison', {
+        p_clerk_user_id: clerkUserId,
+        p_user_url: comparisonData.userUrl,
+        p_competitor_url: comparisonData.competitorUrl,
+        p_comparison_results: comparisonData.comparison_results
+      })
 
       if (error) {
-        console.error('💥 Error saving comparison:', error)
-        throw error
+        console.warn('⚠️ RPC create_user_comparison failed, falling back to direct insert:', (error as any)?.message)
+        const fallback = await supabase
+          .from('competitor_comparisons')
+          .insert({
+            clerk_user_id: clerkUserId,
+            user_url: comparisonData.userUrl,
+            competitor_url: comparisonData.competitorUrl,
+            comparison_results: comparisonData.comparison_results
+          })
+          .select()
+          .single()
+        if (fallback.error) {
+          console.error('💥 Error saving comparison (fallback):', fallback.error)
+          throw fallback.error
+        }
+        console.log('✅ Comparison saved via fallback:', fallback.data)
+        return fallback.data
       }
 
       console.log('✅ Comparison saved successfully:', data)
@@ -309,51 +395,76 @@ export const usageService = {
     console.log('📊 Getting project analyses for project:', projectId)
 
     try {
-  const { data, error } = await supabase
-        .from('user_analyses')
-    .select('*')
-        .eq('clerk_user_id', clerkUserId)
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
+      // Prefer secured RPC to avoid RLS issues
+      const { data, error } = await supabase.rpc('get_project_analyses_for', {
+        p_clerk_user_id: clerkUserId,
+        p_project_id: Number(projectId)
+      })
 
-      if (error) {
-        console.warn('⚠️ Failed to get project analyses:', error.message)
+      if (error) throw error
+
+      const rows = Array.isArray(data) ? data : (data ? [data] : [])
+      console.log(`✅ Found ${rows.length} analyses for project`)
+      return rows
+    } catch (error) {
+      console.warn('⚠️ RPC get_project_analyses_for failed, falling back to direct select:', (error as any)?.message)
+      try {
+        await setClerkUserIdForRLS(clerkUserId);
+        const { data, error: qError } = await supabase
+          .from('user_analyses')
+          .select('*')
+          .eq('clerk_user_id', clerkUserId)
+          .eq('project_id', Number(projectId))
+          .order('created_at', { ascending: false })
+
+        if (qError) {
+          console.warn('⚠️ Failed to get project analyses:', qError.message)
+          return []
+        }
+
+        console.log(`✅ Found ${data?.length || 0} analyses for project (fallback)`)
+        return data || []
+      } catch (e) {
+        console.error('💥 Error getting project analyses (fallback):', e)
         return []
       }
-
-      console.log(`✅ Found ${data?.length || 0} analyses for project`)
-      return data || []
-    } catch (error) {
-      console.error('💥 Error getting project analyses:', error)
-      return []
     }
   },
 
   async deleteProject(projectId: string) {
     const clerkUserId = requireClerkUserId()
     
-    // Set Clerk user ID for RLS
-    await setClerkUserIdForRLS(clerkUserId);
-
     console.log('📁 Deleting project:', projectId)
 
     try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId)
-        .eq('clerk_user_id', clerkUserId)
-    
-  if (error) {
-        console.error('💥 Error deleting project:', error)
-        throw error
-      }
+      // Prefer secured RPC to avoid RLS issues
+      const { data, error } = await supabase.rpc('delete_project_for', {
+        p_clerk_user_id: clerkUserId,
+        p_project_id: Number(projectId)
+      })
+      if (error) throw error
 
-      console.log('✅ Project deleted successfully')
-      return true
+      console.log('✅ Project deleted successfully (RPC)')
+      return !!data || true
     } catch (error) {
-      console.error('💥 Error deleting project:', error)
-      throw error
+      console.warn('⚠️ RPC delete_project_for failed, falling back to direct delete:', (error as any)?.message)
+      try {
+        await setClerkUserIdForRLS(clerkUserId)
+        const { error: qError } = await supabase
+          .from('projects')
+          .delete()
+          .eq('id', Number(projectId))
+          .eq('clerk_user_id', clerkUserId)
+        if (qError) {
+          console.error('💥 Error deleting project (fallback):', qError)
+          throw qError
+        }
+        console.log('✅ Project deleted successfully (fallback)')
+        return true
+      } catch (e) {
+        console.error('💥 Error deleting project:', e)
+        throw e
+      }
     }
   },
 
@@ -505,12 +616,15 @@ export const profileService = {
   
   const { data, error } = await supabase
       .from('profiles')
-    .select('*')
+      .select('*')
       .eq('clerk_user_id', clerkUserId)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      console.warn('⚠️ Profile fetch error:', error.message)
+      // 406 occurs when no rows; suppress noisy log
+      if ((error as any).code !== 'PGRST116' && (error as any).code !== '406') {
+        console.warn('⚠️ Profile fetch error:', (error as any).message || error)
+      }
       return null
     }
 
@@ -553,14 +667,15 @@ export const profileService = {
 export const subscriptionService = {
   // الحصول على معلومات الاشتراك
   async getUserSubscriptionInfo(clerkUserId: string) {
-    await setClerkUserIdForRLS(clerkUserId);
-    
-    const { data, error } = await supabase.rpc('get_user_subscription_info', {
+    // Prefer RPC that accepts clerk_user_id directly to avoid relying on
+    // set_clerk_user_id session state across pooled connections.
+    const { data, error } = await supabase.rpc('get_user_subscription_info_for', {
       p_clerk_user_id: clerkUserId
     });
-    
+
     if (error) throw error;
-    return data[0] || null;
+    // RPC returns table rows; ensure we return single object or null
+    return Array.isArray(data) ? data[0] || null : data || null;
   },
 
   // إنشاء اشتراك جديد

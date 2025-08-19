@@ -94,8 +94,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   Terms of Service
                 </button>
               </li>
-              <li><a href="#" className="hover:text-accent-primary transition-colors">Cookie Policy</a></li>
-              <li><a href="#" className="hover:text-accent-primary transition-colors">Data Security</a></li>
+              <li><a href="/privacy" className="hover:text-accent-primary transition-colors">Data Privacy</a></li>
             </ul>
           </div>
         </div>
@@ -105,7 +104,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="text-center md:text-left mb-4 md:mb-0">
               <p className="text-secondary text-sm">
-                © 2025 OverVeo. All rights reserved.
+                © 2025 Rankora. All rights reserved.
               </p>
               <p className="text-tertiary text-xs flex items-center justify-center md:justify-start mt-1">
                 Made with <Heart className="w-3 h-3 mx-1 text-accent-primary" /> for content creators worldwide

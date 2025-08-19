@@ -10,7 +10,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { profileService } from './lib/supabase';
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser, useClerk } from '@clerk/clerk-react';
 import { LoadingOverlay } from './components/LoadingOverlay';
-import { StarField } from './components/StarField';
+import { AnimatedBackground } from './components/AnimatedBackground';
 import LandingPage from './components/LandingPage';
 
 // تم إزالة تحويلات Supabase المبكرة؛ Clerk سيتكفل بإدارة الدخول
@@ -74,6 +74,10 @@ function App() {
         navigateTo('dashboard', true)
       } else if (path === '/dashboard') {
         navigateTo('dashboard', false)
+      } else if (path === '/terms') {
+        navigateTo('terms', false)
+      } else if (path === '/privacy') {
+        navigateTo('privacy', false)
       } else if (path === '/admin') {
         if (!isOwnerUser) navigateTo('dashboard', true)
       }
@@ -87,6 +91,10 @@ function App() {
       
       if (path === '/dashboard' || path === '/admin') {
         navigateTo('home', true)
+      } else if (path === '/terms') {
+        navigateTo('terms', true)
+      } else if (path === '/privacy') {
+        navigateTo('privacy', true)
       } else if (path === '/') {
         navigateTo('home', true)
       }
@@ -154,6 +162,10 @@ function App() {
           // Fallback to dashboard if not owner
           navigateTo('dashboard')
           return <LoadingOverlay isVisible={true} />
+        case 'terms':
+          return <TermsPage onBack={() => navigateTo('dashboard')} />
+        case 'privacy':
+          return <PrivacyPage onBack={() => navigateTo('dashboard')} />
         
         default:
           // Fallback safely: render dashboard directly
@@ -225,11 +237,8 @@ function App() {
 
   return (
     <div className="min-h-screen relative bg-gradient-to-b from-black via-slate-900 to-black">
-      {/* Global animated background */}
-      <StarField />
-      {/* Emerald auras */}
-      <div className="pointer-events-none absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
-      <div className="pointer-events-none absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
+      {/* Global animated background aligned with landing */}
+      <AnimatedBackground />
 
       <div className="relative z-10 app">
         {renderCurrentPage()}

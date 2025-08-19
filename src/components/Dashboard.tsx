@@ -8,7 +8,7 @@ import { FAQPage } from './FAQPage';
 import { ProjectsPage } from './ProjectsPage';
 import { AccountSettings } from './AccountSettings';
 import { SuccessPage } from './SuccessPage';
-import { StarField } from './StarField';
+import { AnimatedBackground } from './AnimatedBackground';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -56,7 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
       case 'projects':
         return <ProjectsPage />;
       case 'pricing':
-        return <PricingPage />;
+        return <PricingPage embedded />;
       case 'faq':
         return <FAQPage />;
       case 'account':
@@ -73,7 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
         renderContent()
       ) : (
     <div className="min-h-screen relative bg-transparent">
-      <StarField />
+      <AnimatedBackground />
       
       {/* Enhanced Background Effects to match Landing Page */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
