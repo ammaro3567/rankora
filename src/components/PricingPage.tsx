@@ -40,6 +40,18 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
   const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  // Normalize PayPal Client ID to avoid issues if env var was pasted twice or prefixed
+  const getNormalizedPayPalClientId = (): string => {
+    const raw = (import.meta.env.VITE_PAYPAL_CLIENT_ID as string) || '';
+    const trimmed = raw.trim().replace(/^client-id=/i, '');
+    const length = trimmed.length;
+    const half = Math.floor(length / 2);
+    if (length > 0 && length % 2 === 0 && trimmed.slice(0, half) === trimmed.slice(half)) {
+      return trimmed.slice(0, half);
+    }
+    return trimmed;
+  };
+
   // Define plans directly in the component
   const plans: Plan[] = [
     {
@@ -127,7 +139,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
   // Load PayPal SDK dynamically
   useEffect(() => {
     // Load PayPal SDK with correct client ID from environment
-      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+      const clientId = getNormalizedPayPalClientId();
       
       if (!clientId) {
       setPaypalError('PayPal Client ID not configured');
@@ -191,7 +203,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
     
     // Reload SDK
     const loadPayPalSDK = () => {
-      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+      const clientId = getNormalizedPayPalClientId();
       const script = document.createElement('script');
       const paypalEnv = import.meta.env.VITE_PAYPAL_ENV || 'sandbox';
       const paypalUrl = paypalEnv === 'sandbox' ? 'https://www.sandbox.paypal.com/sdk/js' : 'https://www.paypal.com/sdk/js';
