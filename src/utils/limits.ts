@@ -93,7 +93,8 @@ export const evaluateComparisonAllowance = async (clerkUserId?: string): Promise
     }
 
     const sub = await getUserSubscriptionInfo(clerkUserId);
-    const limit = sub?.monthly_comparison_limit ?? 2;
+    // support both field names returned by RPC/network: monthly_comparison_limit or comparison_limit
+    const limit = sub?.monthly_comparison_limit ?? sub?.comparison_limit ?? 2;
 
     const usage = await getMonthlyUsageCounts();
     const usedComparisons = usage?.comparisons || 0;
