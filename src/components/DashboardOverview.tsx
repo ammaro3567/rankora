@@ -24,6 +24,7 @@ export const DashboardOverview: React.FC = () => {
   const [monthlyLimit, setMonthlyLimit] = useState<number | undefined>(undefined);
   const [projectsCount, setProjectsCount] = useState<number>(0);
   const [projectLimit, setProjectLimit] = useState<number | undefined>(undefined);
+  const [comparisonLimit, setComparisonLimit] = useState<number | undefined>(undefined);
   const [recentAnalyses, setRecentAnalyses] = useState<any[]>([]);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export const DashboardOverview: React.FC = () => {
           setSubscription(subscriptionData);
           setMonthlyLimit(subscriptionData?.monthly_analysis_limit || 2);
           setProjectLimit(subscriptionData?.project_limit || 1);
+          setComparisonLimit(subscriptionData?.monthly_comparison_limit || 2);
 
           // جلب المشاريع باستخدام wrapper
           const projects = await listProjects();
@@ -149,7 +151,7 @@ export const DashboardOverview: React.FC = () => {
     {
       title: 'Comparisons Used',
       value: String(comparisonsUsed),
-      subtitle: `This month (${subscription?.monthly_comparison_limit || 2} limit)`,
+      subtitle: `This month (${comparisonLimit ?? subscription?.monthly_comparison_limit ?? 2} limit)`,
       icon: Users,
       color: 'text-info',
       bgColor: 'bg-info/10',

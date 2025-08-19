@@ -471,7 +471,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
                   ))}
                 </ul>
               <button onClick={() => plan.id === 'free' ? window.location.href = '/dashboard' : openPayPalModal(plan)} className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${plan.id === 'pro' ? 'bg-accent-primary hover:opacity-90 text-white' : 'bg-surface-secondary hover:bg-surface-tertiary text-primary'}`}>Choose this plan</button>
-            </div>
+              </div>
             </div>
           ))}
       </div>
