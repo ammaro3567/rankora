@@ -11,7 +11,7 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 VITE_CLERK_ENV=development
 
 # Supabase (لا تغير أي شيء)
-VITE_SUPABASE_URL=https://cpyurkebefjqyymcppag.supabase.co
+VITE_SUPABASE_URL=https://mpjpdgjrafjexniivzln.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNweXVya2ViZWZqcXl5bWNwcGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDQyMDgsImV4cCI6MjA3MDA4MDIwOH0.tzbcZimLXGfpUbno7DeofNQsBt8-ukkEVcE5krxcDhQ
 
 # PayPal (Sandbox للتطوير)
