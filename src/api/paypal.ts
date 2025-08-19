@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+// لم نعد نكتب مباشرة في قاعدة البيانات من الواجهة.
 
 // PayPal API configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
@@ -77,10 +77,34 @@ export async function createPayPalSubscription(planId: string, userId: string, p
     }
 
     const subscription = await response.json();
-    
-    // Save subscription to database
-    await saveSubscriptionToDatabase(subscription.id, userId, planName, subscription.status);
-    
+
+    // محاولة إبلاغ الويبهوك (Edge/Netlify) بدل الكتابة المباشرة
+    try {
+      const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+      const projectRef = supabaseUrl.replace('https://', '').replace('.supabase.co', '');
+      const webhookUrl = `https://${projectRef}.functions.supabase.co/paypal-webhook`;
+      const payload = {
+        event_type: 'BILLING.SUBSCRIPTION.CREATED',
+        resource: {
+          id: subscription.id,
+          custom_id: userId,
+          plan_id: planId,
+          status: subscription.status
+        }
+      };
+      let ok = false;
+      try {
+        const resp = await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        ok = resp.ok;
+      } catch {}
+      if (!ok) {
+        try {
+          const resp2 = await fetch('/.netlify/functions/paypal-webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          ok = resp2.ok;
+        } catch {}
+      }
+    } catch {}
+
     return {
       subscriptionId: subscription.id,
       status: subscription.status,
@@ -93,32 +117,7 @@ export async function createPayPalSubscription(planId: string, userId: string, p
   }
 }
 
-// Save subscription to database
-async function saveSubscriptionToDatabase(paypalSubscriptionId: string, userId: string, planName: string, status: string) {
-  try {
-    const { error } = await supabase
-      .from('subscriptions')
-      .upsert({
-        clerk_user_id: userId,
-        paypal_subscription_id: paypalSubscriptionId,
-        plan_name: planName,
-        status: status,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-    if (error) {
-      console.error('Error saving subscription to database:', error);
-      throw error;
-    }
-    
-    console.log('Subscription saved to database successfully');
-    
-  } catch (error) {
-    console.error('Failed to save subscription to database:', error);
-    throw error;
-  }
-}
+// لم يعد هناك حفظ مباشر للقاعدة هنا.
 
 // Verify subscription status
 export async function verifyPayPalSubscription(subscriptionId: string) {
@@ -166,8 +165,28 @@ export async function cancelPayPalSubscription(subscriptionId: string, reason: s
       throw new Error('Failed to cancel subscription');
     }
 
-    // Update database status
-    await updateSubscriptionStatus(subscriptionId, 'CANCELLED');
+    // إبلاغ الويبهوك بالحالة الجديدة
+    try {
+      const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+      const projectRef = supabaseUrl.replace('https://', '').replace('.supabase.co', '');
+      const webhookUrl = `https://${projectRef}.functions.supabase.co/paypal-webhook`;
+      const payload = {
+        event_type: 'BILLING.SUBSCRIPTION.CANCELLED',
+        resource: {
+          id: subscriptionId
+        }
+      };
+      let ok = false;
+      try {
+        const resp = await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        ok = resp.ok;
+      } catch {}
+      if (!ok) {
+        try {
+          await fetch('/.netlify/functions/paypal-webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        } catch {}
+      }
+    } catch {}
     
     return { success: true };
     
@@ -177,24 +196,4 @@ export async function cancelPayPalSubscription(subscriptionId: string, reason: s
   }
 }
 
-// Update subscription status in database
-async function updateSubscriptionStatus(paypalSubscriptionId: string, status: string) {
-  try {
-    const { error } = await supabase
-      .from('subscriptions')
-      .update({ 
-        status: status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('paypal_subscription_id', paypalSubscriptionId);
-
-    if (error) {
-      console.error('Error updating subscription status:', error);
-      throw error;
-    }
-    
-  } catch (error) {
-    console.error('Failed to update subscription status:', error);
-    throw error;
-  }
-}
+// لا تحديث مباشر لحالة الاشتراك من الواجهة بعد الآن.

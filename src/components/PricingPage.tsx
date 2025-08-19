@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Zap, Crown, X, Check, ArrowRight } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
 import { AnimatedBackground } from './AnimatedBackground';
 
@@ -232,124 +231,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
     loadPayPalSDK();
   };
 
-  // Handle PayPal payment success
-  const handlePaymentSuccess = async (orderID: string, planId: number) => {
-    try {
-      setLoading(true);
-      
-      // Get current user from Clerk using the hook
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      const clerkUserId = user.id;
-      
-      // Create subscription in Supabase using the correct function signature
-      const { data, error } = await supabase.rpc('create_user_subscription', {
-        p_clerk_user_id: clerkUserId,
-        p_plan_id: planId,
-        p_paypal_subscription_id: null, // For one-time payments, this is null
-        p_paypal_order_id: orderID
-      });
-
-      if (error) {
-        console.error('Error creating subscription:', error);
-        throw new Error('Failed to create subscription');
-      }
-
-      console.log('Subscription created successfully:', data);
-      
-      // Close modal and show success message
-      setShowModal(false);
-      alert('Subscription activated successfully! 🎉');
-      
-      // Optionally redirect to dashboard
-      window.location.href = '/dashboard';
-      
-    } catch (error) {
-      console.error('Payment success handler error:', error);
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack
-        });
-      }
-      alert('Payment successful but failed to activate subscription. Please contact support.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePayPalPayment = async (plan: Plan) => {
-    try {
-      console.log('Creating PayPal subscription for plan:', plan);
-      
-      // Create subscription instead of order
-      const response = await fetch('/api/create-paypal-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planId: plan.paypalPlanId,
-          userId: user?.id,
-          planName: plan.name,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create subscription');
-      }
-
-      const { subscriptionId } = await response.json();
-      
-      // Redirect to PayPal for subscription approval
-      window.location.href = `https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_xclick-subscriptions&business=${encodeURIComponent(process.env.VITE_PAYPAL_MERCHANT_EMAIL || '')}&item_name=${encodeURIComponent(plan.name)}&item_number=${subscriptionId}&a3=${plan.price}&p3=1&t3=M&src=1&return=${encodeURIComponent(window.location.origin + '/dashboard?subscription=success')}&cancel_return=${encodeURIComponent(window.location.origin + '/dashboard?subscription=cancelled')}`;
-      
-    } catch (error) {
-      console.error('PayPal subscription error:', error);
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack
-        });
-      }
-      setError('Failed to create PayPal subscription. Please try again.');
-    }
-  };
-
-  const updateUserSubscription = async (planName: string, subscriptionId: string) => {
-    try {
-      // Update user subscription in database
-      const { error } = await supabase
-        .from('subscriptions')
-        .upsert({
-          clerk_user_id: user?.id,
-          paypal_subscription_id: subscriptionId,
-          plan_name: planName,
-          status: 'ACTIVE',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error updating subscription:', error);
-        throw error;
-      }
-
-      console.log('Subscription updated successfully');
-      
-    } catch (error) {
-      console.error('Failed to update subscription:', error);
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack
-        });
-      }
-      throw error;
-    }
-  };
+  // تمت إزالة أي استدعاءات مباشرة لقاعدة البيانات هنا لتجنب أخطاء الصلاحيات.
 
   // Render PayPal button when modal opens
   useEffect(() => {
@@ -406,7 +288,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
               console.log('PayPal environment:', import.meta.env.VITE_PAYPAL_ENV || 'sandbox');
               
               return actions.subscription.create({
-                'plan_id': selectedPlan.paypalPlanId
+                'plan_id': selectedPlan.paypalPlanId,
+                // Pass Clerk user id so the webhook can link the subscription to the user
+                'custom_id': user.id
               });
             },
             onApprove: async (data: any, actions: any) => {
@@ -422,8 +306,52 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
                 const subscription = await actions.subscription.get();
                 console.log('Subscription details:', subscription);
                 
-                // Update user subscription in database
-                await updateUserSubscription(selectedPlan.name, subscription.id);
+                // Notify our Supabase Edge Function webhook so it can persist the subscription via RPCs
+                try {
+                  const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+                  const projectRef = supabaseUrl.replace('https://', '').replace('.supabase.co', '');
+                  const webhookUrl = `https://${projectRef}.functions.supabase.co/paypal-webhook`;
+                  const webhookPayload = {
+                    event_type: 'BILLING.SUBSCRIPTION.ACTIVATED',
+                    resource: {
+                      id: subscription.id,
+                      custom_id: user.id,
+                      plan_id: subscription.plan_id,
+                      billing_info: {
+                        last_payment: { payment_id: data.orderID }
+                      }
+                    }
+                  };
+                  // Try Supabase Edge Function first
+                  let resp: Response | null = null;
+                  try {
+                    resp = await fetch(webhookUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(webhookPayload)
+                    });
+                    console.log('Supabase webhook response status:', resp.status);
+                  } catch (err1) {
+                    console.warn('Supabase webhook call failed, will try Netlify fallback:', err1);
+                  }
+
+                  // Fallback to Netlify Function if Supabase call failed or not OK
+                  if (!resp || !resp.ok) {
+                    try {
+                      const netlifyUrl = '/.netlify/functions/paypal-webhook';
+                      const resp2 = await fetch(netlifyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(webhookPayload)
+                      });
+                      console.log('Netlify webhook response status:', resp2.status);
+                    } catch (err2) {
+                      console.error('Netlify webhook fallback failed:', err2);
+                    }
+                  }
+                } catch (webhookErr) {
+                  console.error('Failed to notify any webhook:', webhookErr);
+                }
                 
                 setSuccess(`Successfully subscribed to ${selectedPlan.name}!`);
                 setShowSuccessModal(true);
