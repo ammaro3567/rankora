@@ -212,31 +212,10 @@ export const CompetitorComparison: React.FC = () => {
           comparison_results: data
         });
 
-        // Create a lightweight analysis row so it appears in Recent Analyses and can be linked to projects
-        try {
-          const summary = {
-            readability: data.userArticle?.readability ?? 0,
-            factuality: data.userArticle?.factuality ?? 0,
-            structure: data.userArticle?.structure ?? 0,
-            qa_format: data.userArticle?.qa_format ?? 0,
-            structured_data: data.userArticle?.structured_data ?? 0,
-            authority: data.userArticle?.authority ?? 0,
-            suggestions: data.suggestions ?? []
-          } as any;
-          const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
-            p_clerk_user_id: user.id,
-            p_url: `${userUrl.trim()} (comparison)` ,
-            p_analysis_results: summary,
-            p_project_id: null
-          });
-          if (typeof createdId === 'number') {
-            setCreatedComparisonAnalysisId(createdId);
-            // notify dashboard to refresh recent analyses
-            window.dispatchEvent(new CustomEvent('analysis-completed'));
-          }
-        } catch (e) {
-          console.warn('Failed to create comparison summary analysis:', e);
-        }
+        // Note: We don't create an additional analysis record for comparisons
+        // This ensures that comparisons only count as 1 usage, not 2
+        // The comparison data is already saved in competitor_comparisons table
+        
         // Dispatch event to update Dashboard
         window.dispatchEvent(new CustomEvent('comparison-completed'));
         try {
