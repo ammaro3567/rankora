@@ -62,7 +62,8 @@ export const AIOverviewAnalyzer: React.FC = () => {
     setError(null);
     
     try {
-      // Call webhook
+      // Call webhook for SINGLE URL analysis only
+      // This ensures each URL is analyzed independently, not compared with others
       const webhookResult = await sendToN8nWebhook({ 
         keyword: 'analysis', 
         userUrl: url.trim() 
@@ -240,9 +241,9 @@ export const AIOverviewAnalyzer: React.FC = () => {
               {typeof allowInfo.limit === 'number' ? (() => {
                 const used = Math.max(0, (allowInfo.limit || 0) - (allowInfo.remaining || 0));
                 return (
-                  <span>
+                <span>
                     Monthly usage: <span className="text-primary font-semibold">{used}/{allowInfo.limit}</span>
-                  </span>
+                </span>
                 );
               })() : (
                 <span>Unlimited usage</span>

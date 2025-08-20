@@ -129,7 +129,8 @@ export const CompetitorComparison: React.FC = () => {
     setError(null);
     
     try {
-      // Send both URLs in one request
+      // Send both URLs in one request for COMPARISON analysis
+      // This analyzes both URLs together to provide competitive insights
       const response = await analyzeComparison({
         userUrl: userUrl.trim(),
         competitorUrl: competitorUrl.trim()
