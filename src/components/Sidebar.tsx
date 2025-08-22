@@ -67,7 +67,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'projects', label: 'Projects', icon: Folder },
     { id: 'pricing', label: 'Pricing', icon: CreditCard },
     { id: 'faq', label: 'FAQ', icon: HelpCircle },
-    { id: 'account', label: 'Account', icon: User },
   ];
 
   return (
