@@ -105,8 +105,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
             />
             
             <main className="flex-1 lg:ml-0 relative z-10">
-              {/* Dashboard Header */}
-              <DashboardHeader onTabChange={setActiveTab} />
+              {/* Dashboard Header - Only show in overview */}
+              {activeTab === 'overview' && (
+                <DashboardHeader onTabChange={setActiveTab} currentTab={activeTab} />
+              )}
               
               <div className="p-4 lg:p-10 pt-6 lg:pt-10 space-y-6">
                 {/* strengthen card contrast over animated bg */}
