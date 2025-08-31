@@ -1,29 +1,17 @@
-// Webhook configuration
-export const WEBHOOKS = {
-	// Instant AI Overview Analysis webhook - analyzes single URL independently
-	N8N_ANALYSIS_WEBHOOK: 'https://flow.sokt.io/func/scriDmS1IH9A',
-	
-	// User article analysis webhook - analyzes single URL independently  
-	USER_ARTICLE_WEBHOOK: 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511',
-	
-	// Competitor article analysis webhook - analyzes single URL independently
-	COMPETITOR_ARTICLE_WEBHOOK: 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511',
-
-	// Separate comparison webhook - handles comparison logic separately
-	// Restore to the endpoint that previously received comparison calls
-	COMPARISON_WEBHOOK: 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511',
-
-	// Keyword-based comparison webhook - analyzes URL against specific keyword
-	KEYWORD_COMPARISON_WEBHOOK: 'https://flow.sokt.io/func/scrifD4jQoUt'
-};
+// Webhook endpoints for AI analysis services
+export const N8N_ANALYSIS_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/616dad33-b5c1-424d-b6c3-0cd04f044a49';
+export const USER_ARTICLE_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/616dad33-b5c1-424d-b6c3-0cd04f044a49';
+export const COMPETITOR_ARTICLE_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/616dad33-b5c1-424d-b6c3-0cd04f044a49';
+export const COMPARISON_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511';
+export const KEYWORD_COMPARISON_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511';
 
 // Helper function to send data to n8n webhook for single URL analysis
 export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string }) => {
 	try {
-		console.log('🔗 Sending single URL analysis to:', WEBHOOKS.N8N_ANALYSIS_WEBHOOK);
+		console.log('🔗 Sending single URL analysis to:', N8N_ANALYSIS_WEBHOOK);
 		console.log('📤 Single URL payload:', data);
 		
-		let response = await fetch(WEBHOOKS.N8N_ANALYSIS_WEBHOOK, {
+		let response = await fetch(N8N_ANALYSIS_WEBHOOK, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -41,7 +29,7 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 			console.warn('📛 Single URL webhook error response:', errorText);
 			// Fallback: try USER_ARTICLE_WEBHOOK with { url }
 			console.log('↩️ Falling back to USER_ARTICLE_WEBHOOK');
-			response = await fetch(WEBHOOKS.USER_ARTICLE_WEBHOOK, {
+			response = await fetch(USER_ARTICLE_WEBHOOK, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ url: data.userUrl })
@@ -96,7 +84,7 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 export const analyzeUserArticle = async (url: string) => {
 	try {
 		console.log('🔗 Analyzing single user article:', url);
-		let response = await fetch(WEBHOOKS.USER_ARTICLE_WEBHOOK, {
+		let response = await fetch(USER_ARTICLE_WEBHOOK, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -109,7 +97,7 @@ export const analyzeUserArticle = async (url: string) => {
 			console.warn('📛 USER_ARTICLE_WEBHOOK error:', errorText);
 			// Fallback to N8N_ANALYSIS_WEBHOOK signature
 			console.log('↩️ Falling back to N8N_ANALYSIS_WEBHOOK');
-			response = await fetch(WEBHOOKS.N8N_ANALYSIS_WEBHOOK, {
+			response = await fetch(N8N_ANALYSIS_WEBHOOK, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -136,7 +124,7 @@ export const analyzeUserArticle = async (url: string) => {
 export const analyzeCompetitorArticle = async (url: string) => {
 	try {
 		console.log('🔗 Analyzing single competitor article:', url);
-		let response = await fetch(WEBHOOKS.COMPETITOR_ARTICLE_WEBHOOK, {
+		let response = await fetch(COMPETITOR_ARTICLE_WEBHOOK, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -149,7 +137,7 @@ export const analyzeCompetitorArticle = async (url: string) => {
 			console.warn('📛 COMPETITOR_ARTICLE_WEBHOOK error:', errorText);
 			// Fallback to USER_ARTICLE_WEBHOOK
 			console.log('↩️ Falling back to USER_ARTICLE_WEBHOOK');
-			response = await fetch(WEBHOOKS.USER_ARTICLE_WEBHOOK, {
+			response = await fetch(USER_ARTICLE_WEBHOOK, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ url })
@@ -171,7 +159,7 @@ export const analyzeCompetitorArticle = async (url: string) => {
 
 // Combined comparison webhook: sends both URLs in a single request for comparison
 export const analyzeComparison = async (params: { userUrl: string; competitorUrl: string }) => {
-	const endpoint = WEBHOOKS.COMPARISON_WEBHOOK || WEBHOOKS.USER_ARTICLE_WEBHOOK;
+	const endpoint = COMPARISON_WEBHOOK || USER_ARTICLE_WEBHOOK;
 	try {
 		console.log('🔗 Sending comparison request to:', endpoint);
 		console.log('📤 Comparison payload:', params);
@@ -192,7 +180,7 @@ export const analyzeComparison = async (params: { userUrl: string; competitorUrl
 			console.warn('📛 Comparison error response:', errorText);
 			// Fallback: try USER_ARTICLE_WEBHOOK with both URLs (legacy flow)
 			console.log('↩️ Falling back to USER_ARTICLE_WEBHOOK (legacy comparison flow)');
-			response = await fetch(WEBHOOKS.USER_ARTICLE_WEBHOOK, {
+			response = await fetch(USER_ARTICLE_WEBHOOK, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ userUrl: params.userUrl, competitorUrl: params.competitorUrl })
@@ -217,7 +205,7 @@ export const analyzeComparison = async (params: { userUrl: string; competitorUrl
 
 // Keyword-based comparison webhook: analyzes URL against specific keyword
 export const analyzeKeywordComparison = async (params: { url: string; keyword: string }) => {
-	const endpoint = WEBHOOKS.KEYWORD_COMPARISON_WEBHOOK;
+	const endpoint = KEYWORD_COMPARISON_WEBHOOK;
 	try {
 		console.log('🔗 Sending keyword comparison request to:', endpoint);
 		console.log('📤 Keyword comparison payload:', params);
