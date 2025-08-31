@@ -444,7 +444,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
 
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
           {plans.map((plan) => (
-          <div key={plan.id} className={`relative surface-primary rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${plan.id === 'pro' ? 'border-accent-primary scale-105' : 'border-primary'}`}>
+          <div key={plan.id} className={`relative bg-gray-900 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${plan.id === 'pro' ? 'border-emerald-500 scale-105' : 'border-gray-700'}`}>
               {plan.id === 'pro' && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <div className="bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold">Most Popular</div>
@@ -452,14 +452,14 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
               )}
               <div className="p-8">
                 <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 bg-accent-primary/20 rounded-full flex items-center justify-center text-accent-primary">{plan.icon}</div>
+                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500">{plan.icon}</div>
                   </div>
-              <h3 className="text-2xl font-bold text-primary text-center mb-2">{plan.name}</h3>
-              <p className="text-secondary text-center mb-6">{plan.description}</p>
+              <h3 className="text-2xl font-bold text-white text-center mb-2">{plan.name}</h3>
+              <p className="text-gray-300 text-center mb-6">{plan.description}</p>
               <div className="text-center mb-8">
-                <div className="mb-2 text-sm text-success">Save 50%</div>
-                <div className="text-4xl font-bold text-primary">${plan.price}<span className="text-secondary text-base">/month</span></div>
-                <div className="text-sm text-tertiary mt-1">
+                <div className="mb-2 text-sm text-emerald-400">Save 50%</div>
+                <div className="text-4xl font-bold text-white">${plan.price}<span className="text-gray-300 text-base">/month</span></div>
+                <div className="text-sm text-gray-400 mt-1">
                   {plan.id === 'starter' && (<span><span className="line-through opacity-70 mr-2">$20</span>Limited-time</span>)}
                   {plan.id === 'pro' && (<span><span className="line-through opacity-70 mr-2">$60</span>Launch offer</span>)}
                   {plan.id === 'business' && (<span><span className="line-through opacity-70 mr-2">$140</span>Team deal</span>)}
@@ -467,10 +467,10 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
                 </div>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-center"><Check className="w-5 h-5 text-accent-primary mr-3 flex-shrink-0" /><span className="text-secondary">{feature}</span></li>
+                  <li key={index} className="flex items-center"><Check className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /><span className="text-gray-300">{feature}</span></li>
                   ))}
                 </ul>
-              <button onClick={() => plan.id === 'free' ? window.location.href = '/dashboard' : openPayPalModal(plan)} className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${plan.id === 'pro' ? 'bg-accent-primary hover:opacity-90 text-white' : 'bg-surface-secondary hover:bg-surface-tertiary text-primary'}`}>Choose this plan</button>
+              <button onClick={() => plan.id === 'free' ? window.location.href = '/dashboard' : openPayPalModal(plan)} className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${plan.id === 'pro' ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'}`}>Choose this plan</button>
               </div>
             </div>
           ))}
@@ -529,9 +529,18 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
   }
 
   return (
-    <div className="min-h-screen relative bg-primary">
-      <AnimatedBackground />
-      <div className="relative z-10 container mx-auto px-4 py-8">{content}</div>
+    <div className="min-h-screen relative bg-transparent">
+      {/* Background Layer */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <AnimatedBackground />
+      </div>
+
+      {/* Content Layer */}
+      <div className="relative z-10 min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

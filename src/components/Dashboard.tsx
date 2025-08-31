@@ -58,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
       case 'projects':
         return <ProjectsPage />;
       case 'pricing':
-        return <PricingPage embedded />;
+        return <PricingPage onTabChange={setActiveTab} />;
       case 'faq':
         return <FAQPage />;
       case 'billing':
@@ -93,7 +93,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
             }
           `}</style>
           
-          <div className="flex">
+          <div className="flex min-h-screen">
+            {/* Enhanced Sidebar */}
             <Sidebar
               activeTab={activeTab}
               onTabChange={setActiveTab}
@@ -104,21 +105,62 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
               onOpenAdmin={onOpenAdmin}
             />
             
-            <main className="flex-1 lg:ml-0 relative z-10">
+            {/* Enhanced Main Content Area */}
+            <main className="flex-1 lg:ml-0 relative z-10 flex flex-col">
               {/* Dashboard Header - Only show in overview */}
               {activeTab === 'overview' && (
-                <DashboardHeader onTabChange={setActiveTab} currentTab={activeTab} />
+                <div className="sticky top-0 z-20">
+                  <DashboardHeader onTabChange={setActiveTab} currentTab={activeTab} />
+                </div>
               )}
               
-              <div className="p-4 lg:p-10 pt-6 lg:pt-10 space-y-6">
-                {/* strengthen card contrast over animated bg */}
+              {/* Enhanced Content Container */}
+              <div className="flex-1 p-6 lg:p-12 pt-8 lg:pt-16 space-y-8">
+                {/* Enhanced Card Styling */}
                 <style>{`
-                  .card { background-color: rgba(15, 23, 42, 0.75); border-color: rgba(148, 163, 184, 0.25); }
-                  .surface-secondary { background-color: rgba(30, 41, 59, 0.65); }
-                  .surface-primary { background-color: rgba(15, 23, 42, 0.8); }
-                  .limit-banner { background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02)); }
+                  .card { 
+                    background: rgba(15, 23, 42, 0.85); 
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(16, 185, 129, 0.2);
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                  }
+                  .surface-secondary { 
+                    background: rgba(30, 41, 59, 0.75); 
+                    backdrop-filter: blur(20px);
+                  }
+                  .surface-primary { 
+                    background: rgba(15, 23, 42, 0.9); 
+                    backdrop-filter: blur(20px);
+                  }
+                  .limit-banner { 
+                    background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+                    backdrop-filter: blur(20px);
+                  }
+                  .btn-primary {
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    border: 1px solid rgba(16, 185, 129, 0.3);
+                    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+                  }
+                  .btn-primary:hover {
+                    background: linear-gradient(135deg, #059669, #047857);
+                    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.3);
+                    transform: translateY(-2px);
+                  }
+                  .btn-secondary {
+                    background: rgba(30, 41, 59, 0.8);
+                    border: 1px solid rgba(148, 163, 184, 0.3);
+                    backdrop-filter: blur(20px);
+                  }
+                  .btn-secondary:hover {
+                    background: rgba(51, 65, 85, 0.9);
+                    border-color: rgba(16, 185, 129, 0.5);
+                  }
                 `}</style>
-                {renderContent()}
+                
+                {/* Content with Enhanced Spacing */}
+                <div className="max-w-7xl mx-auto">
+                  {renderContent()}
+                </div>
               </div>
             </main>
           </div>

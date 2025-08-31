@@ -32,6 +32,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onTabChange }) => {
             getUserSubscriptionInfo(user.id),
             getMonthlyUsageCounts()
           ]);
+          console.log('🔍 [BillingPage] Subscription data:', sub);
+          console.log('🔍 [BillingPage] Usage data:', usageData);
           setSubscription(sub);
           setUsage(usageData);
         } catch (error) {
@@ -55,15 +57,81 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onTabChange }) => {
 
   const isSubscribed = subscription?.status === 'active';
   const planName = subscription?.plan_name || 'Free Plan';
-  const planLimit = subscription?.monthly_analysis_limit || 5;
-  const comparisonLimit = subscription?.monthly_comparison_limit || 2;
+  
+  // Handle both field names for analysis limit
+  const planLimit = subscription?.monthly_analysis_limit ?? subscription?.analysis_limit ?? 5;
+  
+  // Handle both field names for comparison limit and provide proper fallbacks
+  let comparisonLimit = subscription?.monthly_comparison_limit ?? subscription?.comparison_limit ?? 2;
+  
+  // If we have a subscription but no comparison limit, try to get it from the plan name
+  if (subscription && !subscription.monthly_comparison_limit && !subscription.comparison_limit) {
+    switch (subscription.plan_name) {
+      case 'Starter':
+        comparisonLimit = 10;
+        break;
+      case 'Pro':
+        comparisonLimit = 50;
+        break;
+      case 'Business':
+        comparisonLimit = 150;
+        break;
+      default:
+        comparisonLimit = 2; // Free plan
+    }
+  }
+  
+  console.log('🔍 [BillingPage] Processed data:', {
+    isSubscribed,
+    planName,
+    planLimit,
+    comparisonLimit,
+    subscription: subscription,
+    rawComparisonLimit: subscription?.monthly_comparison_limit,
+    rawComparisonLimitAlt: subscription?.comparison_limit
+  });
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="animate-fadeInUp">
-        <h1 className="text-3xl font-bold text-primary mb-2">Billing & Subscription</h1>
-        <p className="text-secondary">Manage your subscription and view usage</p>
+      {/* Enhanced Header with Gradient */}
+      <div className="text-center mb-12 animate-fadeInUp">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-6">
+          <CreditCard className="w-10 h-10 text-emerald-300" />
+        </div>
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
+          Billing & Subscription
+        </h1>
+        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          Manage your subscription, view usage statistics, and upgrade your plan.
+        </p>
+      </div>
+
+      {/* Enhanced Current Plan Status */}
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-8 shadow-2xl">
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400/30 to-emerald-600/30 rounded-2xl flex items-center justify-center border border-emerald-500/40">
+              <Crown className="w-8 h-8 text-emerald-300" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Current Plan</h2>
+              <p className="text-gray-300">Your active subscription details</p>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="text-center p-6 bg-gray-800/30 rounded-xl border border-emerald-500/20">
+              <div className="text-3xl font-bold text-emerald-400 mb-2">{planName}</div>
+              <div className="text-sm text-gray-300">Plan Type</div>
+            </div>
+            <div className="text-center p-6 bg-gray-800/30 rounded-xl border border-emerald-500/20">
+              <div className="text-3xl font-bold text-emerald-400 mb-2">
+                {isSubscribed ? 'Active' : 'Free'}
+              </div>
+              <div className="text-sm text-gray-300">Status</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -71,27 +139,6 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onTabChange }) => {
         <div className="lg:col-span-2">
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                  <Crown className="w-6 h-6 text-emerald-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-primary">{planName}</h2>
-                  <p className="text-secondary">
-                    {isSubscribed ? 'Active Subscription' : 'Free Tier'}
-                  </p>
-                </div>
-              </div>
-              {isSubscribed && (
-                <div className="flex items-center space-x-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Active</span>
-                </div>
-              )}
-            </div>
-
-            {/* Plan Features */}
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
               <div className="flex items-center space-x-3">
                 <BarChart3 className="w-5 h-5 text-emerald-400" />
                 <div>

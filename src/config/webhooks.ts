@@ -1,7 +1,7 @@
 // Webhook configuration
 export const WEBHOOKS = {
 	// Instant AI Overview Analysis webhook - analyzes single URL independently
-	N8N_ANALYSIS_WEBHOOK: 'https://n8n-n8n.lyie4i.easypanel.host/webhook/616dad33-b5c1-424d-b6c3-0cd04f044a49',
+	N8N_ANALYSIS_WEBHOOK: 'https://flow.sokt.io/func/scriDmS1IH9A',
 	
 	// User article analysis webhook - analyzes single URL independently  
 	USER_ARTICLE_WEBHOOK: 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511',
@@ -11,7 +11,10 @@ export const WEBHOOKS = {
 
 	// Separate comparison webhook - handles comparison logic separately
 	// Restore to the endpoint that previously received comparison calls
-	COMPARISON_WEBHOOK: 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511'
+	COMPARISON_WEBHOOK: 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511',
+
+	// Keyword-based comparison webhook - analyzes URL against specific keyword
+	KEYWORD_COMPARISON_WEBHOOK: 'https://flow.sokt.io/func/scrifD4jQoUt'
 };
 
 // Helper function to send data to n8n webhook for single URL analysis
@@ -30,6 +33,8 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 		});
 
 		console.log('📥 Single URL response status:', response.status);
+		console.log('📥 Single URL response headers:', Object.fromEntries(response.headers.entries()));
+		console.log('📥 Single URL response content-type:', response.headers.get('content-type'));
 
 		if (!response.ok) {
 			const errorText = await response.text().catch(() => '');
@@ -47,9 +52,37 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 			}
 		}
 
-		const result = await response.json();
-		console.log('✅ Single URL webhook success:', result);
-		return { success: true, data: result };
+		// Try to get JSON response, fallback to text if needed
+		let result;
+		try {
+			result = await response.json();
+			console.log('✅ Single URL webhook success (JSON):', result);
+		} catch (jsonError) {
+			console.log('⚠️ [WEBHOOK] JSON parse failed, trying text:', jsonError);
+			const textResult = await response.text();
+			console.log('📝 [WEBHOOK] Raw text response:', textResult);
+			try {
+				result = JSON.parse(textResult);
+				console.log('✅ Single URL webhook success (parsed text):', result);
+			} catch (parseError) {
+				console.error('💥 [WEBHOOK] Failed to parse response as JSON:', parseError);
+				throw new Error('Invalid JSON response from webhook');
+			}
+		}
+		
+		// Handle case where result might be a JSON string
+		let parsedResult = result;
+		if (typeof result === 'string') {
+			try {
+				parsedResult = JSON.parse(result);
+				console.log('🔄 [WEBHOOK] Parsed JSON string result:', parsedResult);
+			} catch (parseError) {
+				console.warn('⚠️ [WEBHOOK] Failed to parse JSON string:', parseError);
+				parsedResult = result; // Use original if parsing fails
+			}
+		}
+		
+		return { success: true, data: parsedResult };
 	} catch (error) {
 		console.error('💥 Single URL webhook error:', error);
 		return { 
@@ -178,6 +211,87 @@ export const analyzeComparison = async (params: { userUrl: string; competitorUrl
 		return { 
 			success: false, 
 			error: error instanceof Error ? error.message : 'Comparison analysis failed. Please check your URLs and try again.' 
+		};
+	}
+};
+
+// Keyword-based comparison webhook: analyzes URL against specific keyword
+export const analyzeKeywordComparison = async (params: { url: string; keyword: string }) => {
+	const endpoint = WEBHOOKS.KEYWORD_COMPARISON_WEBHOOK;
+	try {
+		console.log('🔗 Sending keyword comparison request to:', endpoint);
+		console.log('📤 Keyword comparison payload:', params);
+		
+		const response = await fetch(endpoint, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Accept': 'application/json',
+			},
+			body: JSON.stringify({ ...params, analysis_type: 'keyword_comparison' })
+		});
+
+		console.log('📥 Keyword comparison response status:', response.status);
+
+		if (!response.ok) {
+			const errorText = await response.text().catch(() => '');
+			console.warn('📛 Keyword comparison error response:', errorText);
+			throw new Error(`Keyword comparison failed. Status: ${response.status} - ${errorText}`);
+		}
+
+		// Try to get JSON response, fallback to text if needed
+		let result;
+		let cleanText = ''; // Declare cleanText in the outer scope
+		try {
+			result = await response.json();
+			console.log('✅ Keyword comparison success (JSON):', result);
+		} catch (jsonError) {
+			console.log('⚠️ [KEYWORD_COMPARISON] JSON parse failed, trying text:', jsonError);
+			const textResult = await response.text();
+			console.log('📝 [KEYWORD_COMPARISON] Raw text response:', textResult);
+			try {
+				// Handle responses wrapped in markdown code blocks
+				cleanText = textResult;
+				
+				// Remove ```json and ``` markers
+				if (cleanText.includes('```json')) {
+					cleanText = cleanText.replace(/```json\s*/, '').replace(/\s*```$/, '');
+				} else if (cleanText.includes('```')) {
+					cleanText = cleanText.replace(/```\s*/, '').replace(/\s*```$/, '');
+				}
+				
+				// Clean up any remaining whitespace
+				cleanText = cleanText.trim();
+				
+				console.log('🧹 [KEYWORD_COMPARISON] Cleaned text:', cleanText);
+				
+				result = JSON.parse(cleanText);
+				console.log('✅ Keyword comparison success (parsed text):', result);
+			} catch (parseError) {
+				console.error('💥 [KEYWORD_COMPARISON] Failed to parse response as JSON:', parseError);
+				console.error('💥 [KEYWORD_COMPARISON] Cleaned text was:', cleanText);
+				throw new Error('Invalid JSON response from keyword comparison webhook');
+			}
+		}
+		
+		// Handle case where result might be a JSON string
+		let parsedResult = result;
+		if (typeof result === 'string') {
+			try {
+				parsedResult = JSON.parse(result);
+				console.log('🔄 [KEYWORD_COMPARISON] Parsed JSON string result:', parsedResult);
+			} catch (parseError) {
+				console.warn('⚠️ [KEYWORD_COMPARISON] Failed to parse JSON string:', parseError);
+				parsedResult = result; // Use original if parsing fails
+			}
+		}
+		
+		return { success: true, data: parsedResult };
+	} catch (error) {
+		console.error('💥 Keyword comparison webhook error:', error);
+		return { 
+			success: false, 
+			error: error instanceof Error ? error.message : 'Keyword comparison analysis failed. Please check your URL and keyword and try again.' 
 		};
 	}
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Folder, Link2, Eye, Trash2, Calendar, FileText, BarChart3, Target, ArrowLeft, X } from 'lucide-react';
+import { Plus, Folder, Link2, Eye, Trash2, Calendar, FileText, BarChart3, Target, ArrowLeft, X, XCircle, AlertCircle, Lightbulb } from 'lucide-react';
 import { createProject, listProjects, getProjectAnalyses, deleteProject, ProjectAnalysis, checkUserLimits, supabase } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
 
@@ -97,15 +97,15 @@ export const ProjectsPage: React.FC = () => {
 
   const handleDeleteProject = async (projectId: number) => {
     try {
-      const { error } = await deleteProject(projectId.toString());
-      if (error) {
-        setError(error.message);
-      } else {
+      const result = await deleteProject(projectId.toString());
+      if (result) {
         await refresh();
         setDeleteConfirm(null);
         if (selectedProject?.id === projectId) {
           setSelectedProject(null);
         }
+      } else {
+        setError('Failed to delete project');
       }
     } catch (error) {
       setError('Failed to delete project');
@@ -116,6 +116,37 @@ export const ProjectsPage: React.FC = () => {
     if (!analysis) return null;
 
     const result = analysis.analysis_results;
+
+    // Handle keyword analysis results
+    if (result && result.analysis_type === 'keyword_analysis') {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <Target className="w-5 h-5 text-emerald-400" />
+            <span className="font-semibold text-emerald-400">Keyword Analysis: {result.keyword || 'N/A'}</span>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+              <div className="text-2xl font-bold text-red-400">{result.missing_topics?.length || 0}</div>
+              <div className="text-xs text-red-300">Missing Topics</div>
+            </div>
+            <div className="text-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+              <div className="text-2xl font-bold text-yellow-400">{result.missing_entities?.length || 0}</div>
+              <div className="text-xs text-yellow-300">Missing Entities</div>
+            </div>
+            <div className="text-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+              <div className="text-2xl font-bold text-orange-400">{result.content_gaps?.length || 0}</div>
+              <div className="text-xs text-orange-300">Content Gaps</div>
+            </div>
+            <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <div className="text-2xl font-bold text-blue-400">{result.seo_opportunities?.length || 0}</div>
+              <div className="text-xs text-blue-300">SEO Opportunities</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     // Handle single analysis results
     if (result && result.readability !== undefined) {
@@ -326,6 +357,81 @@ export const ProjectsPage: React.FC = () => {
                 <div className="border-t border-primary pt-4">
                   {renderAnalysisResult(selectedAnalysis)}
                 </div>
+                
+                {/* Keyword Analysis Details */}
+                {selectedAnalysis.analysis_results?.analysis_type === 'keyword_analysis' && (
+                  <div className="space-y-6">
+                    {/* Missing Topics */}
+                    {selectedAnalysis.analysis_results.missing_topics && selectedAnalysis.analysis_results.missing_topics.length > 0 && (
+                      <div className="border-t border-primary pt-4">
+                        <h4 className="font-semibold text-primary mb-3 flex items-center">
+                          <XCircle className="w-5 h-5 text-red-400 mr-2" />
+                          Missing Topics ({selectedAnalysis.analysis_results.missing_topics.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedAnalysis.analysis_results.missing_topics.map((topic: string, index: number) => (
+                            <div key={index} className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                              <p className="text-secondary text-sm">{topic}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Missing Entities */}
+                    {selectedAnalysis.analysis_results.missing_entities && selectedAnalysis.analysis_results.missing_entities.length > 0 && (
+                      <div className="border-t border-primary pt-4">
+                        <h4 className="font-semibold text-primary mb-3 flex items-center">
+                          <AlertCircle className="w-5 h-5 text-yellow-400 mr-2" />
+                          Missing Entities ({selectedAnalysis.analysis_results.missing_entities.length})
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedAnalysis.analysis_results.missing_entities.map((entity: string, index: number) => (
+                            <span key={index} className="px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-400 text-sm">
+                              {entity}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Content Gaps */}
+                    {selectedAnalysis.analysis_results.content_gaps && selectedAnalysis.analysis_results.content_gaps.length > 0 && (
+                      <div className="border-t border-primary pt-4">
+                        <h4 className="font-semibold text-primary mb-3 flex items-center">
+                          <AlertCircle className="w-5 h-5 text-orange-400 mr-2" />
+                          Content Gaps ({selectedAnalysis.analysis_results.content_gaps.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedAnalysis.analysis_results.content_gaps.map((gap: string, index: number) => (
+                            <div key={index} className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                              <p className="text-secondary text-sm">{gap}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SEO Opportunities */}
+                    {selectedAnalysis.analysis_results.seo_opportunities && selectedAnalysis.analysis_results.seo_opportunities.length > 0 && (
+                      <div className="border-t border-primary pt-4">
+                        <h4 className="font-semibold text-primary mb-3 flex items-center">
+                          <Lightbulb className="w-5 h-5 text-blue-400 mr-2" />
+                          SEO Opportunities ({selectedAnalysis.analysis_results.seo_opportunities.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedAnalysis.analysis_results.seo_opportunities.map((opportunity: string, index: number) => (
+                            <div key={index} className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                              <p className="text-secondary text-sm">{opportunity}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Regular Analysis Suggestions */}
                 {selectedAnalysis.analysis_results?.suggestions && (
                   <div className="border-t border-primary pt-4">
                     <h4 className="font-semibold text-primary mb-3">Suggestions</h4>
@@ -347,52 +453,58 @@ export const ProjectsPage: React.FC = () => {
   // Main projects list view
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-primary mb-1">Projects</h1>
-          <p className="text-secondary">Organize analyses into projects and keep your workspace clean.</p>
+      {/* Enhanced Header with Gradient */}
+      <div className="text-center mb-12 animate-fadeInUp">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-6">
+          <Folder className="w-10 h-10 text-emerald-300" />
         </div>
-        <div className="text-sm text-secondary">
-          {userLimits ? (() => {
-            const usedFromLimits = typeof userLimits.project_limit === 'number' && typeof userLimits.project_remaining === 'number'
-              ? Math.max(0, (userLimits.project_limit || 0) - (userLimits.project_remaining || 0))
-              : undefined;
-            const projectsUsed = typeof userLimits.projects_used === 'number'
-              ? userLimits.projects_used
-              : (typeof usedFromLimits === 'number' ? usedFromLimits : projects.length);
-            const projectsLimit = typeof userLimits.projects_limit === 'number'
-              ? userLimits.projects_limit
-              : (typeof userLimits.project_limit === 'number' ? userLimits.project_limit : 1);
-            return (
-              <span>Projects: <span className="text-primary font-semibold">{projectsUsed}/{projectsLimit}</span></span>
-            );
-          })() : (
-            <span>Projects: <span className="text-primary font-semibold">Loading...</span></span>
-          )}
-        </div>
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
+          Your Projects
+        </h1>
+        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          Organize and manage your content analyses in dedicated project workspaces.
+        </p>
       </div>
 
-      <div className="card">
-        <div className="flex items-center space-x-3">
-          <input
-            className="input-primary flex-1"
-            placeholder="New project name"
-            value={newProjectName}
-            onChange={(e) => setNewProjectName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
-          />
-          <button 
-            className="btn-primary" 
-            disabled={loading || !canCreate()} 
-            onClick={handleCreate}
-            title={!canCreate() ? 'Project limit reached. Upgrade your plan to create more projects.' : 'Create new project'}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {loading ? 'Creating...' : 'Create'}
-          </button>
+      {/* Enhanced Project Creation */}
+      {!selectedProject && (
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-400/30 to-emerald-600/30 rounded-xl flex items-center justify-center border border-emerald-500/40">
+                <Plus className="w-6 h-6 text-emerald-300" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white">Create New Project</h3>
+                <p className="text-gray-300">Start organizing your content analyses</p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-4">
+              <input
+                type="text"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder="Enter project name..."
+                className="flex-1 px-4 py-3 bg-gray-800/50 border border-emerald-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300"
+              />
+              <button
+                onClick={handleCreate}
+                disabled={loading || !newProjectName.trim() || !canCreate()}
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {loading ? 'Creating...' : 'Create Project'}
+              </button>
+            </div>
+            
+            {error && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+          </div>
         </div>
-        {error && <div className="mt-3 p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm">{error}</div>}
-      </div>
+      )}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map((p) => (

@@ -72,41 +72,50 @@ export const SuccessPage: React.FC<SuccessPageProps> = ({ onNavigate }) => {
   const features = getPlanFeatures(planName);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto text-center">
-          {/* Success Icon */}
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle className="w-12 h-12 text-emerald-600" />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-slate-900 to-emerald-800 relative overflow-hidden">
+      {/* Enhanced Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '15%', left: '5%', animation: 'float 20s ease-in-out infinite'}}></div>
+        <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 rounded-full blur-3xl animate-pulse" style={{top: '65%', right: '5%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
+        <div className="absolute w-60 h-60 bg-gradient-to-r from-emerald-400/8 to-emerald-500/8 rounded-full blur-3xl animate-pulse" style={{top: '40%', left: '70%', animation: 'float 30s ease-in-out infinite'}}></div>
+      </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.1; }
+          50% { transform: translateY(-20px) rotate(180deg); opacity: 0.2; }
+        }
+      `}</style>
+
+      <div className="container mx-auto px-4 py-16 relative z-10">
+        <div className="max-w-3xl mx-auto text-center">
+          {/* Enhanced Success Icon */}
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-8 animate-bounce">
+            <CheckCircle className="w-14 h-14 text-emerald-300" />
           </div>
 
-          {/* Success Message */}
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          {/* Enhanced Success Message */}
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-6">
             Welcome to {planName}!
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-2xl text-gray-300 mb-12 max-w-2xl mx-auto">
             Your subscription has been activated successfully. You now have access to all {planName} features.
           </p>
 
-          {/* Plan Details */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+          {/* Enhanced Plan Details */}
+          <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-3xl shadow-2xl p-10 mb-12">
+            <h2 className="text-3xl font-bold text-white mb-8">
               Your {planName} Plan Includes:
             </h2>
-            <div className="space-y-4 mb-8">
+            <div className="space-y-6 mb-10">
               {features.map((feature, index) => (
-                <div key={index} className="flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                  <span className="text-gray-700 text-lg">{feature}</span>
+                <div key={index} className="flex items-center justify-center space-x-4">
+                  <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center border border-emerald-500/40">
+                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <span className="text-gray-200 text-xl font-medium">{feature}</span>
                 </div>
               ))}
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-500">
-                Your subscription will automatically renew each month.
-                <br />
-                You can manage your subscription anytime from your account settings.
-              </p>
             </div>
           </div>
 

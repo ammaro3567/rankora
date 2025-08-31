@@ -299,10 +299,43 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onLogout }) =>
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="animate-fadeInUp">
-        <h1 className="text-3xl font-bold text-primary mb-2">Account Settings</h1>
-        <p className="text-secondary">Manage your account preferences and settings</p>
+      {/* Enhanced Header with Gradient */}
+      <div className="text-center mb-12 animate-fadeInUp">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-6">
+          <User className="w-10 h-10 text-emerald-300" />
+        </div>
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
+          Account Settings
+        </h1>
+        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          Manage your profile, preferences, and account security settings.
+        </p>
+      </div>
+
+      {/* Enhanced Navigation Tabs */}
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-2 shadow-2xl">
+          <div className="flex space-x-2">
+            {[
+              { id: 'profile', label: 'Profile', icon: User },
+              { id: 'security', label: 'Security', icon: Shield },
+              { id: 'notifications', label: 'Notifications', icon: Mail }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSection(tab.id)}
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                  activeSection === tab.id
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
+                }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-4 gap-8">

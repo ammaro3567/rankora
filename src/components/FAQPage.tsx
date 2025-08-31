@@ -70,55 +70,55 @@ export const FAQPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center animate-fadeInUp">
-        <div className="inline-block mb-6">
-          <span className="px-6 py-3 surface-secondary border border-primary rounded-full text-accent-primary text-lg font-semibold flex items-center space-x-2">
-            <HelpCircle className="w-5 h-5" />
-            <span>Frequently Asked Questions</span>
-          </span>
+      {/* Enhanced Header with Gradient */}
+      <div className="text-center mb-12 animate-fadeInUp">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-6">
+          <HelpCircle className="w-10 h-10 text-emerald-300" />
         </div>
-        <h1 className="text-4xl font-bold text-primary mb-6">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
           Got Questions?
-          <span className="block text-accent-primary mt-2">We've Got Answers</span>
         </h1>
-        <p className="text-lg text-secondary max-w-3xl mx-auto">
+        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
           Everything you need to know about Rankora, AI Overviews optimization, and our platform.
         </p>
       </div>
 
-      {/* FAQ Items */}
-      <div className="max-w-4xl mx-auto">
-        <div className="space-y-4">
+      {/* Enhanced FAQ Items */}
+      <div className="max-w-5xl mx-auto">
+        <div className="space-y-6">
           {faqData.map((item, index) => (
             <div
               key={index}
-              className="card overflow-hidden animate-scaleIn"
+              className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl overflow-hidden animate-scaleIn shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <button
                 onClick={() => toggleItem(index)}
-                className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-surface-secondary transition-colors group"
+                className="w-full p-6 text-left hover:bg-gray-800/30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
               >
-                <h3 className="text-lg font-semibold text-primary pr-4 group-hover:text-accent-primary transition-colors">
-                  {item.question}
-                </h3>
-                <div className="flex-shrink-0">
-                  {openItems.includes(index) ? (
-                    <ChevronUp className="w-5 h-5 text-accent-primary" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-secondary group-hover:text-accent-primary transition-colors" />
-                  )}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-white pr-4">
+                    {item.question}
+                  </h3>
+                  <div className="flex-shrink-0">
+                    {openItems.includes(index) ? (
+                      <ChevronUp className="w-6 h-6 text-emerald-400 transition-transform duration-300" />
+                    ) : (
+                      <ChevronDown className="w-6 h-6 text-emerald-400 transition-transform duration-300" />
+                    )}
+                  </div>
                 </div>
               </button>
               
-              <div className={`overflow-hidden transition-all duration-300 ${
-                openItems.includes(index) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-              }`}>
-                <div className="px-6 py-5 surface-secondary text-secondary leading-relaxed border-t border-primary">
-                  {item.answer}
+              {openItems.includes(index) && (
+                <div className="px-6 pb-6 animate-fadeInUp">
+                  <div className="pt-4 border-t border-emerald-500/20">
+                    <p className="text-gray-300 leading-relaxed">
+                      {item.answer}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>

@@ -189,225 +189,285 @@ export const DashboardOverview: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="animate-fadeInUp">
-        <h1 className="text-3xl font-bold text-primary mb-2">Welcome back!</h1>
-        <p className="text-secondary">Here's what's happening with your content analysis.</p>
+      {/* Enhanced Header with Gradient */}
+      <div className="text-center mb-12 animate-fadeInUp">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-6">
+          <Crown className="w-10 h-10 text-emerald-300" />
+        </div>
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
+          Welcome back!
+        </h1>
+        <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          Here's what's happening with your content analysis and performance insights.
+        </p>
       </div>
 
-      {/* Plan Status Banner */}
+      {/* Enhanced Plan Status Banners */}
       {limitReached && (
-      <div className="limit-banner rounded-xl p-6 animate-scaleIn mb-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-error/20 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-error" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-primary">Monthly Limit Reached</h3>
-              <p className="text-secondary">You've used {(analysesUsed ?? 0)}/{monthlyLimit ?? 5} analyses this month. Upgrade for more!</p>
-            </div>
-          </div>
-          <button className="btn-primary whitespace-nowrap" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>
-            Upgrade Now
-          </button>
-        </div>
-      </div>
-      )}
-      
-      {/* Free Plan Banner */}
-      {!isSubscribed && !limitReached && (
-      <div className="surface-primary border border-warning/30 rounded-xl p-6 animate-scaleIn mb-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-warning/20 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-warning" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-primary">You're on the Free Plan</h3>
-              <p className="text-secondary">You've used {(analysesUsed ?? 0)}/{monthlyLimit ?? 5} analyses this month. Upgrade for more!</p>
-            </div>
-          </div>
-          <button className="btn-primary whitespace-nowrap" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>
-            Upgrade Now
-          </button>
-        </div>
-      </div>
-      )}
-
-      {/* Active Subscription Banner */}
-      {isSubscribed && subscription && (
-        <div className="surface-primary border border-success/30 rounded-xl p-6 animate-scaleIn mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-success/20 rounded-lg flex items-center justify-center">
-                <Crown className="w-6 h-6 text-success" />
+        <div className="bg-gradient-to-r from-red-500/10 via-red-600/10 to-red-700/10 border border-red-500/30 rounded-2xl p-8 animate-scaleIn mb-8 shadow-2xl">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            <div className="flex items-center space-x-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-400/30 to-red-600/30 rounded-2xl flex items-center justify-center border border-red-500/40 shadow-lg">
+                <AlertCircle className="w-8 h-8 text-red-300" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-primary">You're on the {subscription.plan_name || 'Premium'} Plan</h3>
-                <p className="text-secondary">{subscription.plan_description || 'Premium features'} • Full access to all features</p>
+                <h3 className="text-2xl font-bold text-white mb-2">Monthly Limit Reached</h3>
+                <p className="text-gray-300 text-lg">You've used {(analysesUsed ?? 0)}/{monthlyLimit ?? 5} analyses this month. Upgrade for more!</p>
+              </div>
+            </div>
+            <button 
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-red-500/25 hover:scale-105 whitespace-nowrap" 
+              onClick={() => window.dispatchEvent(new Event('open-pricing'))}
+            >
+              Upgrade Now
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Enhanced Free Plan Banner */}
+      {!isSubscribed && !limitReached && (
+        <div className="bg-gradient-to-r from-yellow-500/10 via-yellow-600/10 to-yellow-700/10 border border-yellow-500/30 rounded-2xl p-8 animate-scaleIn mb-8 shadow-2xl">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            <div className="flex items-center space-x-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400/30 to-yellow-600/30 rounded-2xl flex items-center justify-center border border-yellow-500/40 shadow-lg">
+                <Zap className="w-8 h-8 text-yellow-300" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">You're on the Free Plan</h3>
+                <p className="text-gray-300 text-lg">You've used {(analysesUsed ?? 0)}/{monthlyLimit ?? 5} analyses this month. Upgrade for more!</p>
+              </div>
+            </div>
+            <button 
+              className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/25 hover:scale-105 whitespace-nowrap" 
+              onClick={() => window.dispatchEvent(new Event('open-pricing'))}
+            >
+              Upgrade Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Active Subscription Banner */}
+      {isSubscribed && subscription && (
+        <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-700/10 border border-emerald-500/30 rounded-2xl p-8 animate-scaleIn mb-8 shadow-2xl">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            <div className="flex items-center space-x-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-400/30 to-emerald-600/30 rounded-2xl flex items-center justify-center border border-emerald-500/40 shadow-lg">
+                <Crown className="w-8 h-8 text-emerald-300" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">You're on the {subscription.plan_name || 'Premium'} Plan</h3>
+                <p className="text-gray-300 text-lg">{subscription.plan_description || 'Premium features'} • Full access to all features</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-secondary">Active</div>
+              <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl px-4 py-2">
+                <div className="text-sm text-emerald-200 font-medium">Active</div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Enhanced Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div
               key={stat.title}
-              className="card hover:scale-105 transition-transform duration-300 animate-scaleIn"
+              className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-6 hover:scale-105 transition-all duration-300 animate-scaleIn shadow-2xl hover:shadow-emerald-500/25"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                  <Icon className={`w-6 h-6 ${stat.color}`} />
+                <div className={`w-14 h-14 ${stat.bgColor} rounded-2xl flex items-center justify-center border border-emerald-500/20 shadow-lg`}>
+                  <Icon className={`w-7 h-7 ${stat.color}`} />
                 </div>
                 {stat.title === 'Analyses Used' && (
-                  <span className="text-sm text-secondary">
+                  <span className="text-sm text-emerald-200 font-medium bg-emerald-500/20 border border-emerald-500/30 rounded-lg px-3 py-1">
                     {(analysesUsed ?? 0)}/{monthlyLimit ?? 5}
                   </span>
                 )}
               </div>
-              <div className="text-2xl font-bold text-primary mb-1">{stat.value}</div>
-              <div className="text-sm text-secondary">{stat.title}</div>
-              <div className="text-xs text-tertiary mt-2">{stat.subtitle}</div>
+              <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
+              <div className="text-sm font-semibold text-emerald-200 mb-1">{stat.title}</div>
+              <div className="text-xs text-gray-400">{stat.subtitle}</div>
             </div>
           );
         })}
       </div>
 
-      {/* Smart CTA Row */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="card">
+      {/* Enhanced Smart CTA Row */}
+      <div className="grid md:grid-cols-3 gap-6 mb-12">
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <BarChart3 className="w-5 h-5 text-accent-primary" />
-              <h3 className="font-semibold text-primary">Analyze New Article</h3>
-            </div>
-            <button className="btn-primary" onClick={() => window.dispatchEvent(new Event('open-analyzer'))}>Open</button>
-          </div>
-          <p className="text-sm text-secondary">Run AI analysis on a new URL and save results to your workspace.</p>
-        </div>
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <Target className="w-5 h-5 text-info" />
-              <h3 className="font-semibold text-primary">Competitor Comparison</h3>
-            </div>
-            <button className="btn-secondary" onClick={() => window.dispatchEvent(new Event('open-comparison'))}>Open</button>
-          </div>
-          <p className="text-sm text-secondary">Compare your article against a competitor and get actionable suggestions.</p>
-        </div>
-        {!isSubscribed && (
-          <div className="card border-warning/30">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-3">
-                <Zap className="w-5 h-5 text-warning" />
-                <h3 className="font-semibold text-primary">Upgrade to Unlock More</h3>
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-400/30 to-emerald-600/30 rounded-xl flex items-center justify-center border border-emerald-500/40">
+                <BarChart3 className="w-6 h-6 text-emerald-300" />
               </div>
-              <button className="btn-primary" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>Upgrade</button>
+              <h3 className="font-semibold text-white text-lg">Analyze New Article</h3>
             </div>
-            <p className="text-sm text-secondary">Increase your monthly quota and access advanced analytics.</p>
+            <button 
+              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-2 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105" 
+              onClick={() => window.dispatchEvent(new Event('open-analyzer'))}
+            >
+              Open
+            </button>
+          </div>
+          <p className="text-sm text-gray-300">Run AI analysis on a new URL and save results to your workspace.</p>
+        </div>
+        
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-400/30 to-blue-600/30 rounded-xl flex items-center justify-center border border-blue-500/40">
+                <Target className="w-6 h-6 text-blue-300" />
+              </div>
+              <h3 className="font-semibold text-white text-lg">Competitor Comparison</h3>
+            </div>
+            <button 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105" 
+              onClick={() => window.dispatchEvent(new Event('open-comparison'))}
+            >
+              Open
+            </button>
+          </div>
+          <p className="text-sm text-gray-300">Compare your article against a competitor and get actionable suggestions.</p>
+        </div>
+        
+        {!isSubscribed && (
+          <div className="bg-gray-900/50 backdrop-blur-xl border border-yellow-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-yellow-500/25 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400/30 to-yellow-600/30 rounded-xl flex items-center justify-center border border-yellow-500/40">
+                  <Zap className="w-6 h-6 text-yellow-300" />
+                </div>
+                <h3 className="font-semibold text-white text-lg">Upgrade to Unlock More</h3>
+              </div>
+              <button 
+                className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-semibold py-2 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105" 
+                onClick={() => window.dispatchEvent(new Event('open-pricing'))}
+              >
+                Upgrade
+              </button>
+            </div>
+            <p className="text-sm text-gray-300">Increase your monthly quota and access advanced analytics.</p>
           </div>
         )}
       </div>
 
-      {/* Main Content Grid */}
+      {/* Enhanced Main Content Grid */}
       <div className="grid xl:grid-cols-3 gap-8">
-        {/* Recent Analyses */}
+        {/* Enhanced Recent Analyses */}
         <div className="xl:col-span-2">
-          <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-primary">Recent Analyses</h3>
-              <button className="btn-secondary" onClick={() => window.dispatchEvent(new Event('open-analyzer'))}>New Analysis</button>
+          <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-8 shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400/30 to-emerald-600/30 rounded-xl flex items-center justify-center border border-emerald-500/40">
+                  <BarChart3 className="w-5 h-5 text-emerald-300" />
+                </div>
+                <h3 className="text-2xl font-bold text-white">Recent Analyses</h3>
+              </div>
+              <button 
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105" 
+                onClick={() => window.dispatchEvent(new Event('open-analyzer'))}
+              >
+                New Analysis
+              </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {recentAnalyses.length > 0 ? (
                 recentAnalyses.map((analysis, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-4 surface-secondary rounded-lg hover:bg-surface-tertiary transition-colors duration-200 border border-primary"
+                    className="flex items-center justify-between p-6 bg-gray-800/30 rounded-2xl hover:bg-gray-800/50 transition-all duration-300 border border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/25"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        analysis.type === 'analysis' ? 'bg-success/20' : 'bg-info/20'
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${
+                        analysis.type === 'analysis' ? 'bg-emerald-500/20 border-emerald-500/40' : 'bg-blue-500/20 border-blue-500/40'
                       }`}>
                         {analysis.type === 'analysis' ? (
-                          <BarChart3 className="w-5 h-5 text-success" />
+                          <BarChart3 className="w-6 h-6 text-emerald-300" />
                         ) : (
-                          <Target className="w-5 h-5 text-info" />
+                          <Target className="w-6 h-6 text-blue-300" />
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-primary">{analysis.title}</div>
-                        <div className="text-sm text-secondary">{analysis.url}</div>
-                        <div className="text-xs text-tertiary">{analysis.time}</div>
+                        <div className="font-semibold text-white text-lg">{analysis.title}</div>
+                        <div className="text-sm text-gray-300">{analysis.url}</div>
+                        <div className="text-xs text-gray-400">{analysis.time}</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-2xl font-bold ${
-                        analysis.score >= 80 ? 'text-success' : 
-                        analysis.score >= 60 ? 'text-warning' : 'text-error'
+                      <div className={`text-3xl font-bold ${
+                        analysis.score >= 80 ? 'text-emerald-400' : 
+                        analysis.score >= 60 ? 'text-yellow-400' : 'text-red-400'
                       }`}>
                         {analysis.score}
                       </div>
-                      <div className="text-xs text-tertiary">Score</div>
+                      <div className="text-xs text-gray-400">Score</div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-secondary">
-                  <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No analyses yet.</p>
-                  <p className="text-sm mt-2">Start analyzing content to see your results here.</p>
+                <div className="text-center py-12 text-gray-400">
+                  <div className="w-20 h-20 bg-gray-800/30 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-gray-700/50">
+                    <BarChart3 className="w-10 h-10 opacity-50" />
+                  </div>
+                  <p className="text-lg mb-2">No analyses yet.</p>
+                  <p className="text-sm">Start analyzing content to see your results here.</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Enhanced Sidebar */}
         <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="card">
-            <h3 className="text-lg font-bold text-primary mb-4">Quick Actions</h3>
-            <div className="space-y-3">
+          {/* Enhanced Quick Actions */}
+          <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-400/30 to-emerald-600/30 rounded-lg flex items-center justify-center border border-emerald-500/40">
+                <Zap className="w-4 h-4 text-emerald-300" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Quick Actions</h3>
+            </div>
+            <div className="space-y-4">
               <button 
                 disabled={limitReached}
                 onClick={() => window.dispatchEvent(new Event('open-analyzer'))}
-                className={`w-full p-3 rounded-lg text-left transition-colors ${
+                className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${
                   !limitReached 
-                    ? 'bg-accent-primary text-white hover:bg-accent-secondary' 
-                    : 'surface-tertiary text-tertiary cursor-not-allowed opacity-50'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105' 
+                    : 'bg-gray-800/30 text-gray-400 cursor-not-allowed opacity-50 border border-gray-700/50'
                 }`}
               >
-                <div className="font-medium">Analyze New Article</div>
-                <div className="text-sm">{!limitReached ? 'Start analyzing content' : 'Monthly limit reached'}</div>
+                <div className="font-semibold text-lg">Analyze New Article</div>
+                <div className="text-sm opacity-90">{!limitReached ? 'Start analyzing content' : 'Monthly limit reached'}</div>
               </button>
+              
               <button 
                 disabled={limitReached}
                 onClick={() => window.dispatchEvent(new Event('open-comparison'))}
-                className={`w-full p-3 rounded-lg text-left transition-colors ${
+                className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${
                   !limitReached 
-                    ? 'bg-accent-primary text-white hover:bg-accent-secondary' 
-                    : 'surface-tertiary text-tertiary cursor-not-allowed opacity-50'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-105' 
+                    : 'bg-gray-800/30 text-gray-400 cursor-not-allowed opacity-50 border border-gray-700/50'
                 }`}
               >
-                <div className="font-medium">Compare with Competitor</div>
-                <div className="text-sm">{!limitReached ? 'Compare your content' : 'Monthly limit reached'}</div>
+                <div className="font-semibold text-lg">Compare with Competitor</div>
+                <div className="text-sm opacity-90">{!limitReached ? 'Compare your content' : 'Monthly limit reached'}</div>
               </button>
+              
               {!isSubscribed && (
-              <button className="w-full p-3 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary transition-colors text-left" onClick={() => window.dispatchEvent(new Event('open-pricing'))}>
-                <div className="font-medium">View Pricing Plans</div>
-                <div className="text-sm opacity-90">Unlock all features</div>
-              </button>
+                <button 
+                  className="w-full p-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl hover:from-yellow-600 hover:to-yellow-700 transition-all duration-300 text-left hover:shadow-lg hover:shadow-yellow-500/25 hover:scale-105" 
+                  onClick={() => window.dispatchEvent(new Event('open-pricing'))}
+                >
+                  <div className="font-semibold text-lg">View Pricing Plans</div>
+                  <div className="text-sm opacity-90">Unlock all features</div>
+                </button>
               )}
             </div>
           </div>
