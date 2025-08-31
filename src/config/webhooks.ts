@@ -5,6 +5,39 @@ export const COMPETITOR_ARTICLE_WEBHOOK = 'https://flow.sokt.io/func/scriDmS1IH9
 export const COMPARISON_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511';
 export const KEYWORD_COMPARISON_WEBHOOK = 'https://flow.sokt.io/func/scrifD4jQoUt';
 
+// Helper function to use Netlify proxy when direct CSP fails
+export const sendViaProxy = async (targetUrl: string, payload: any) => {
+  try {
+    console.log('🔄 Using proxy for:', targetUrl);
+    
+    const response = await fetch('/.netlify/functions/proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        targetUrl,
+        payload
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Proxy request failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Proxy success:', result);
+    
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('💥 Proxy error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Proxy request failed' 
+    };
+  }
+};
+
 // Helper function to send data to n8n webhook for single URL analysis
 export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string }) => {
 	try {
