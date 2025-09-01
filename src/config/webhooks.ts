@@ -1,14 +1,13 @@
 // Webhook endpoints for AI analysis services
 export const N8N_ANALYSIS_WEBHOOK = 'https://flow.sokt.io/func/scriDmS1IH9A';
 export const USER_ARTICLE_WEBHOOK = 'https://flow.sokt.io/func/scriDmS1IH9A';
-export const COMPETITOR_ARTICLE_WEBHOOK = 'https://flow.sokt.io/func/scriDmS1IH9A';
-export const COMPARISON_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511';
+export const COMPARISON_WEBHOOK = '';
 export const KEYWORD_COMPARISON_WEBHOOK = 'https://flow.sokt.io/func/scrifD4jQoUt';
 
 // Helper function to use Netlify proxy when direct CSP fails
 export const sendViaProxy = async (targetUrl: string, payload: any) => {
   try {
-    console.log('🔄 Using proxy for:', targetUrl);
+    console.log('🔄 Using proxy for external service');
     
     const response = await fetch('/.netlify/functions/proxy', {
       method: 'POST',
@@ -26,7 +25,7 @@ export const sendViaProxy = async (targetUrl: string, payload: any) => {
     }
 
     const result = await response.json();
-    console.log('✅ Proxy success:', result);
+    console.log('✅ Proxy request successful');
     
     return { success: true, data: result.data };
   } catch (error) {
@@ -41,8 +40,8 @@ export const sendViaProxy = async (targetUrl: string, payload: any) => {
 // Helper function to send data to n8n webhook for single URL analysis
 export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string }) => {
 	try {
-		console.log('🔗 Sending single URL analysis to:', N8N_ANALYSIS_WEBHOOK);
-		console.log('📤 Single URL payload:', data);
+		console.log('🔗 Sending single URL analysis request');
+		console.log('📤 Analysis payload prepared');
 		
 		let response = await fetch(N8N_ANALYSIS_WEBHOOK, {
 			method: 'POST',
@@ -53,15 +52,13 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 			body: JSON.stringify(data)
 		});
 
-		console.log('📥 Single URL response status:', response.status);
-		console.log('📥 Single URL response headers:', Object.fromEntries(response.headers.entries()));
-		console.log('📥 Single URL response content-type:', response.headers.get('content-type'));
+		console.log('📥 Analysis response received');
 
 		if (!response.ok) {
 			const errorText = await response.text().catch(() => '');
-			console.warn('📛 Single URL webhook error response:', errorText);
+			console.warn('📛 Analysis error response received');
 			// Fallback: try USER_ARTICLE_WEBHOOK with { url }
-			console.log('↩️ Falling back to USER_ARTICLE_WEBHOOK');
+			console.log('↩️ Trying fallback endpoint');
 			response = await fetch(USER_ARTICLE_WEBHOOK, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -69,7 +66,7 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 			});
 			if (!response.ok) {
 				const err2 = await response.text().catch(() => '');
-				throw new Error(`Single analysis failed on both endpoints. Last status: ${response.status} - ${err2}`);
+				throw new Error(`Analysis failed on both endpoints. Last status: ${response.status}`);
 			}
 		}
 
@@ -77,17 +74,16 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 		let result;
 		try {
 			result = await response.json();
-			console.log('✅ Single URL webhook success (JSON):', result);
+			console.log('✅ Analysis webhook successful (JSON)');
 		} catch (jsonError) {
-			console.log('⚠️ [WEBHOOK] JSON parse failed, trying text:', jsonError);
+			console.log('⚠️ JSON parse failed, trying text fallback');
 			const textResult = await response.text();
-			console.log('📝 [WEBHOOK] Raw text response:', textResult);
 			try {
 				result = JSON.parse(textResult);
-				console.log('✅ Single URL webhook success (parsed text):', result);
+				console.log('✅ Analysis webhook successful (parsed text)');
 			} catch (parseError) {
-				console.error('💥 [WEBHOOK] Failed to parse response as JSON:', parseError);
-				throw new Error('Invalid JSON response from webhook');
+				console.error('💥 Failed to parse response as JSON');
+				throw new Error('Invalid JSON response from analysis service');
 			}
 		}
 		
@@ -96,27 +92,59 @@ export const sendToN8nWebhook = async (data: { keyword: string; userUrl: string 
 		if (typeof result === 'string') {
 			try {
 				parsedResult = JSON.parse(result);
-				console.log('🔄 [WEBHOOK] Parsed JSON string result:', parsedResult);
+				console.log('🔄 Parsed JSON string result');
 			} catch (parseError) {
-				console.warn('⚠️ [WEBHOOK] Failed to parse JSON string:', parseError);
+				console.warn('⚠️ Failed to parse JSON string');
 				parsedResult = result; // Use original if parsing fails
 			}
 		}
 		
+		// Validate that we have meaningful data before returning success
+		if (!parsedResult || (Array.isArray(parsedResult) && parsedResult.length === 0)) {
+			throw new Error('No analysis data received');
+		}
+		
+		// Check if we have valid scores (at least one non-zero score)
+		const hasValidScores = Array.isArray(parsedResult) 
+			? parsedResult.some(item => item && typeof item === 'object' && hasValidAnalysisScores(item))
+			: hasValidAnalysisScores(parsedResult);
+			
+		if (!hasValidScores) {
+			throw new Error('Invalid analysis data: no valid scores received');
+		}
+		
 		return { success: true, data: parsedResult };
 	} catch (error) {
-		console.error('💥 Single URL webhook error:', error);
+		console.error('💥 Analysis webhook error:', error);
 		return { 
 			success: false, 
-			error: error instanceof Error ? error.message : 'Unknown webhook error. Please check your connection and try again.' 
+			error: error instanceof Error ? error.message : 'Analysis service error. Please try again.' 
 		};
 	}
+};
+
+// Helper function to validate analysis scores
+const hasValidAnalysisScores = (data: any): boolean => {
+	if (!data || typeof data !== 'object') return false;
+	
+	const requiredFields = ['readability', 'factuality', 'structure', 'qa_format', 'structured_data', 'authority'];
+	const hasRequiredFields = requiredFields.every(field => field in data);
+	
+	if (!hasRequiredFields) return false;
+	
+	// Check if at least one score is greater than 0
+	const hasValidScores = requiredFields.some(field => {
+		const score = Number(data[field]);
+		return !isNaN(score) && score > 0;
+	});
+	
+	return hasValidScores;
 };
 
 // Helper function to analyze user article (single URL)
 export const analyzeUserArticle = async (url: string) => {
 	try {
-		console.log('🔗 Analyzing single user article:', url);
+		console.log('🔗 Analyzing single user article');
 		let response = await fetch(USER_ARTICLE_WEBHOOK, {
 			method: 'POST',
 			headers: {
@@ -145,7 +173,7 @@ export const analyzeUserArticle = async (url: string) => {
 		}
 
 		const result = await response.json();
-		console.log('✅ Single user article analysis success:', result);
+		console.log('✅ Single user article analysis successful');
 		return { success: true, data: result };
 	} catch (error) {
 		console.error('Single user article analysis error:', error);
@@ -156,13 +184,13 @@ export const analyzeUserArticle = async (url: string) => {
 // Helper function to analyze competitor article (single URL)
 export const analyzeCompetitorArticle = async (url: string) => {
 	try {
-		console.log('🔗 Analyzing single competitor article:', url);
-		let response = await fetch(COMPETITOR_ARTICLE_WEBHOOK, {
+		console.log('🔗 Analyzing single competitor article');
+		let response = await fetch(USER_ARTICLE_WEBHOOK, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({ url, analysis_type: 'single_competitor' })
+			body: JSON.stringify({ url })
 		});
 
 		if (!response.ok) {
@@ -182,7 +210,7 @@ export const analyzeCompetitorArticle = async (url: string) => {
 		}
 
 		const result = await response.json();
-		console.log('✅ Single competitor article analysis success:', result);
+		console.log('✅ Single competitor article analysis successful');
 		return { success: true, data: result };
 	} catch (error) {
 		console.error('Single competitor article analysis error:', error);
@@ -194,8 +222,8 @@ export const analyzeCompetitorArticle = async (url: string) => {
 export const analyzeComparison = async (params: { userUrl: string; competitorUrl: string }) => {
 	const endpoint = COMPARISON_WEBHOOK || USER_ARTICLE_WEBHOOK;
 	try {
-		console.log('🔗 Sending comparison request to:', endpoint);
-		console.log('📤 Comparison payload:', params);
+		console.log('🔗 Sending comparison request');
+		console.log('📤 Comparison payload prepared');
 		
 		let response = await fetch(endpoint, {
 			method: 'POST',
@@ -225,7 +253,7 @@ export const analyzeComparison = async (params: { userUrl: string; competitorUrl
 		}
 
 		const result = await response.json();
-		console.log('✅ Comparison success:', result);
+		console.log('✅ Comparison successful');
 		return { success: true, data: result };
 	} catch (error) {
 		console.error('💥 Comparison webhook error:', error);
@@ -240,8 +268,8 @@ export const analyzeComparison = async (params: { userUrl: string; competitorUrl
 export const analyzeKeywordComparison = async (params: { url: string; keyword: string }) => {
 	const endpoint = KEYWORD_COMPARISON_WEBHOOK;
 	try {
-		console.log('🔗 Sending keyword comparison request to:', endpoint);
-		console.log('📤 Keyword comparison payload:', params);
+		console.log('🔗 Sending keyword comparison request');
+		console.log('📤 Keyword comparison payload prepared');
 		
 		const response = await fetch(endpoint, {
 			method: 'POST',

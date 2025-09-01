@@ -92,6 +92,56 @@ const ScoreCard: React.FC<{
   );
 };
 
+// Helper function to validate analysis scores
+const hasValidAnalysisScores = (data: any): boolean => {
+  if (!data || typeof data !== 'object') return false;
+  
+  const requiredFields = ['readability', 'factuality', 'structure', 'qa_format', 'structured_data', 'authority'];
+  const hasRequiredFields = requiredFields.every(field => field in data);
+  
+  if (!hasRequiredFields) return false;
+  
+  // Check if at least one score is greater than 0
+  const hasValidScores = requiredFields.some(field => {
+    const score = Number(data[field]);
+    return !isNaN(score) && score > 0;
+  });
+  
+  return hasValidScores;
+};
+
+// Helper function to validate keyword analysis data
+const hasValidKeywordAnalysisData = (data: any): boolean => {
+  if (!data || typeof data !== 'object') return false;
+  
+  // Check if we have at least one meaningful result
+  const hasMissingTopics = Array.isArray(data.missing_topics) && data.missing_topics.length > 0;
+  const hasMissingEntities = Array.isArray(data.missing_entities) && data.missing_entities.length > 0;
+  const hasContentGaps = Array.isArray(data.content_gaps) && data.content_gaps.length > 0;
+  const hasSeoOpportunities = Array.isArray(data.seo_opportunities) && data.seo_opportunities.length > 0;
+  
+  // At least one category should have meaningful data
+  return hasMissingTopics || hasMissingEntities || hasContentGaps || hasSeoOpportunities;
+};
+
+// Helper function to convert values to numbers safely
+const toNumber = (value: any): number => {
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
+// Helper function to normalize analysis data
+const normalize = (data: any): AnalysisResult => {
+  return {
+    readability: toNumber(data.readability),
+    factuality: toNumber(data.factuality),
+    structure: toNumber(data.structure),
+    qa_format: toNumber(data.qa_format),
+    structured_data: toNumber(data.structured_data),
+    authority: toNumber(data.authority)
+  };
+};
+
 export const CompetitorComparison: React.FC = () => {
   const { user } = useUser();
   const [userUrl, setUserUrl] = useState('');
@@ -185,7 +235,20 @@ export const CompetitorComparison: React.FC = () => {
 
         if (!response.success) throw new Error(response.error || 'Comparison webhook failed');
 
+        // Validate that we have meaningful comparison data
         const payload: any = response.data || {};
+        if (!payload || (Array.isArray(payload) && payload.length === 0)) {
+          throw new Error('No comparison data received');
+        }
+
+        // Check if we have valid scores for both articles
+        const hasValidComparisonData = Array.isArray(payload) 
+          ? payload.length >= 2 && payload.every(item => item && hasValidAnalysisScores(item))
+          : payload.user && payload.competitor && hasValidAnalysisScores(payload.user) && hasValidAnalysisScores(payload.competitor);
+
+        if (!hasValidComparisonData) {
+          throw new Error('Invalid comparison data: missing or invalid scores');
+        }
         const normalize = (obj: any): AnalysisResult => {
           const item = Array.isArray(obj) ? (obj[0] || {}) : (obj || {});
           const toNumber = (v: any) => {
@@ -259,20 +322,22 @@ export const CompetitorComparison: React.FC = () => {
           throw new Error(response.error || 'Keyword analysis failed');
         }
 
-        console.log('🔍 [DEBUG] Keyword analysis response:', response);
-        console.log('🔍 [DEBUG] response.data:', response.data);
-        console.log('🔍 [DEBUG] response.data type:', typeof response.data);
-        console.log('🔍 [DEBUG] response.data keys:', response.data ? Object.keys(response.data) : 'no data');
+        // Validate keyword analysis data
+        const keywordData = response.data;
+        if (!keywordData || !hasValidKeywordAnalysisData(keywordData)) {
+          throw new Error('Invalid keyword analysis data: missing or invalid content');
+        }
 
-        setKeywordAnalysisResult(response.data);
+        setKeywordAnalysisResult(keywordData);
         setComparisonData(null);
         
         console.log('🔍 [DEBUG] keywordAnalysisResult set to:', response.data);
 
-        // Save keyword analysis to database to count towards comparison limits
-        try {
-          // For keyword analysis, we'll use the keyword as a "competitor" to work around the NOT NULL constraint
-          const savedKeywordAnalysis = await saveUserComparison({
+        // Only save keyword analysis if we have valid data
+        if (user && hasValidKeywordAnalysisData(keywordData)) {
+          try {
+            // For keyword analysis, we'll use the keyword as a "competitor" to work around the NOT NULL constraint
+            const savedKeywordAnalysis = await saveUserComparison({
             userUrl: userUrl.trim(),
             competitorUrl: `keyword:${keyword.trim()}`, // Use keyword as competitor URL to satisfy NOT NULL constraint
             comparison_results: {
@@ -295,7 +360,7 @@ export const CompetitorComparison: React.FC = () => {
             // Refresh local allowance banner to reflect new usage
             try {
               const a2 = await evaluateComparisonAllowance(user.id);
-              setAllowInfo({ canProceed: a2.canProceed, remaining: a2.remaining || 0, limit: a2.limit });
+              setAllowInfo({ canProceed: a2.canProceed || false, remaining: a2.remaining || 0, limit: a2.limit });
             } catch {}
           }
         } catch (saveError) {

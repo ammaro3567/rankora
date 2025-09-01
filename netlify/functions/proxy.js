@@ -26,8 +26,8 @@ export async function handler(event, context) {
       };
     }
 
-    console.log('🔄 Proxying request to:', targetUrl);
-    console.log('📤 Payload:', payload);
+    console.log('🔄 Proxying request to external service');
+    console.log('📤 Payload received');
 
     // Make the request to the target URL
     const response = await fetch(targetUrl, {
@@ -40,8 +40,8 @@ export async function handler(event, context) {
     });
 
     const responseText = await response.text();
-    console.log('📥 Response status:', response.status);
-    console.log('📥 Response body:', responseText);
+    console.log('📥 Response received');
+    console.log('📥 Response processed');
 
     // Try to parse as JSON, fallback to text
     let responseData;
