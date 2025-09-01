@@ -434,30 +434,33 @@ export const CompetitorComparison: React.FC = () => {
         // Only save keyword analysis if we have valid data
         if (user && hasValidKeywordAnalysisData(keywordData)) {
           try {
-            // For keyword analysis, we'll use the keyword as a "competitor" to work around the NOT NULL constraint
-            const savedKeywordAnalysis = await saveUserComparison({
-              userUrl: userUrl.trim(),
-              competitorUrl: `keyword:${keyword.trim()}`, // Use keyword as competitor URL to satisfy NOT NULL constraint
-              comparison_results: {
-                keyword: keyword.trim(),
-                analysis_type: 'keyword',
-                missing_topics: keywordData?.missing_topics || [],
-                missing_entities: keywordData?.missing_entities || [],
-                content_gaps: keywordData?.content_gaps || [],
-                seo_opportunities: keywordData?.seo_opportunities || []
-              }
+            // Save keyword analysis to the analyses table (not comparison_analyses) so it appears in projects
+            const summary = {
+              keyword: keyword.trim(),
+              missing_topics: keywordData?.missing_topics || [],
+              missing_entities: keywordData?.missing_entities || [],
+              content_gaps: keywordData?.content_gaps || [],
+              seo_opportunities: keywordData?.seo_opportunities || [],
+              analysis_type: 'keyword_analysis'
+            };
+
+            const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
+              p_clerk_user_id: user.id,
+              p_url: userUrl.trim(),
+              p_analysis_results: summary,
+              p_project_id: null // Will be linked to project later when user saves
             });
 
-            if (savedKeywordAnalysis) {
-              console.log('✅ Keyword analysis saved to database:', savedKeywordAnalysis);
-              setCreatedComparisonAnalysisId(typeof savedKeywordAnalysis === 'number' ? savedKeywordAnalysis : Number(savedKeywordAnalysis));
+            if (createdId) {
+              console.log('✅ Keyword analysis saved to database:', createdId);
+              setCreatedComparisonAnalysisId(Number(createdId));
               
               // Dispatch event to update Dashboard
-              window.dispatchEvent(new CustomEvent('comparison-completed'));
+              window.dispatchEvent(new CustomEvent('analysis-completed'));
               
               // Refresh local allowance banner to reflect new usage
               try {
-                const a2 = await evaluateComparisonAllowance(user.id);
+                const a2 = await evaluateAnalysisAllowance(user.id);
                 setAllowInfo({ canProceed: a2.canProceed || false, remaining: a2.remaining || 0, limit: a2.limit });
               } catch {}
             }
@@ -1251,31 +1254,60 @@ export const CompetitorComparison: React.FC = () => {
                       }
                       if (!projectId) throw new Error('Unable to resolve project');
                       
-                      // Save keyword analysis data
+                      // Save analysis data to project
                       if (createdComparisonAnalysisId) {
+                        // Link existing analysis to project
                         await saveAnalysisToProject(String(projectId), String(createdComparisonAnalysisId));
                         window.dispatchEvent(new CustomEvent('project-updated'));
                       } else {
+                        // Create new analysis and link to project
                         try {
-                          const summary = {
-                            keyword: keywordAnalysisResult?.keyword || '',
-                            missing_topics: keywordAnalysisResult?.missing_topics || [],
-                            missing_entities: keywordAnalysisResult?.missing_entities || [],
-                            content_gaps: keywordAnalysisResult?.content_gaps || [],
-                            seo_opportunities: keywordAnalysisResult?.seo_opportunities || [],
-                            analysis_type: 'keyword_analysis'
-                          } as any;
-                          const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
-                            p_clerk_user_id: user!.id,
-                            p_url: userUrl.trim() + ' (keyword analysis)',
-                            p_analysis_results: summary,
-                            p_project_id: Number(projectId)
-                          });
-                          if (typeof createdId === 'number') {
-                            await saveAnalysisToProject(String(projectId), String(createdId));
-                            window.dispatchEvent(new CustomEvent('project-updated'));
+                          if (keywordAnalysisResult) {
+                            // For keyword analysis
+                            const summary = {
+                              keyword: keywordAnalysisResult.keyword || '',
+                              missing_topics: keywordAnalysisResult.missing_topics || [],
+                              missing_entities: keywordAnalysisResult.missing_entities || [],
+                              content_gaps: keywordAnalysisResult.content_gaps || [],
+                              seo_opportunities: keywordAnalysisResult.seo_opportunities || [],
+                              analysis_type: 'keyword_analysis'
+                            };
+                            const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
+                              p_clerk_user_id: user!.id,
+                              p_url: userUrl.trim(),
+                              p_analysis_results: summary,
+                              p_project_id: Number(projectId)
+                            });
+                            if (typeof createdId === 'number') {
+                              await saveAnalysisToProject(String(projectId), String(createdId));
+                              window.dispatchEvent(new CustomEvent('project-updated'));
+                            }
+                          } else if (comparisonData) {
+                            // For comparison analysis
+                            const summary = {
+                              user_analysis: comparisonData.userArticle,
+                              competitor_analysis: comparisonData.competitorArticle,
+                              suggestions: comparisonData.suggestions,
+                              quickWins: comparisonData.quickWins,
+                              overallUserReadinessScore: comparisonData.overallUserReadinessScore,
+                              seoOpportunityScore: comparisonData.seoOpportunityScore,
+                              analysis_type: 'comparison'
+                            };
+                            const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
+                              p_clerk_user_id: user!.id,
+                              p_url: userUrl.trim() + ' vs ' + competitorUrl.trim(),
+                              p_analysis_results: summary,
+                              p_project_id: Number(projectId)
+                            });
+                            if (typeof createdId === 'number') {
+                              await saveAnalysisToProject(String(projectId), String(createdId));
+                              window.dispatchEvent(new CustomEvent('project-updated'));
+                            }
                           }
-                        } catch {}
+                        } catch (error) {
+                          console.error('Failed to create analysis:', error);
+                          throw error;
+                        }
                       }
                       
                       setSaveOpen(false);
