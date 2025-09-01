@@ -198,7 +198,6 @@ export const CompetitorComparison: React.FC = () => {
         const comparisonAllowance = await evaluateComparisonAllowance(user.id);
         if (!comparisonAllowance.canProceed) {
           setError(`Monthly comparison limit reached (${comparisonAllowance.limit} per month). Please upgrade your plan.`);
-          setIsAnalyzing(false);
           return;
         }
         setAllowInfo({ 
@@ -338,34 +337,35 @@ export const CompetitorComparison: React.FC = () => {
           try {
             // For keyword analysis, we'll use the keyword as a "competitor" to work around the NOT NULL constraint
             const savedKeywordAnalysis = await saveUserComparison({
-            userUrl: userUrl.trim(),
-            competitorUrl: `keyword:${keyword.trim()}`, // Use keyword as competitor URL to satisfy NOT NULL constraint
-            comparison_results: {
-              keyword: keyword.trim(),
-              analysis_type: 'keyword',
-              missing_topics: response.data?.missing_topics || [],
-              missing_entities: response.data?.missing_entities || [],
-              content_gaps: response.data?.content_gaps || [],
-              seo_opportunities: response.data?.seo_opportunities || []
-            }
-          });
+              userUrl: userUrl.trim(),
+              competitorUrl: `keyword:${keyword.trim()}`, // Use keyword as competitor URL to satisfy NOT NULL constraint
+              comparison_results: {
+                keyword: keyword.trim(),
+                analysis_type: 'keyword',
+                missing_topics: keywordData?.missing_topics || [],
+                missing_entities: keywordData?.missing_entities || [],
+                content_gaps: keywordData?.content_gaps || [],
+                seo_opportunities: keywordData?.seo_opportunities || []
+              }
+            });
 
-          if (savedKeywordAnalysis) {
-            console.log('✅ Keyword analysis saved to database:', savedKeywordAnalysis);
-            setCreatedComparisonAnalysisId(typeof savedKeywordAnalysis === 'number' ? savedKeywordAnalysis : Number(savedKeywordAnalysis));
-            
-            // Dispatch event to update Dashboard
-            window.dispatchEvent(new CustomEvent('comparison-completed'));
-            
-            // Refresh local allowance banner to reflect new usage
-            try {
-              const a2 = await evaluateComparisonAllowance(user.id);
-              setAllowInfo({ canProceed: a2.canProceed || false, remaining: a2.remaining || 0, limit: a2.limit });
-            } catch {}
+            if (savedKeywordAnalysis) {
+              console.log('✅ Keyword analysis saved to database:', savedKeywordAnalysis);
+              setCreatedComparisonAnalysisId(typeof savedKeywordAnalysis === 'number' ? savedKeywordAnalysis : Number(savedKeywordAnalysis));
+              
+              // Dispatch event to update Dashboard
+              window.dispatchEvent(new CustomEvent('comparison-completed'));
+              
+              // Refresh local allowance banner to reflect new usage
+              try {
+                const a2 = await evaluateComparisonAllowance(user.id);
+                setAllowInfo({ canProceed: a2.canProceed || false, remaining: a2.remaining || 0, limit: a2.limit });
+              } catch {}
+            }
+          } catch (saveError) {
+            console.error('❌ Failed to save keyword analysis:', saveError);
+            // Don't throw error here, just log it - the analysis still worked
           }
-        } catch (saveError) {
-          console.error('❌ Failed to save keyword analysis:', saveError);
-          // Don't throw error here, just log it - the analysis still worked
         }
       }
 
@@ -666,7 +666,7 @@ export const CompetitorComparison: React.FC = () => {
                 type="submit"
                 disabled={isAnalyzing || 
                   (analysisType === 'comparison' ? (!userUrl.trim() || !competitorUrl.trim()) : (!userUrl.trim() || !keyword.trim())) || 
-                  (allowInfo && allowInfo.canProceed === false)}
+                  (allowInfo ? !allowInfo.canProceed : false)}
                 className="relative group px-12 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-emerald-600/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
@@ -701,22 +701,22 @@ export const CompetitorComparison: React.FC = () => {
       {/* Allowance banner */}
       {allowInfo && (
         <div className={`max-w-4xl mx-auto mb-8 ${
-          allowInfo.canProceed === true 
+          allowInfo.canProceed 
             ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-700/10 border-emerald-500/30' 
             : 'bg-gradient-to-r from-red-500/10 via-red-600/10 to-red-700/10 border-red-500/30'
         } border rounded-2xl p-6 text-center shadow-2xl`}>
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-              allowInfo.canProceed === true 
+              allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border border-emerald-500/40' 
                 : 'bg-red-500/20 border border-red-500/40'
             }`}>
               <Target className={`w-5 h-5 ${
-                allowInfo.canProceed === true ? 'text-emerald-400' : 'text-red-400'
+                allowInfo.canProceed ? 'text-emerald-400' : 'text-red-400'
               }`} />
             </div>
             <span className={`font-semibold text-lg ${
-              allowInfo.canProceed === true ? 'text-emerald-200' : 'text-red-200'
+              allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
             }`}>
               Monthly Comparison Usage
             </span>
@@ -724,34 +724,34 @@ export const CompetitorComparison: React.FC = () => {
           
           <div className="grid grid-cols-2 gap-6 mb-4">
             <div className={`text-center p-4 rounded-xl border ${
-              allowInfo.canProceed === true 
+              allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border-emerald-500/30' 
                 : 'bg-red-500/20 border-red-500/30'
             }`}>
               <div className={`text-2xl font-bold mb-1 ${
-                allowInfo.canProceed === true ? 'text-emerald-300' : 'text-red-300'
+                allowInfo.canProceed ? 'text-emerald-300' : 'text-red-300'
               }`}>
                 {allowInfo.remaining}
               </div>
               <div className={`text-sm ${
-                allowInfo.canProceed === true ? 'text-emerald-200' : 'text-red-200'
+                allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
               }`}>
                 Remaining
               </div>
             </div>
             
             <div className={`text-center p-4 rounded-xl border ${
-              allowInfo.canProceed === true 
+              allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border-emerald-500/30' 
                 : 'bg-red-500/20 border-red-500/30'
             }`}>
               <div className={`text-2xl font-bold mb-1 ${
-                allowInfo.canProceed === true ? 'text-emerald-300' : 'text-red-300'
+                allowInfo.canProceed ? 'text-emerald-300' : 'text-red-300'
               }`}>
                 {allowInfo.limit || '∞'}
               </div>
               <div className={`text-sm ${
-                allowInfo.canProceed === true ? 'text-emerald-200' : 'text-red-200'
+                allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
               }`}>
                 Total Limit
               </div>
