@@ -272,9 +272,23 @@ export const CompetitorComparison: React.FC = () => {
 
         console.log('🔍 [DEBUG] Normalized payload:', normalizedPayload);
 
-        hasValidComparisonData = Array.isArray(normalizedPayload) 
-          ? normalizedPayload.length >= 2 && normalizedPayload.every(item => item && hasValidAnalysisScores(item))
-          : normalizedPayload.user && normalizedPayload.competitor && hasValidAnalysisScores(normalizedPayload.user) && hasValidAnalysisScores(normalizedPayload.competitor);
+        // Check if we have valid comparison data in the expected format
+        if (Array.isArray(normalizedPayload) && normalizedPayload.length >= 1) {
+          const firstItem = normalizedPayload[0];
+          // Check if it has the expected structure with User Analysis and Competitor Analysis
+          if (firstItem && firstItem['User Analysis'] && firstItem['Competitor Analysis']) {
+            hasValidComparisonData = hasValidAnalysisScores(firstItem['User Analysis']) && hasValidAnalysisScores(firstItem['Competitor Analysis']);
+          } else if (firstItem && firstItem.user_analysis && firstItem.competitor_analysis) {
+            hasValidComparisonData = hasValidAnalysisScores(firstItem.user_analysis) && hasValidAnalysisScores(firstItem.competitor_analysis);
+          } else if (firstItem && firstItem.user && firstItem.competitor) {
+            hasValidComparisonData = hasValidAnalysisScores(firstItem.user) && hasValidAnalysisScores(firstItem.competitor);
+          } else if (normalizedPayload.length >= 2) {
+            // Check if we have two separate analysis objects
+            hasValidComparisonData = hasValidAnalysisScores(normalizedPayload[0]) && hasValidAnalysisScores(normalizedPayload[1]);
+          }
+        } else if (normalizedPayload.user && normalizedPayload.competitor) {
+          hasValidComparisonData = hasValidAnalysisScores(normalizedPayload.user) && hasValidAnalysisScores(normalizedPayload.competitor);
+        }
 
         if (!hasValidComparisonData) {
           console.error('❌ [DEBUG] Invalid comparison data:', {
