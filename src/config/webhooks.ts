@@ -252,8 +252,36 @@ export const analyzeComparison = async (params: { userUrl: string; competitorUrl
 			}
 		}
 
-		const result = await response.json();
-		console.log('✅ Comparison successful');
+		// Try to get JSON response, fallback to text if needed
+		let result;
+		try {
+			result = await response.json();
+			console.log('✅ Comparison successful (JSON):', result);
+		} catch (jsonError) {
+			console.log('⚠️ [COMPARISON] JSON parse failed, trying text:', jsonError);
+			const textResult = await response.text();
+			console.log('📝 [COMPARISON] Raw text response:', textResult);
+			
+			// Handle responses wrapped in markdown code blocks
+			let cleanText = textResult;
+			if (cleanText.includes('```json')) {
+				cleanText = cleanText.replace(/```json\s*/, '').replace(/\s*```$/, '');
+			} else if (cleanText.includes('```')) {
+				cleanText = cleanText.replace(/```\s*/, '').replace(/\s*```$/, '');
+			}
+			
+			cleanText = cleanText.trim();
+			console.log('🧹 [COMPARISON] Cleaned text:', cleanText);
+			
+			try {
+				result = JSON.parse(cleanText);
+				console.log('✅ Comparison successful (parsed text):', result);
+			} catch (parseError) {
+				console.error('💥 [COMPARISON] Failed to parse response as JSON:', parseError);
+				throw new Error('Invalid JSON response from comparison webhook');
+			}
+		}
+		
 		return { success: true, data: result };
 	} catch (error) {
 		console.error('💥 Comparison webhook error:', error);

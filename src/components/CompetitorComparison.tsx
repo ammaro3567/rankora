@@ -241,13 +241,62 @@ export const CompetitorComparison: React.FC = () => {
         }
 
         // Check if we have valid scores for both articles
-        const hasValidComparisonData = Array.isArray(payload) 
-          ? payload.length >= 2 && payload.every(item => item && hasValidAnalysisScores(item))
-          : payload.user && payload.competitor && hasValidAnalysisScores(payload.user) && hasValidAnalysisScores(payload.competitor);
+        console.log('🔍 [DEBUG] Raw payload structure:', {
+          isArray: Array.isArray(payload),
+          length: Array.isArray(payload) ? payload.length : 'N/A',
+          keys: !Array.isArray(payload) ? Object.keys(payload || {}) : 'N/A',
+          payload: payload
+        });
+
+        // Try to find valid data in different possible formats
+        let hasValidComparisonData = false;
+        let normalizedPayload = payload;
+
+        // Check if payload is wrapped in a response object
+        if (payload && typeof payload === 'object' && payload.data) {
+          normalizedPayload = payload.data;
+          console.log('🔄 [DEBUG] Found data wrapper, using payload.data');
+        }
+
+        // Check if payload is wrapped in a result object
+        if (normalizedPayload && typeof normalizedPayload === 'object' && normalizedPayload.result) {
+          normalizedPayload = normalizedPayload.result;
+          console.log('🔄 [DEBUG] Found result wrapper, using payload.result');
+        }
+
+        // Check if payload is wrapped in a response object
+        if (normalizedPayload && typeof normalizedPayload === 'object' && normalizedPayload.response) {
+          normalizedPayload = normalizedPayload.response;
+          console.log('🔄 [DEBUG] Found response wrapper, using payload.response');
+        }
+
+        console.log('🔍 [DEBUG] Normalized payload:', normalizedPayload);
+
+        hasValidComparisonData = Array.isArray(normalizedPayload) 
+          ? normalizedPayload.length >= 2 && normalizedPayload.every(item => item && hasValidAnalysisScores(item))
+          : normalizedPayload.user && normalizedPayload.competitor && hasValidAnalysisScores(normalizedPayload.user) && hasValidAnalysisScores(normalizedPayload.competitor);
 
         if (!hasValidComparisonData) {
+          console.error('❌ [DEBUG] Invalid comparison data:', {
+            originalPayload: payload,
+            normalizedPayload,
+            hasValidComparisonData,
+            validationDetails: {
+              isArray: Array.isArray(normalizedPayload),
+              length: Array.isArray(normalizedPayload) ? normalizedPayload.length : 'N/A',
+              keys: !Array.isArray(payload) ? Object.keys(payload || {}) : 'N/A',
+              normalizedKeys: !Array.isArray(normalizedPayload) ? Object.keys(normalizedPayload || {}) : 'N/A',
+              hasUser: !Array.isArray(normalizedPayload) ? !!normalizedPayload.user : 'N/A',
+              hasCompetitor: !Array.isArray(normalizedPayload) ? !!normalizedPayload.competitor : 'N/A',
+              userScores: !Array.isArray(normalizedPayload) && normalizedPayload.user ? hasValidAnalysisScores(normalizedPayload.user) : 'N/A',
+              competitorScores: !Array.isArray(normalizedPayload) && normalizedPayload.competitor ? hasValidAnalysisScores(normalizedPayload.competitor) : 'N/A'
+            }
+          });
           throw new Error('Invalid comparison data: missing or invalid scores');
         }
+
+        // Use normalized payload for further processing
+        const finalPayload = normalizedPayload;
         const normalize = (obj: any): AnalysisResult => {
           const item = Array.isArray(obj) ? (obj[0] || {}) : (obj || {});
           const toNumber = (v: any) => {
@@ -271,8 +320,8 @@ export const CompetitorComparison: React.FC = () => {
         let overallUserReadinessScore: number | undefined;
         let seoOpportunityScore: number | undefined;
 
-        if (Array.isArray(payload) && payload.length >= 1 && (payload[0]?.user_analysis || payload[0]?.competitor_analysis || payload[0]?.['User Analysis'] || payload[0]?.['Competitor Analysis'])) {
-          const entry = payload[0] || {};
+        if (Array.isArray(finalPayload) && finalPayload.length >= 1 && (finalPayload[0]?.user_analysis || finalPayload[0]?.competitor_analysis || finalPayload[0]?.['User Analysis'] || finalPayload[0]?.['Competitor Analysis'])) {
+          const entry = finalPayload[0] || {};
           const userBlock = entry.user_analysis ?? entry['User Analysis'] ?? {};
           const competitorBlock = entry.competitor_analysis ?? entry['Competitor Analysis'] ?? {};
           userData = normalize(userBlock);
@@ -285,18 +334,18 @@ export const CompetitorComparison: React.FC = () => {
           };
           overallUserReadinessScore = toNumber(entry.overall_user_readiness_score);
           seoOpportunityScore = toNumber(entry.seo_opportunity_score);
-        } else if (Array.isArray(payload) && payload.length >= 2) {
-          const primary = payload[0] || {};
-          const secondary = payload[1] || {};
+        } else if (Array.isArray(finalPayload) && finalPayload.length >= 2) {
+          const primary = finalPayload[0] || {};
+          const secondary = finalPayload[1] || {};
           userData = normalize(primary);
           compData = normalize(secondary);
           const s1 = Array.isArray(primary.suggestions) ? primary.suggestions : [];
           const s2 = Array.isArray(secondary.suggestions) ? secondary.suggestions : [];
           suggestions = [...s1, ...s2];
         } else {
-          userData = normalize(payload.user ?? payload.userArticle ?? payload.user_result ?? payload);
-          compData = normalize(payload.competitor ?? payload.competitorArticle ?? payload.competitor_result ?? payload);
-          suggestions = Array.isArray(payload.suggestions) ? payload.suggestions : [];
+          userData = normalize(finalPayload.user ?? finalPayload.userArticle ?? finalPayload.user_result ?? finalPayload);
+          compData = normalize(finalPayload.competitor ?? finalPayload.competitorArticle ?? finalPayload.competitor_result ?? finalPayload);
+          suggestions = Array.isArray(finalPayload.suggestions) ? finalPayload.suggestions : [];
         }
 
         const data: ComparisonData = {
