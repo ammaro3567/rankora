@@ -1,7 +1,7 @@
 // Webhook endpoints for AI analysis services
 export const N8N_ANALYSIS_WEBHOOK = 'https://flow.sokt.io/func/scriDmS1IH9A';
 export const USER_ARTICLE_WEBHOOK = 'https://flow.sokt.io/func/scriDmS1IH9A';
-export const COMPARISON_WEBHOOK = '';
+export const COMPARISON_WEBHOOK = 'https://n8n-n8n.lyie4i.easypanel.host/webhook/1ce6ce57-fc27-459c-b538-eedd345f2511';
 export const KEYWORD_COMPARISON_WEBHOOK = 'https://flow.sokt.io/func/scrifD4jQoUt';
 
 // Helper function to use Netlify proxy when direct CSP fails
