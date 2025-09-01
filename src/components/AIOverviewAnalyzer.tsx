@@ -543,26 +543,59 @@ export const AIOverviewAnalyzer: React.FC = () => {
                     setSaving(true);
                     try {
                       let projectId: number | null = null;
+                      
                       if (selectedProjectId === 'new') {
                         if (!newProjectName.trim()) {
                           setSaveError('Please enter a project name');
                           setSaving(false);
                           return;
                         }
+                        
+                        // Check project limits before creating
+                        try {
+                          const limits = await supabase.rpc('check_user_limits', {
+                            p_clerk_user_id: user!.id
+                          });
+                          
+                          if (limits.data && limits.data[0] && !limits.data[0].can_create_project) {
+                            setSaveError('Project limit reached. Please upgrade your plan.');
+                            setSaving(false);
+                            return;
+                          }
+                        } catch (limitError) {
+                          console.warn('⚠️ Could not check project limits:', limitError);
+                        }
+                        
                         const created = await createProject({ name: newProjectName.trim(), description: '' });
-                        if ((created as any)?.error) throw new Error((created as any).error.message);
+                        if ((created as any)?.error) {
+                          if ((created as any).error.code === 'LIMIT_EXCEEDED') {
+                            setSaveError('Project limit reached. Please upgrade your plan.');
+                          } else {
+                            setSaveError((created as any).error.message || 'Failed to create project');
+                          }
+                          setSaving(false);
+                          return;
+                        }
+                        
                         const list = await listProjects();
                         setProjects(list);
                         projectId = list[0]?.id || null;
                       } else if (typeof selectedProjectId === 'number') {
                         projectId = selectedProjectId;
                       }
-                      if (!projectId) throw new Error('Unable to resolve project');
-                      // Link the just-created analysis id directly when available
+                      
+                      if (!projectId) {
+                        throw new Error('Unable to resolve project');
+                      }
+                      
+                      // Link the analysis to the project
                       if (lastAnalysisId) {
+                        console.log('🔗 Linking analysis', lastAnalysisId, 'to project', projectId);
                         await saveAnalysisToProject(String(projectId), String(lastAnalysisId));
+                        console.log('✅ Analysis linked to project successfully');
                       } else {
                         // Fallback: try to locate by URL
+                        console.log('🔍 Fallback: searching for analysis by URL');
                         try {
                           const { data: recent } = await supabase
                             .from('user_analyses')
@@ -571,14 +604,31 @@ export const AIOverviewAnalyzer: React.FC = () => {
                             .eq('url', url.trim())
                             .order('created_at', { ascending: false })
                             .limit(1);
+                          
                           if (recent && recent[0]?.id) {
+                            console.log('🔗 Linking found analysis', recent[0].id, 'to project', projectId);
                             await saveAnalysisToProject(String(projectId), String(recent[0].id));
+                            console.log('✅ Analysis linked to project successfully (fallback)');
+                          } else {
+                            console.warn('⚠️ No analysis found to link to project');
                           }
-                        } catch {}
+                        } catch (linkError) {
+                          console.error('💥 Failed to link analysis to project:', linkError);
+                          setSaveError('Analysis saved but could not be linked to project');
+                          setSaving(false);
+                          return;
+                        }
                       }
+                      
+                      // Dispatch events to update UI
+                      window.dispatchEvent(new CustomEvent('project-updated'));
+                      window.dispatchEvent(new CustomEvent('analysis-completed'));
+                      
                       setSaveOpen(false);
+                      console.log('✅ Project save completed successfully');
                     } catch (e: any) {
-                      setSaveError(e?.message || 'Failed to save');
+                      console.error('💥 Project save error:', e);
+                      setSaveError(e?.message || 'Failed to save to project');
                     } finally {
                       setSaving(false);
                     }

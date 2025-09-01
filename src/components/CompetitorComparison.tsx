@@ -142,11 +142,34 @@ export const CompetitorComparison: React.FC = () => {
       return;
     }
 
-    // Check allowance - both types use comparison allowance
-    const allowance = await evaluateComparisonAllowance(user.id);
-    if (!allowance.canProceed) {
-      setError(allowance.reason || 'Monthly limit reached');
-      return;
+    // Check limits before proceeding
+    if (user) {
+      if (analysisType === 'comparison') {
+        const comparisonAllowance = await evaluateComparisonAllowance(user.id);
+        if (!comparisonAllowance.canProceed) {
+          setError(`Monthly comparison limit reached (${comparisonAllowance.limit} per month). Please upgrade your plan.`);
+          setIsAnalyzing(false);
+          return;
+        }
+        setAllowInfo({ 
+          canProceed: comparisonAllowance.canProceed || false, 
+          remaining: comparisonAllowance.remaining || 0, 
+          limit: comparisonAllowance.limit 
+        });
+      } else {
+        // For keyword analysis, check analysis limits
+        const analysisAllowance = await evaluateAnalysisAllowance(user.id);
+        if (!analysisAllowance.canProceed) {
+          setError(`Monthly analysis limit reached (${analysisAllowance.limit} per month). Please upgrade your plan.`);
+          setIsAnalyzing(false);
+          return;
+        }
+        setAllowInfo({ 
+          canProceed: analysisAllowance.canProceed, 
+          remaining: analysisAllowance.remaining || 0, 
+          limit: analysisAllowance.limit 
+        });
+      }
     }
 
     setIsAnalyzing(true);
@@ -1051,11 +1074,11 @@ export const CompetitorComparison: React.FC = () => {
                       } else {
                         try {
                           const summary = {
-                            keyword: keywordAnalysisResult.keyword || '',
-                            missing_topics: keywordAnalysisResult.missing_topics || [],
-                            missing_entities: keywordAnalysisResult.missing_entities || [],
-                            content_gaps: keywordAnalysisResult.content_gaps || [],
-                            seo_opportunities: keywordAnalysisResult.seo_opportunities || [],
+                            keyword: keywordAnalysisResult?.keyword || '',
+                            missing_topics: keywordAnalysisResult?.missing_topics || [],
+                            missing_entities: keywordAnalysisResult?.missing_entities || [],
+                            content_gaps: keywordAnalysisResult?.content_gaps || [],
+                            seo_opportunities: keywordAnalysisResult?.seo_opportunities || [],
                             analysis_type: 'keyword_analysis'
                           } as any;
                           const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {

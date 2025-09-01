@@ -272,6 +272,17 @@ export const usageService = {
     console.log('📁 Creating new project...')
 
     try {
+      // Check project limits first
+      const limits = await subscriptionService.checkUserLimits(clerkUserId);
+      if (limits && !limits.can_create_project) {
+        return { 
+          error: { 
+            message: 'Project limit reached. Please upgrade your plan.',
+            code: 'LIMIT_EXCEEDED'
+          } 
+        }
+      }
+
       // استخدام Function الجديد مع التحقق من الحدود
       const { data, error } = await supabase.rpc('create_project_with_limit_check', {
         p_clerk_user_id: clerkUserId,
