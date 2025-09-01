@@ -373,6 +373,42 @@ export const CompetitorComparison: React.FC = () => {
 
         setComparisonData(data);
         setKeywordAnalysisResult(null);
+
+        // Save comparison to database if we have valid data
+        if (user && hasValidComparisonData) {
+          try {
+            const savedComparison = await saveUserComparison({
+              userUrl: userUrl.trim(),
+              competitorUrl: competitorUrl.trim(),
+              comparison_results: {
+                user_analysis: userData,
+                competitor_analysis: compData,
+                suggestions,
+                quickWins,
+                overallUserReadinessScore,
+                seoOpportunityScore,
+                analysis_type: 'comparison'
+              }
+            });
+
+            if (savedComparison) {
+              console.log('✅ Comparison saved to database:', savedComparison);
+              setCreatedComparisonAnalysisId(typeof savedComparison === 'number' ? savedComparison : Number(savedComparison));
+              
+              // Dispatch event to update Dashboard
+              window.dispatchEvent(new CustomEvent('comparison-completed'));
+              
+              // Refresh local allowance banner to reflect new usage
+              try {
+                const a2 = await evaluateComparisonAllowance(user.id);
+                setAllowInfo({ canProceed: a2.canProceed || false, remaining: a2.remaining || 0, limit: a2.limit });
+              } catch {}
+            }
+          } catch (saveError) {
+            console.error('❌ Failed to save comparison:', saveError);
+            // Don't throw error here, just log it - the analysis still worked
+          }
+        }
       } else {
         // Keyword analysis
         const response = await analyzeKeywordComparison({
@@ -1012,6 +1048,26 @@ export const CompetitorComparison: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Save to Project Button */}
+          <div className="text-center pt-6">
+            <button
+              onClick={async () => {
+                if (user) {
+                  try {
+                    const list = await listProjects();
+                    setProjects(list);
+                    setSelectedProjectId(list.length ? list[0].id : 'new');
+                  } catch {}
+                  setSaveOpen(true);
+                }
+              }}
+              className="btn-primary px-8 py-3 text-lg"
+            >
+              <Folder className="w-5 h-5 mr-2" />
+              Save to Project
+            </button>
+          </div>
         </div>
       )}
 
@@ -1148,7 +1204,7 @@ export const CompetitorComparison: React.FC = () => {
       )}
 
       {/* Save to project modal */}
-      {saveOpen && comparisonData && (
+      {saveOpen && (comparisonData || keywordAnalysisResult) && (
         <div className="fixed inset-0 modal-backdrop z-[70]">
           <div className="min-h-full flex items-center justify-center p-4">
             <div className="card glass card-shadow max-w-md w-full relative animate-scaleIn">
