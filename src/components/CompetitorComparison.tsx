@@ -206,17 +206,17 @@ export const CompetitorComparison: React.FC = () => {
           limit: comparisonAllowance.limit 
         });
       } else {
-        // For keyword analysis, check analysis limits
-        const analysisAllowance = await evaluateAnalysisAllowance(user.id);
-        if (!analysisAllowance.canProceed) {
-          setError(`Monthly analysis limit reached (${analysisAllowance.limit} per month). Please upgrade your plan.`);
+        // For keyword analysis, count against COMPARISON limits per requirement
+        const comparisonAllowance = await evaluateComparisonAllowance(user.id);
+        if (!comparisonAllowance.canProceed) {
+          setError(`Monthly comparison limit reached (${comparisonAllowance.limit} per month). Please upgrade your plan.`);
           setIsAnalyzing(false);
           return;
         }
         setAllowInfo({ 
-          canProceed: analysisAllowance.canProceed, 
-          remaining: analysisAllowance.remaining || 0, 
-          limit: analysisAllowance.limit 
+          canProceed: comparisonAllowance.canProceed || false, 
+          remaining: comparisonAllowance.remaining || 0, 
+          limit: comparisonAllowance.limit 
         });
       }
     }
