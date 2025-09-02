@@ -453,6 +453,19 @@ export const CompetitorComparison: React.FC = () => {
               // Dispatch event to update Dashboard
               window.dispatchEvent(new CustomEvent('comparison-completed'));
               
+              // Also record a comparison usage entry so monthly counter increases
+              try {
+                await saveUserComparison({
+                  userUrl: userUrl.trim(),
+                  competitorUrl: `keyword:${keyword.trim()}`,
+                  comparison_results: {
+                    analysis_type: 'keyword_analysis_usage'
+                  }
+                });
+              } catch (e) {
+                console.warn('⚠️ Failed to record comparison usage for keyword analysis:', e);
+              }
+
               // Refresh local allowance banner to reflect new comparison usage
               try {
                 const a2 = await evaluateComparisonAllowance(user.id);
