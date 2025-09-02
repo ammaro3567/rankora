@@ -451,11 +451,11 @@ export const CompetitorComparison: React.FC = () => {
               setCreatedComparisonAnalysisId(Number(createdId));
               
               // Dispatch event to update Dashboard
-              window.dispatchEvent(new CustomEvent('analysis-completed'));
+              window.dispatchEvent(new CustomEvent('comparison-completed'));
               
-              // Refresh local allowance banner to reflect new usage
+              // Refresh local allowance banner to reflect new comparison usage
               try {
-                const a2 = await evaluateAnalysisAllowance(user.id);
+                const a2 = await evaluateComparisonAllowance(user.id);
                 setAllowInfo({ canProceed: a2.canProceed || false, remaining: a2.remaining || 0, limit: a2.limit });
               } catch {}
             }
