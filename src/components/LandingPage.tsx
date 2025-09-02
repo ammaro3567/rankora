@@ -34,6 +34,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
         {/* Emerald aura */}
         <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
         <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
+        {/* Subtle gradient grid overlay (non-fake visual) */}
+        <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]">
+          <div
+            className="absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.6) 1px, transparent 1px)',
+              backgroundSize: '36px 36px'
+            }}
+          />
+        </div>
         {/* Moving gradient orbs for atmosphere */}
           <div className="absolute w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
           <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
@@ -257,99 +268,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
         </div>
       </section>
 
-      {/* Stats + How it works */}
+      {/* How it works (no fake stats) */}
       <section className="py-20 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <h3 className="text-3xl font-bold text-white mb-4">Outcomes that matter</h3>
-              <p className="text-gray-300 mb-8">Teams ship faster and win more SERP features with Rankora's AI insight engine.</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl border border-emerald-500/20 bg-slate-900/60 p-6">
-                  <div className="text-4xl font-extrabold text-white">98%</div>
-                  <div className="text-gray-400 mt-1 text-sm">Analysis accuracy</div>
-                </div>
-                <div className="rounded-xl border border-emerald-500/20 bg-slate-900/60 p-6">
-                  <div className="text-4xl font-extrabold text-white">10x</div>
-                  <div className="text-gray-400 mt-1 text-sm">Faster decisions</div>
-                </div>
-                <div className="rounded-xl border border-emerald-500/20 bg-slate-900/60 p-6">
-                  <div className="text-4xl font-extrabold text-white">+42%</div>
-                  <div className="text-gray-400 mt-1 text-sm">AI Overview win‑rate</div>
-                </div>
-                <div className="rounded-xl border border-emerald-500/20 bg-slate-900/60 p-6">
-                  <div className="text-4xl font-extrabold text-white">24/7</div>
-                  <div className="text-gray-400 mt-1 text-sm">Secure processing</div>
-                </div>
-              </div>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h3 className="text-3xl font-bold text-white mb-8 text-center">How it works</h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-6">
+              <p className="text-emerald-300 text-sm font-semibold tracking-widest uppercase">Step 1</p>
+              <p className="text-white font-semibold mt-2">Paste your URL or keyword</p>
+              <p className="text-gray-300 text-sm mt-2">We fetch, parse, and validate your content securely.</p>
             </div>
-            <div>
-              <h3 className="text-3xl font-bold text-white mb-4">How it works</h3>
-              <div className="space-y-4">
-                <div className="flex gap-4 items-start">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/20 text-emerald-300 flex items-center justify-center font-bold">1</div>
-                  <div>
-                    <p className="text-white font-semibold">Paste your URL or keyword</p>
-                    <p className="text-gray-300 text-sm">We fetch, parse, and validate your content securely.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/20 text-emerald-300 flex items-center justify-center font-bold">2</div>
-                  <div>
-                    <p className="text-white font-semibold">AI analyzes what matters</p>
-                    <p className="text-gray-300 text-sm">6 core signals + gaps, entities, and opportunities.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/20 text-emerald-300 flex items-center justify-center font-bold">3</div>
-                  <div>
-                    <p className="text-white font-semibold">Save to projects</p>
-                    <p className="text-gray-300 text-sm">Track progress, compare, and share with your team.</p>
-                  </div>
-                </div>
-              </div>
+            <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-6">
+              <p className="text-emerald-300 text-sm font-semibold tracking-widest uppercase">Step 2</p>
+              <p className="text-white font-semibold mt-2">AI analyzes what matters</p>
+              <p className="text-gray-300 text-sm mt-2">Signals, gaps, entities, and opportunities.</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-6">
+              <p className="text-emerald-300 text-sm font-semibold tracking-widest uppercase">Step 3</p>
+              <p className="text-white font-semibold mt-2">Save to projects</p>
+              <p className="text-gray-300 text-sm mt-2">Track progress, compare, and share with your team.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 bg-secondary/50 relative z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-3">Loved by marketers & founders</h2>
-            <p className="text-gray-300">Real results from real teams using Rankora every day.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
-              <p className="text-gray-300">“The keyword analysis is scary good. We found content gaps we kept missing.”</p>
-              <div className="mt-4 text-sm text-gray-400">— Lina, Content Lead</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
-              <p className="text-gray-300">“Our AI Overview win‑rate jumped. The suggestions are actionable and quick.”</p>
-              <div className="mt-4 text-sm text-gray-400">— Kareem, SEO Manager</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
-              <p className="text-gray-300">“Beautiful UX, strict security, and everything just works.”</p>
-              <div className="mt-4 text-sm text-gray-400">— Dana, Founder</div>
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* Logos / Social proof */}
-      <section className="py-10 relative z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-gray-400 text-sm mb-6">Trusted by creators and teams</div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 opacity-70">
-            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">CreatorHub</div>
-            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">Insightly</div>
-            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">MetaLabs</div>
-            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">Searchly</div>
-            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">FlowStack</div>
-            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">RankSuite</div>
-          </div>
-        </div>
-      </section>
+      {/* Removed testimonials to avoid fake content */}
+      {/* Removed social proof with fake brand names */}
 
       {/* Features Section */}
       <section id="features" className="py-20 bg-secondary/50 relative z-10">
