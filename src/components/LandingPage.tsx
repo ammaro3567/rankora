@@ -220,6 +220,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
         </div>
       </section>
 
+      {/* Logos / Social proof */}
+      <section className="py-10 relative z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-gray-400 text-sm mb-6">Trusted by creators and teams</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 opacity-70">
+            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">CreatorHub</div>
+            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">Insightly</div>
+            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">MetaLabs</div>
+            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">Searchly</div>
+            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">FlowStack</div>
+            <div className="h-10 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-gray-300">RankSuite</div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="py-20 bg-secondary/50 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
