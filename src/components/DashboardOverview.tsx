@@ -70,36 +70,53 @@ export const DashboardOverview: React.FC = () => {
           const analyses = await usageService.getRecentAnalyses(5);
 
           if (analyses && analyses.length) {
-            // حساب متوسط النتائج
-            const scores = analyses.map((row) => {
-              const r = (row as any).analysis_results || {};
-              const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
+            // Helper to compute score from multiple shapes
+            const computeScore = (r: any): number | null => {
+              if (!r || typeof r !== 'object') return null;
+              // Single analysis shape
+              const direct = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
                 .map((v: any) => (typeof v === 'number' ? v : 0));
-              const valid = vals.filter((v: number) => v > 0);
-              return valid.length ? Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length) : 0;
-            });
+              const directValid = direct.filter((v: number) => v > 0);
+              if (directValid.length) return Math.round(directValid.reduce((a: number, b: number) => a + b, 0) / directValid.length);
 
-            const validScores = scores.filter((s) => s > 0);
-            const avgScore = validScores.length 
-              ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) 
+              // Comparison summary
+              if (typeof r.overallUserReadinessScore === 'number') return Math.round(r.overallUserReadinessScore);
+              if (r.user_analysis) {
+                const ua = r.user_analysis;
+                const vals = [ua.readability, ua.factuality, ua.structure, ua.qa_format, ua.structured_data, ua.authority]
+                  .map((v: any) => (typeof v === 'number' ? v : 0));
+                const ok = vals.filter((v: number) => v > 0);
+                if (ok.length) return Math.round(ok.reduce((a: number, b: number) => a + b, 0) / ok.length);
+              }
+
+              // Keyword analysis: no numeric metrics → exclude from average
+              if (r.analysis_type === 'keyword_analysis') return null;
+              return null;
+            };
+
+            const scores = analyses
+              .map((row) => computeScore((row as any).analysis_results || {}))
+              .filter((s): s is number => typeof s === 'number' && isFinite(s));
+
+            const avgScore = scores.length 
+              ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) 
               : 0;
-            
             setAverageScore(avgScore);
 
             // إعداد التحليلات الحديثة للعرض
-            const recentItems = analyses.map((row: any) => ({
-              title: 'Content Analysis',
-              url: row.url || 'N/A',
-              score: (() => {
-                const r = row.analysis_results || {};
-                const vals = [r.readability, r.factuality, r.structure, r.qa_format, r.structured_data, r.authority]
-                  .map((v: any) => (typeof v === 'number' ? v : 0));
-                const valid = vals.filter((v: number) => v > 0);
-                return valid.length ? Math.round(valid.reduce((a: number, b: number) => a + b, 0) / valid.length) : 0;
-              })(),
-              time: new Date(row.created_at).toLocaleString(),
-              type: 'analysis'
-            }));
+            const recentItems = analyses.map((row: any) => {
+              const r = row.analysis_results || {};
+              const score = computeScore(r) ?? 0;
+              const type = r.analysis_type === 'comparison' ? 'comparison' : (r.analysis_type === 'keyword_analysis' ? 'keyword' : 'analysis');
+              const title = type === 'comparison' ? 'URL Comparison' : (type === 'keyword' ? 'Keyword Analysis' : 'Content Analysis');
+              return {
+                title,
+                url: row.url || 'N/A',
+                score,
+                time: new Date(row.created_at).toLocaleString(),
+                type
+              };
+            });
 
             setRecentAnalyses(recentItems);
           }
