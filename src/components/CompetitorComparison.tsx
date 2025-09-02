@@ -374,43 +374,34 @@ export const CompetitorComparison: React.FC = () => {
         setComparisonData(data);
         setKeywordAnalysisResult(null);
 
-        // Save comparison to database if we have valid data
+        // Save comparison usage correctly (count as comparison, not analysis)
         if (user && hasValidComparisonData) {
           try {
-            // Save comparison to the analyses table (not comparison_analyses) so it appears in projects
-            const summary = {
-              user_analysis: userData,
-              competitor_analysis: compData,
-              suggestions,
-              quickWins,
-              overallUserReadinessScore,
-              seoOpportunityScore,
-              analysis_type: 'comparison'
-            };
-
-            const { data: createdId } = await supabase.rpc('create_analysis_with_limit_check', {
-              p_clerk_user_id: user.id,
-              p_url: userUrl.trim() + ' vs ' + competitorUrl.trim(),
-              p_analysis_results: summary,
-              p_project_id: null // Will be linked to project later when user saves
+            const savedComparison = await saveUserComparison({
+              userUrl: userUrl.trim(),
+              competitorUrl: competitorUrl.trim(),
+              comparison_results: {
+                user_analysis: userData,
+                competitor_analysis: compData,
+                suggestions,
+                quickWins,
+                overallUserReadinessScore,
+                seoOpportunityScore,
+                analysis_type: 'comparison'
+              }
             });
 
-            if (createdId) {
-              console.log('✅ Comparison saved to database:', createdId);
-              setCreatedComparisonAnalysisId(Number(createdId));
-              
-              // Dispatch event to update Dashboard
-              window.dispatchEvent(new CustomEvent('analysis-completed'));
-              
-              // Refresh local allowance banner to reflect new usage
+            if (savedComparison) {
+              console.log('✅ Comparison saved (usage counted as comparison)');
+
+              // Update comparison allowance banner
               try {
                 const a2 = await evaluateComparisonAllowance(user.id);
                 setAllowInfo({ canProceed: a2.canProceed || false, remaining: a2.remaining || 0, limit: a2.limit });
               } catch {}
             }
           } catch (saveError) {
-            console.error('❌ Failed to save comparison:', saveError);
-            // Don't throw error here, just log it - the analysis still worked
+            console.error('❌ Failed to save comparison usage:', saveError);
           }
         }
       } else {

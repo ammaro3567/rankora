@@ -529,7 +529,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
   }
 
   return (
-    <div className="min-h-screen relative bg-transparent">
+    <div className="min-h-screen relative bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
       {/* Background Layer */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <AnimatedBackground />

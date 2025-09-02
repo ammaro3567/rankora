@@ -28,46 +28,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
   }, [localAuth])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black relative">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 relative">
       {/* Enhanced Star Field Background with Movement */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Emerald aura */}
-        <div className="absolute -top-32 -left-32 w-[42rem] h-[42rem] bg-emerald-500/10 blur-3xl rounded-full" />
-        <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] bg-emerald-400/10 blur-3xl rounded-full" />
-        {/* Subtle gradient grid overlay (non-fake visual) */}
+        {/* Softer emerald auras */}
+        <div className="absolute -top-40 -left-40 w-[40rem] h-[40rem] bg-emerald-500/5 blur-3xl rounded-full" />
+        <div className="absolute bottom-[-8rem] right-[-8rem] w-[38rem] h-[38rem] bg-emerald-400/5 blur-3xl rounded-full" />
+        {/* Subtle gradient grid overlay */}
         <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]">
           <div
-            className="absolute inset-0 opacity-[0.04]"
+            className="absolute inset-0 opacity-[0.02]"
             style={{
               backgroundImage:
                 'linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.6) 1px, transparent 1px)',
-              backgroundSize: '36px 36px'
+              backgroundSize: '40px 40px'
             }}
           />
         </div>
-        {/* Moving gradient orbs for atmosphere */}
-          <div className="absolute w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{top: '10%', left: '10%', animation: 'float 20s ease-in-out infinite'}}></div>
-          <div className="absolute w-80 h-80 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 rounded-full blur-3xl animate-pulse" style={{top: '60%', right: '10%', animation: 'float 25s ease-in-out infinite reverse'}}></div>
-        
-        {/* Animated stars */}
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-20 animate-pulse" style={{top: '10%', left: '20%'}}></div>
-        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-30 animate-pulse" style={{top: '20%', right: '15%', animationDelay: '1s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '30%', left: '70%', animationDelay: '0.5s'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-25 animate-pulse" style={{top: '40%', left: '10%', animationDelay: '2s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full opacity-35 animate-pulse" style={{top: '50%', right: '25%', animationDelay: '1.5s'}}></div>
-        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-20 animate-pulse" style={{top: '60%', left: '85%', animationDelay: '1.5s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-30" style={{top: '70%', left: '30%'}}></div>
-        <div className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '80%', right: '40%', animationDelay: '0.5s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-25" style={{top: '90%', left: '60%'}}></div>
-        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-35 animate-pulse" style={{top: '15%', left: '50%', animationDelay: '2.5s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full opacity-20 animate-pulse" style={{top: '25%', right: '60%', animationDelay: '3s'}}></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full opacity-30 animate-pulse" style={{top: '35%', left: '5%', animationDelay: '1.8s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '45%', right: '10%', animationDelay: '2.2s'}}></div>
-        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-25 animate-pulse" style={{top: '55%', left: '75%', animationDelay: '0.8s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-35" style={{top: '65%', right: '50%'}}></div>
-        <div className="absolute w-1 h-1 bg-emerald-400 rounded-full opacity-20 animate-pulse" style={{top: '75%', left: '15%', animationDelay: '2.2s'}}></div>
-        <div className="absolute w-0.5 h-0.5 bg-emerald-400 rounded-full opacity-30 animate-pulse" style={{top: '85%', right: '20%', animationDelay: '1.7s'}}></div>
-        <div className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-40 animate-pulse" style={{top: '95%', left: '40%', animationDelay: '1.2s'}}></div>
       </div>
 
       {/* Add floating animation keyframes */}
@@ -76,10 +53,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
           0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.1; }
           50% { transform: translateY(-20px) rotate(180deg); opacity: 0.2; }
         }
+        @keyframes floatSoft {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes pulseSoft {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.15); }
+          50% { box-shadow: 0 0 0 8px rgba(16,185,129,0.04); }
+        }
+        @keyframes borderPan {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
       `}</style>
 
       {/* Navigation */}
-      <nav className="bg-secondary/80 backdrop-blur-sm border-b border-gray-700/50 relative z-10">
+      <nav className="bg-slate-900/70 backdrop-blur-md border-b border-white/10 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -91,17 +80,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
+            <div className="hidden md:flex items-center space-x-6">
+              <a href="#features" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200 rounded-md hover:bg-white/5">
                 Features
               </a>
               <button 
                 onClick={onPricing}
-                className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200"
+                className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200 rounded-md hover:bg-white/5"
               >
                 Pricing
               </button>
-              <a href="#faq" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200">
+              <a href="#faq" className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition duration-200 rounded-md hover:bg-white/5">
                 FAQ
               </a>
               {localAuth ? (
@@ -190,11 +179,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
-              Transform Your Ideas Into
-              <span className="bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent"> Ranked Success</span>
+              Transform Your Ideas Into Ranked Success
             </h1>
             
-            <p className="text-xl text-gray-300 mb-12 leading-relaxed">
+            <p className="text-lg sm:text-xl text-gray-300 mb-12 leading-relaxed">
               Rankora helps you rank, compare, and analyze anything with powerful AI-driven insights. 
               Make data-driven decisions with confidence.
             </p>
@@ -204,19 +192,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 <a
                   href="/dashboard"
                   onClick={onGoDashboard}
-                  className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transform hover:scale-105 transition duration-200 shadow-lg shadow-emerald-500/20"
+                  className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transition duration-200"
                 >
                   Go to Dashboard
                 </a>
               ) : (
                 <>
                   <SignUpButton mode="modal">
-                    <button className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transform hover:scale-105 transition duration-200 shadow-lg shadow-emerald-500/20">
-                    Start Ranking Free
-                  </button>
+                    <button className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-500/90 active:bg-emerald-600 transition duration-200" style={{animation: 'pulseSoft 9s ease-in-out infinite'}}>
+                      Start Ranking Free
+                    </button>
                   </SignUpButton>
                   <SignInButton mode="modal">
-                    <button className="w-full sm:w-auto border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:border-gray-500 hover:bg-gray-800/50 transition duration-200">
+                    <button className="w-full sm:w-auto border border-white/10 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/5 transition duration-200">
                     Sign In
                   </button>
                   </SignInButton>
@@ -224,15 +212,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
               )}
             </div>
 
-            <div className="mt-12 text-sm text-gray-400">
-              ✨ No credit card required • 🚀 Get started in 30 seconds • 🔒 100% secure
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+              <span className="px-3 py-1 rounded-full text-xs sm:text-sm bg-white/5 text-gray-300 border border-white/10">✨ No credit card required</span>
+              <span className="px-3 py-1 rounded-full text-xs sm:text-sm bg-white/5 text-gray-300 border border-white/10">🚀 Get started in 30s</span>
+              <span className="px-3 py-1 rounded-full text-xs sm:text-sm bg-white/5 text-gray-300 border border-white/10">🔒 100% secure</span>
             </div>
           </div>
           {/* Product preview card */}
           <div className="mt-16 mx-auto max-w-5xl">
-            <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-2 shadow-2xl shadow-emerald-500/10">
-              <div className="absolute -top-8 left-6 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-400/10 text-emerald-300 border border-emerald-400/20">Live Preview</div>
-              <div className="rounded-xl bg-gradient-to-b from-slate-900/70 to-slate-900/30 p-4">
+            <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-2 transition-all duration-300 hover:border-emerald-500/20 hover:-translate-y-0.5" style={{animation: 'floatSoft 18s ease-in-out infinite'}}>
+              <div className="rounded-xl bg-slate-900/60 p-4">
                 {/* faux window controls */}
                 <div className="flex items-center gap-2 mb-4">
                   <span className="w-3 h-3 rounded-full bg-red-400/70"/>
@@ -241,7 +230,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 </div>
                 <div className="grid lg:grid-cols-3 gap-4">
                   <div className="lg:col-span-2 rounded-lg border border-white/10 bg-slate-950/40 p-4">
-                    <div className="h-64 sm:h-80 w-full rounded-md bg-gradient-to-br from-emerald-500/20 via-blue-500/10 to-transparent flex items-center justify-center">
+                    <div className="h-64 sm:h-80 w-full rounded-md bg-slate-950/60 flex items-center justify-center">
                       <div className="text-left max-w-md">
                         <p className="text-emerald-300 text-sm font-semibold tracking-widest uppercase">AI Overview Analyzer</p>
                         <h3 className="text-white text-2xl sm:text-3xl font-bold mt-2">See instant scores and opportunities</h3>
@@ -268,22 +257,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
         </div>
       </section>
 
+      {/* subtle divider */}
+      <div className="relative z-10">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        </div>
+      </div>
+
       {/* How it works (no fake stats) */}
       <section className="py-20 relative z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-bold text-white mb-8 text-center">How it works</h3>
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-6">
+            <div className="rounded-2xl border border-white/10 hover:border-emerald-500/30 bg-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-0.5">
               <p className="text-emerald-300 text-sm font-semibold tracking-widest uppercase">Step 1</p>
               <p className="text-white font-semibold mt-2">Paste your URL or keyword</p>
               <p className="text-gray-300 text-sm mt-2">We fetch, parse, and validate your content securely.</p>
             </div>
-            <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-6">
+            <div className="rounded-2xl border border-white/10 hover:border-emerald-500/30 bg-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-0.5">
               <p className="text-emerald-300 text-sm font-semibold tracking-widest uppercase">Step 2</p>
               <p className="text-white font-semibold mt-2">AI analyzes what matters</p>
               <p className="text-gray-300 text-sm mt-2">Signals, gaps, entities, and opportunities.</p>
             </div>
-            <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-6">
+            <div className="rounded-2xl border border-white/10 hover:border-emerald-500/30 bg-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-0.5">
               <p className="text-emerald-300 text-sm font-semibold tracking-widest uppercase">Step 3</p>
               <p className="text-white font-semibold mt-2">Save to projects</p>
               <p className="text-gray-300 text-sm mt-2">Track progress, compare, and share with your team.</p>
@@ -309,7 +305,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-emerald-500/10 transition duration-300">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500/30">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6">
                 <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -322,7 +318,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-blue-400/10 transition duration-300">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500/30">
               <div className="w-12 h-12 bg-blue-400/20 rounded-xl flex items-center justify-center mb-6">
                 <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -335,7 +331,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 hover:shadow-lg hover:shadow-emerald-400/10 transition duration-300">
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500/30">
               <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center mb-6">
                 <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

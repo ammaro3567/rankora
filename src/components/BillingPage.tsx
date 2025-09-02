@@ -205,7 +205,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onTabChange }) => {
                   <div 
                     className="bg-blue-400 h-2 rounded-full transition-all duration-300"
                     style={{ 
-                      width: `${comparisonLimit === -1 ? 0 : Math.min((usage?.comparisons || 0) / comparisonLimit * 100, 100)}` 
+                      width: `${comparisonLimit === -1 ? 0 : Math.min((usage?.comparisons || 0) / comparisonLimit * 100, 100)}%` 
                     }}
                   ></div>
                 </div>

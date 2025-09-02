@@ -165,10 +165,32 @@ export const ProjectsPage: React.FC = () => {
       );
     }
 
-    // Handle comparison results
-    if (result && (result.userAnalysis || result.competitorAnalysis)) {
+    // Handle comparison results (support both camelCase and snake_case)
+    if (result && (result.userAnalysis || result.competitorAnalysis || result.user_analysis || result.competitor_analysis)) {
+      const userAnalysis = result.userAnalysis || result.user_analysis || {};
+      const competitorAnalysis = result.competitorAnalysis || result.competitor_analysis || {};
+      const overallUserReadinessScore = result.overallUserReadinessScore ?? result.overall_user_readiness_score;
+      const seoOpportunityScore = result.seoOpportunityScore ?? result.seo_opportunity_score;
+      const suggestions = result.suggestions || [];
+      const quickWins = result.quickWins || result.quick_wins || [];
       return (
         <div className="space-y-4">
+          {(overallUserReadinessScore !== undefined || seoOpportunityScore !== undefined) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {overallUserReadinessScore !== undefined && (
+                <div className="text-center p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                  <div className="text-2xl font-bold text-emerald-400">{overallUserReadinessScore}%</div>
+                  <div className="text-xs text-emerald-300">Overall Readiness</div>
+                </div>
+              )}
+              {seoOpportunityScore !== undefined && (
+                <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <div className="text-2xl font-bold text-blue-400">{seoOpportunityScore}%</div>
+                  <div className="text-xs text-blue-300">SEO Opportunity</div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="card">
               <h4 className="font-semibold text-primary mb-3 flex items-center">
@@ -176,7 +198,7 @@ export const ProjectsPage: React.FC = () => {
                 Your Content
               </h4>
               <div className="grid grid-cols-2 gap-2">
-                {Object.entries(result.userAnalysis || {}).map(([key, value]) => (
+                {Object.entries(userAnalysis).map(([key, value]) => (
                   <div key={key} className="text-center">
                     <div className="text-lg font-bold text-accent-primary">{value as number}%</div>
                     <div className="text-xs text-tertiary">{key.replace('_', ' ')}</div>
@@ -190,7 +212,7 @@ export const ProjectsPage: React.FC = () => {
                 Competitor
               </h4>
               <div className="grid grid-cols-2 gap-2">
-                {Object.entries(result.competitorAnalysis || {}).map(([key, value]) => (
+                {Object.entries(competitorAnalysis).map(([key, value]) => (
                   <div key={key} className="text-center">
                     <div className="text-lg font-bold text-secondary">{value as number}%</div>
                     <div className="text-xs text-tertiary">{key.replace('_', ' ')}</div>
@@ -199,6 +221,26 @@ export const ProjectsPage: React.FC = () => {
               </div>
             </div>
           </div>
+          {(suggestions.length > 0 || quickWins.length > 0) && (
+            <div className="grid md:grid-cols-2 gap-4">
+              {suggestions.length > 0 && (
+                <div className="card p-4">
+                  <h5 className="font-semibold text-primary mb-2">Suggestions</h5>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-secondary">
+                    {suggestions.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+              {quickWins.length > 0 && (
+                <div className="card p-4">
+                  <h5 className="font-semibold text-primary mb-2">Quick Wins</h5>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-secondary">
+                    {quickWins.map((q: string, i: number) => <li key={i}>{q}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       );
     }
