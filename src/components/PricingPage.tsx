@@ -66,7 +66,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
         'Email support'
       ],
       icon: <Star className="w-6 h-6" />,
-      paypalPlanId: import.meta.env.VITE_PAYPAL_STARTER_PLAN_ID || 'P-4U172182GD1125018NCRYJ2Q'
+      paypalPlanId: import.meta.env.VITE_PAYPAL_STARTER_PLAN_ID || 'P-9K072166CD116383LNCRWSTA'
     },
     {
       id: 'pro',
@@ -82,7 +82,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
         'Advanced analytics'
       ],
       icon: <Zap className="w-6 h-6" />,
-      paypalPlanId: import.meta.env.VITE_PAYPAL_PRO_PLAN_ID || 'P-6AN8622945094324ENCRYKBI'
+      paypalPlanId: import.meta.env.VITE_PAYPAL_PRO_PLAN_ID || 'P-2J70743998262202XNCRWTEI'
     },
     {
       id: 'business',
@@ -99,7 +99,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onBack, embedded = fal
         'Custom integrations'
       ],
       icon: <Crown className="w-6 h-6" />,
-      paypalPlanId: import.meta.env.VITE_PAYPAL_BUSINESS_PLAN_ID || 'P-7MD84180M2360054PNCRYKII'
+      paypalPlanId: import.meta.env.VITE_PAYPAL_BUSINESS_PLAN_ID || 'P-3EP896454P0049003NCRWTPY'
     }
   ];
 
