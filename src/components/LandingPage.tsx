@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { sendToN8nWebhook, analyzeComparison } from '../config/webhooks'
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react'
 
 interface LandingPageProps {
@@ -11,6 +12,16 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing, isAuthenticated = false, onGoDashboard }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [showDemo, setShowDemo] = useState(false)
+  const [demoTab, setDemoTab] = useState<'ai' | 'comparison'>('ai')
+  const [demoUrl, setDemoUrl] = useState('')
+  const [demoCompetitorUrl, setDemoCompetitorUrl] = useState('')
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [demoError, setDemoError] = useState<string | null>(null)
+  const [demoUsedAI, setDemoUsedAI] = useState<boolean>(false)
+  const [demoUsedCMP, setDemoUsedCMP] = useState<boolean>(false)
+  const [demoAIResult, setDemoAIResult] = useState<any>(null)
+  const [demoCMPResult, setDemoCMPResult] = useState<any>(null)
   const [localAuth, setLocalAuth] = useState<boolean>(!!isAuthenticated)
 
   // لم نعد نعتمد على Supabase Auth
@@ -26,6 +37,123 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
       }
     } catch {}
   }, [localAuth])
+
+  useEffect(() => {
+    try {
+      const ai = localStorage.getItem('rankora_guest_ai_trial_used') === '1'
+      const cmp = localStorage.getItem('rankora_guest_cmp_trial_used') === '1'
+      setDemoUsedAI(ai)
+      setDemoUsedCMP(cmp)
+    } catch {}
+  }, [])
+
+  // قفل تمرير الصفحة عند فتح المودال
+  useEffect(() => {
+    try {
+      if (showDemo) document.body.style.overflow = 'hidden';
+      else document.body.style.overflow = '';
+    } catch {}
+    return () => {
+      try { document.body.style.overflow = ''; } catch {}
+    }
+  }, [showDemo])
+
+  const runGuestAI = async () => {
+    if (demoUsedAI) {
+      setDemoError('Your free demo analysis was used. Sign up to get 2 more each month.')
+      return
+    }
+    if (!demoUrl.trim()) {
+      setDemoError('Please enter a valid URL')
+      return
+    }
+    setDemoLoading(true)
+    setDemoError(null)
+    setDemoAIResult(null)
+    try {
+      const res = await sendToN8nWebhook({ keyword: 'analysis', userUrl: demoUrl.trim() })
+      if (!res?.success) throw new Error(res?.error || 'Analysis failed')
+      const payload: any = res.data
+      const raw = Array.isArray(payload) ? (payload[0] || {}) : (payload || {})
+      const toNumber = (v: any) => {
+        const n = typeof v === 'string' ? parseFloat(v) : Number(v)
+        return Number.isFinite(n) ? n : 0
+      }
+      const finalResult = {
+        readability: toNumber(raw.readability),
+        factuality: toNumber(raw.factuality),
+        structure: toNumber(raw.structure),
+        qa_format: toNumber(raw.qa_format),
+        structured_data: toNumber(raw.structured_data),
+        authority: toNumber(raw.authority),
+        suggestions: Array.isArray(raw.suggestions) ? raw.suggestions : []
+      }
+      const hasScores = [finalResult.readability, finalResult.factuality, finalResult.structure, finalResult.qa_format, finalResult.structured_data, finalResult.authority].some(v => v > 0)
+      if (!hasScores) throw new Error('No scores returned from webhook')
+      setDemoAIResult(finalResult)
+      try { localStorage.setItem('rankora_guest_ai_trial_used', '1'); setDemoUsedAI(true) } catch {}
+    } catch (e: any) {
+      setDemoError(e?.message || 'Failed to analyze')
+    } finally {
+      setDemoLoading(false)
+    }
+  }
+
+  const runGuestComparison = async () => {
+    if (demoUsedCMP) {
+      setDemoError('Your free demo comparison was used. Sign up to get 2 more each month.')
+      return
+    }
+    if (!demoUrl.trim() || !demoCompetitorUrl.trim()) {
+      setDemoError('Please enter both URLs')
+      return
+    }
+    setDemoLoading(true)
+    setDemoError(null)
+    setDemoCMPResult(null)
+    try {
+      const res = await analyzeComparison({ userUrl: demoUrl.trim(), competitorUrl: demoCompetitorUrl.trim() })
+      if (!res?.success) throw new Error(res?.error || 'Comparison failed')
+      let payload: any = res.data || {}
+      if (payload?.data) payload = payload.data
+      if (payload?.result) payload = payload.result
+      if (payload?.response) payload = payload.response
+      let user: any, competitor: any, suggestions: string[] = [], quickWins: string[] = []
+      const pickNum = (v: any) => {
+        const n = typeof v === 'string' ? parseFloat(v) : Number(v)
+        return Number.isFinite(n) ? n : 0
+      }
+      const norm = (o: any) => ({
+        readability: pickNum(o?.readability),
+        factuality: pickNum(o?.factuality),
+        structure: pickNum(o?.structure),
+        qa_format: pickNum(o?.qa_format),
+        structured_data: pickNum(o?.structured_data),
+        authority: pickNum(o?.authority)
+      })
+      if (Array.isArray(payload) && payload[0]) {
+        const first = payload[0]
+        user = first['User Analysis'] || first.user_analysis || first.user
+        competitor = first['Competitor Analysis'] || first.competitor_analysis || first.competitor
+        suggestions = Array.isArray(first.competitive_suggestions) ? first.competitive_suggestions : []
+        quickWins = Array.isArray(first.quick_wins) ? first.quick_wins : []
+      } else if (payload?.user && payload?.competitor) {
+        user = payload.user; competitor = payload.competitor
+        suggestions = Array.isArray(payload.suggestions) ? payload.suggestions : []
+      }
+      const userN = norm(user || {})
+      const compN = norm(competitor || {})
+      const valid = [userN.readability, userN.factuality, userN.structure, userN.qa_format, userN.structured_data, userN.authority].some(v => v > 0)
+        && [compN.readability, compN.factuality, compN.structure, compN.qa_format, compN.structured_data, compN.authority].some(v => v > 0)
+      if (!valid) throw new Error('Invalid comparison data')
+      setDemoCMPResult({ user: userN, competitor: compN, suggestions, quickWins })
+      try { localStorage.setItem('rankora_guest_cmp_trial_used', '1'); setDemoUsedCMP(true) } catch {}
+    } catch (e: any) {
+      setDemoError(e?.message || 'Failed to compare')
+    } finally {
+      setDemoLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 relative">
@@ -64,6 +192,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
         @keyframes borderPan {
           0% { background-position: 0% 50%; }
           100% { background-position: 200% 50%; }
+        }
+        @keyframes barGrow {
+          0% { width: 0%; }
+          100% { width: var(--w, 100%); }
         }
       `}</style>
 
@@ -198,10 +330,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 </a>
               ) : (
                 <>
+                  <button
+                    onClick={() => setShowDemo(true)}
+                    className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-600 transition duration-200 shadow-lg shadow-emerald-500/20"
+                    aria-label="Try a live demo without signup"
+                    style={{animation: 'pulseSoft 9s ease-in-out infinite'}}
+                  >
+                    Try Live Demo (No Signup)
+                  </button>
                   <SignUpButton mode="modal">
-                    <button className="w-full sm:w-auto bg-emerald-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-500/90 active:bg-emerald-600 transition duration-200" style={{animation: 'pulseSoft 9s ease-in-out infinite'}}>
-                      Start Ranking Free
-                    </button>
+                    <button className="w-full sm:w-auto border border-white/15 text-gray-100 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/5 transition duration-200">
+                    Start Ranking Free
+                  </button>
                   </SignUpButton>
                   <SignInButton mode="modal">
                     <button className="w-full sm:w-auto border border-white/10 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/5 transition duration-200">
@@ -211,6 +351,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
                 </>
               )}
             </div>
+
+            {/* Demo value proposition under CTAs */}
+            <p className="mt-4 text-sm text-emerald-200/90">
+              Analyze a real article instantly and see live scores — no account needed.
+            </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
               <span className="px-3 py-1 rounded-full text-xs sm:text-sm bg-white/5 text-gray-300 border border-white/10">✨ No credit card required</span>
@@ -256,6 +401,199 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
           </div>
         </div>
       </section>
+
+      {/* Demo Modal */}
+      {showDemo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onClick={() => setShowDemo(false)} />
+          <div className="relative w-full max-w-5xl lg:max-w-6xl rounded-2xl border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] max-h-[88vh] overflow-hidden animate-scaleIn">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-900/90 backdrop-blur-xl">
+              <h3 className="text-white text-lg font-semibold">Live Demo — Sample Analysis</h3>
+              <button onClick={() => setShowDemo(false)} className="text-gray-300 hover:text-white" aria-label="Close demo">
+                ✕
+              </button>
+            </div>
+            <div className="p-5 overflow-auto max-h-[calc(88vh-56px)]">
+              {/* Tabs */}
+              <div className="mb-5 inline-flex rounded-xl border border-white/10 bg-slate-950/50 p-1 shadow-inner">
+                <button onClick={() => setDemoTab('ai')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${demoTab==='ai'?'bg-emerald-500 text-white shadow':'text-gray-300 hover:text-white hover:bg-white/5'}`}>AI Analyzer</button>
+                <button onClick={() => setDemoTab('comparison')} className={`px-4 py-2 rounded-lg text-sm font-medium transition ${demoTab==='comparison'?'bg-emerald-500 text-white shadow':'text-gray-300 hover:text-white hover:bg-white/5'}`}>Comparison</button>
+              </div>
+
+              {demoError && (
+                <div className="mb-4 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-200 text-sm">{demoError}</div>
+              )}
+
+              {demoTab === 'ai' ? (
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-slate-950/50 p-5 shadow">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+                      <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40" placeholder="https://example.com/article" value={demoUrl} onChange={(e)=>setDemoUrl(e.target.value)} />
+                      <button onClick={runGuestAI} disabled={demoLoading} className="px-5 py-3 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 shadow">{demoLoading?'Running...':'Run Demo'}</button>
+                    </div>
+                    {demoAIResult ? (
+                      <>
+                        {/* Overall score badge */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <p className="text-emerald-300 text-xs font-semibold tracking-widest uppercase">AI Analyzer Result</p>
+                            <h4 className="text-white text-lg font-bold mt-1">Live Scores</h4>
+                          </div>
+                          {(() => {
+                            const avg = Math.round(((demoAIResult.readability||0)+(demoAIResult.factuality||0)+(demoAIResult.structure||0)+(demoAIResult.qa_format||0)+(demoAIResult.structured_data||0)+(demoAIResult.authority||0))/6);
+                            return (
+                              <div className="relative w-16 h-16">
+                                <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(#10b981 ${avg*3.6}deg, rgba(255,255,255,0.08) 0deg)` }} />
+                                <div className="absolute inset-[6px] rounded-full bg-slate-950/80 border border-white/10 flex items-center justify-center">
+                                  <span className="text-white font-bold text-lg">{avg}</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="grid sm:grid-cols-3 gap-4">
+                          {[
+                            { label: 'Readability', score: demoAIResult.readability },
+                            { label: 'Factuality', score: demoAIResult.factuality },
+                            { label: 'Structure', score: demoAIResult.structure },
+                            { label: 'Q&A Format', score: demoAIResult.qa_format },
+                            { label: 'Structured Data', score: demoAIResult.structured_data },
+                            { label: 'Authority', score: demoAIResult.authority }
+                          ].map((m:any) => (
+                            <div key={m.label} className="rounded-xl border border-white/10 bg-slate-950/60 p-4 hover:border-emerald-400/30 transition">
+                              <div className="flex items-center justify-between">
+                                <p className="text-gray-300 text-sm">{m.label}</p>
+                                <span className="text-white font-semibold">{m.score}</span>
+                              </div>
+                              <div className="mt-2 h-2.5 rounded bg-white/10 overflow-hidden">
+                                <div className="h-2.5 rounded bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${m.score}%`, ['--w' as any]: `${m.score}%`, animation: 'barGrow 900ms ease-out 100ms both' }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {Array.isArray(demoAIResult.suggestions) && demoAIResult.suggestions.length>0 && (
+                          <div className="mt-6">
+                            <p className="text-white font-semibold mb-2">Suggestions</p>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                              {demoAIResult.suggestions.slice(0,6).map((s:string, idx:number)=>(
+                                <div key={idx} className="p-3 rounded-lg border border-white/10 bg-slate-900/70 text-gray-300 text-sm">
+                                  {s}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-gray-400 text-sm">Enter a URL and run the demo to see real results.</div>
+                    )}
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5 shadow">
+                    <p className="text-white font-semibold mb-2">No account needed</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">Try one full AI analysis now. To save results and get 2 more this month, sign up free.</p>
+                    <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                      <SignUpButton mode="modal"><button className="w-full sm:w-auto bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-600">Sign up free</button></SignUpButton>
+                      <SignInButton mode="modal"><button className="w-full sm:w-auto border border-white/10 text-gray-300 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-white/5">Sign in</button></SignInButton>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid lg:grid-cols-3 gap-5">
+                  <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-slate-950/50 p-5 shadow">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+                      <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40" placeholder="https://your-url.com" value={demoUrl} onChange={(e)=>setDemoUrl(e.target.value)} />
+                      <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40" placeholder="https://competitor.com" value={demoCompetitorUrl} onChange={(e)=>setDemoCompetitorUrl(e.target.value)} />
+                      <button onClick={runGuestComparison} disabled={demoLoading} className="px-5 py-3 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 shadow">{demoLoading?'Running...':'Run Demo'}</button>
+                    </div>
+                    {demoCMPResult ? (
+                      <>
+                        {/* Top summary badges */}
+                        {(() => {
+                          const a = demoCMPResult.user; const b = demoCMPResult.competitor;
+                          const avgA = Math.round(((a.readability||0)+(a.factuality||0)+(a.structure||0)+(a.qa_format||0)+(a.structured_data||0)+(a.authority||0))/6);
+                          const avgB = Math.round(((b.readability||0)+(b.factuality||0)+(b.structure||0)+(b.qa_format||0)+(b.structured_data||0)+(b.authority||0))/6);
+                          return (
+                            <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 flex items-center justify-between">
+                                <div>
+                                  <p className="text-emerald-300 text-xs font-semibold tracking-widest uppercase">Your Article</p>
+                                  <p className="text-gray-300 text-sm">Overall Readiness</p>
+                                </div>
+                                <div className="relative w-16 h-16">
+                                  <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(#10b981 ${avgA*3.6}deg, rgba(255,255,255,0.08) 0deg)` }} />
+                                  <div className="absolute inset-[6px] rounded-full bg-slate-950/80 border border-white/10 flex items-center justify-center">
+                                    <span className="text-white font-bold text-lg">{avgA}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 flex items-center justify-between">
+                                <div>
+                                  <p className="text-blue-300 text-xs font-semibold tracking-widest uppercase">Competitor</p>
+                                  <p className="text-gray-300 text-sm">Overall Readiness</p>
+                                </div>
+                                <div className="relative w-16 h-16">
+                                  <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(#60a5fa ${avgB*3.6}deg, rgba(255,255,255,0.08) 0deg)` }} />
+                                  <div className="absolute inset-[6px] rounded-full bg-slate-950/80 border border-white/10 flex items-center justify-center">
+                                    <span className="text-white font-bold text-lg">{avgB}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })()}
+
+                        <div className="grid sm:grid-cols-3 gap-4">
+                          {[
+                            { label: 'Readability', yours: demoCMPResult.user.readability, comp: demoCMPResult.competitor.readability },
+                            { label: 'Factuality', yours: demoCMPResult.user.factuality, comp: demoCMPResult.competitor.factuality },
+                            { label: 'Structure', yours: demoCMPResult.user.structure, comp: demoCMPResult.competitor.structure },
+                            { label: 'Q&A Format', yours: demoCMPResult.user.qa_format, comp: demoCMPResult.competitor.qa_format },
+                            { label: 'Structured Data', yours: demoCMPResult.user.structured_data, comp: demoCMPResult.competitor.structured_data },
+                            { label: 'Authority', yours: demoCMPResult.user.authority, comp: demoCMPResult.competitor.authority }
+                          ].map((m:any) => (
+                            <div key={m.label} className="rounded-xl border border-white/10 bg-slate-950/60 p-4 hover:border-emerald-400/30 transition">
+                              <div className="flex items-center justify-between text-sm mb-1">
+                                <p className="text-gray-300">{m.label}</p>
+                                <span className="text-white font-semibold">{m.yours} vs {m.comp}</span>
+                              </div>
+                              <div className="h-2.5 rounded bg-white/10 overflow-hidden">
+                                <div className="h-2.5 rounded bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${Math.min(100, m.yours)}%`, ['--w' as any]: `${Math.min(100, m.yours)}%`, animation: 'barGrow 900ms ease-out 100ms both' }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {(Array.isArray(demoCMPResult.suggestions) && demoCMPResult.suggestions.length>0) && (
+                          <div className="mt-6">
+                            <p className="text-white font-semibold mb-2">Suggestions</p>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                              {demoCMPResult.suggestions.slice(0,6).map((s:string, idx:number)=>(
+                                <div key={idx} className="p-3 rounded-lg border border-white/10 bg-slate-900/70 text-gray-300 text-sm">
+                                  {s}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-gray-400 text-sm">Enter two URLs and run the demo to see real comparison.</div>
+                    )}
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5 shadow">
+                    <p className="text-white font-semibold mb-2">One free comparison</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">Try one URL vs competitor now. To save and unlock 2 more comparisons this month, sign up free.</p>
+                    <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                      <SignUpButton mode="modal"><button className="w-full sm:w-auto bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-600">Sign up free</button></SignUpButton>
+                      <SignInButton mode="modal"><button className="w-full sm:w-auto border border-white/10 text-gray-300 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-white/5">Sign in</button></SignInButton>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* subtle divider */}
       <div className="relative z-10">
@@ -398,6 +736,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricing,
           </div>
 
           <div className="space-y-6">
+            <div className="bg-slate-900/70 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-6 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.25)] transition duration-300">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Do I need to sign up to try it?
+              </h3>
+              <p className="text-gray-300">
+                No, you can run a live demo instantly without an account. Sign up only if you want to save results or run full analyses.
+              </p>
+            </div>
             <div className="bg-slate-900/70 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-6 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.25)] transition duration-300">
               <h3 className="text-lg font-semibold text-white mb-2">
                 What is Rankora and how does it work?
