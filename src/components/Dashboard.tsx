@@ -100,8 +100,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, showAdminAccess,
                 </div>
               )}
               
-              {/* Enhanced Content Container */}
-              <div className="flex-1 p-6 lg:p-12 pt-8 lg:pt-16 space-y-8">
+              {/* Enhanced Content Container - Responsive padding */}
+              <div className="flex-1 p-4 sm:p-6 lg:p-12 pt-6 sm:pt-8 lg:pt-16 space-y-6 sm:space-y-8">
                 {/* Enhanced Card Styling */}
                 <style>{`
                   .card { 

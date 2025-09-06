@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Loader2, TrendingUp, TrendingDown, Minus, Lightbulb, Target, Search, AlertCircle, CheckCircle, XCircle, BarChart3, Folder } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Lightbulb, Target, Search, AlertCircle, XCircle, Folder } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
 import { saveUserComparison, listProjects, createProject, saveAnalysisToProject, supabase } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
-import { evaluateAnalysisAllowance, evaluateComparisonAllowance, consumeIfGuest } from '../utils/limits';
+import { evaluateComparisonAllowance } from '../utils/limits';
 import { analyzeComparison, analyzeKeywordComparison } from '../config/webhooks';
-import { handleError } from '../utils/error-handler';
 
 interface AnalysisResult {
   readability: number;
@@ -125,22 +124,7 @@ const hasValidKeywordAnalysisData = (data: any): boolean => {
 };
 
 // Helper function to convert values to numbers safely
-const toNumber = (value: any): number => {
-  const num = Number(value);
-  return isNaN(num) ? 0 : num;
-};
 
-// Helper function to normalize analysis data
-const normalize = (data: any): AnalysisResult => {
-  return {
-    readability: toNumber(data.readability),
-    factuality: toNumber(data.factuality),
-    structure: toNumber(data.structure),
-    qa_format: toNumber(data.qa_format),
-    structured_data: toNumber(data.structured_data),
-    authority: toNumber(data.authority)
-  };
-};
 
 export const CompetitorComparison: React.FC = () => {
   const { user } = useUser();
@@ -568,43 +552,26 @@ export const CompetitorComparison: React.FC = () => {
     },
   ] : [];
 
-  const overallScore = comparisonData ? Math.round((
-    (comparisonData.userArticle?.readability || 0) +
-    (comparisonData.userArticle?.factuality || 0) +
-    (comparisonData.userArticle?.structure || 0) +
-    (comparisonData.userArticle?.qa_format || 0) +
-    (comparisonData.userArticle?.structured_data || 0) +
-    (comparisonData.userArticle?.authority || 0)
-  ) / 6) : 0;
-
-  const overallCompetitorScore = comparisonData ? Math.round((
-    (comparisonData.competitorArticle?.readability || 0) +
-    (comparisonData.competitorArticle?.factuality || 0) +
-    (comparisonData.competitorArticle?.structure || 0) +
-    (comparisonData.competitorArticle?.qa_format || 0) +
-    (comparisonData.competitorArticle?.structured_data || 0) +
-    (comparisonData.competitorArticle?.authority || 0)
-  ) / 6) : 0;
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Header with Gradient */}
-      <div className="text-center mb-12 animate-fadeInUp">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-6">
-          <TrendingUp className="w-10 h-10 text-emerald-300" />
+      {/* Enhanced Header with Gradient - Responsive */}
+      <div className="text-center mb-8 sm:mb-12 animate-fadeInUp">
+        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-4 sm:mb-6">
+          <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-300" />
         </div>
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-3 sm:mb-4">
           Competitor Analysis
         </h1>
-        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+        <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto px-4">
           Compare your content with competitors and discover opportunities to outperform them.
         </p>
       </div>
 
-      {/* Enhanced Analysis Type Toggle */}
-      <div className="max-w-4xl mx-auto mb-8">
+      {/* Enhanced Analysis Type Toggle - Responsive */}
+      <div className="max-w-4xl mx-auto mb-6 sm:mb-8">
         <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-2 shadow-2xl">
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             {[
               { id: 'comparison', label: 'URL Comparison', icon: TrendingUp, description: 'Compare two URLs directly' },
               { id: 'keyword', label: 'Keyword Analysis', icon: Target, description: 'Analyze URL against keyword' }
@@ -612,54 +579,54 @@ export const CompetitorComparison: React.FC = () => {
               <button
                 key={type.id}
                 onClick={() => setAnalysisType(type.id as 'comparison' | 'keyword')}
-                className={`flex-1 flex flex-col items-center justify-center space-y-2 px-6 py-4 rounded-xl font-medium transition-all duration-300 ${
+                className={`flex-1 flex flex-col items-center justify-center space-y-1 sm:space-y-2 px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-medium transition-all duration-300 ${
                   analysisType === type.id
                     ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg'
                     : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
                 }`}
               >
-                <type.icon className="w-6 h-6" />
-                <span className="font-semibold">{type.label}</span>
-                <span className="text-xs opacity-80">{type.description}</span>
+                <type.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="font-semibold text-sm sm:text-base">{type.label}</span>
+                <span className="text-xs opacity-80 hidden sm:block">{type.description}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* High-level Scores for Comparison */}
+      {/* High-level Scores for Comparison - Responsive */}
       {analysisType === 'comparison' && comparisonData?.overallUserReadinessScore !== undefined || comparisonData?.seoOpportunityScore !== undefined ? (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {comparisonData?.overallUserReadinessScore !== undefined && (
-            <div className="card text-center">
-              <h4 className="text-lg font-semibold text-primary mb-2">Overall User Readiness</h4>
-              <div className="text-4xl font-bold text-accent-primary">{comparisonData.overallUserReadinessScore}</div>
+            <div className="card text-center p-4 sm:p-6">
+              <h4 className="text-base sm:text-lg font-semibold text-primary mb-2">Overall User Readiness</h4>
+              <div className="text-3xl sm:text-4xl font-bold text-accent-primary">{comparisonData.overallUserReadinessScore}</div>
             </div>
           )}
           {comparisonData?.seoOpportunityScore !== undefined && (
-            <div className="card text-center">
-              <h4 className="text-lg font-semibold text-primary mb-2">SEO Opportunity</h4>
-              <div className="text-4xl font-bold text-info">{comparisonData.seoOpportunityScore}</div>
+            <div className="card text-center p-4 sm:p-6">
+              <h4 className="text-base sm:text-lg font-semibold text-primary mb-2">SEO Opportunity</h4>
+              <div className="text-3xl sm:text-4xl font-bold text-info">{comparisonData.seoOpportunityScore}</div>
             </div>
           )}
         </div>
       ) : null}
 
-      {/* Input Form */}
+      {/* Input Form - Responsive */}
       <div className="max-w-5xl mx-auto animate-scaleIn">
-        <div className="bg-gradient-to-br from-gray-900/50 via-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-3xl p-8 shadow-2xl">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-2xl border border-emerald-500/40 shadow-xl mb-6">
+        <div className="bg-gradient-to-br from-gray-900/50 via-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl">
+          <div className="text-center mb-6 sm:mb-10">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-2xl border border-emerald-500/40 shadow-xl mb-4 sm:mb-6">
               {analysisType === 'comparison' ? (
-                <Target className="w-8 h-8 text-emerald-300" />
+                <Target className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-300" />
               ) : (
-                <Search className="w-8 h-8 text-emerald-300" />
+                <Search className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-300" />
               )}
             </div>
-            <h3 className="text-3xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
+            <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-3 sm:mb-4">
               {analysisType === 'comparison' ? 'Start Your Competitive Analysis' : 'Analyze Content Against Keyword'}
             </h3>
-            <p className="text-lg text-emerald-200/80 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-emerald-200/80 max-w-2xl mx-auto px-4">
               {analysisType === 'comparison' 
                 ? 'Enter two URLs to get instant AI-powered comparison insights and competitive advantages'
                 : 'Enter your URL and target keyword to identify content gaps, missing topics, and SEO opportunities'
@@ -667,12 +634,12 @@ export const CompetitorComparison: React.FC = () => {
             </p>
           </div>
           
-          <form onSubmit={handleCompare} className="space-y-8">
+          <form onSubmit={handleCompare} className="space-y-6 sm:space-y-8">
             {analysisType === 'comparison' ? (
               // Comparison form
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <label htmlFor="userUrl" className="block text-lg font-semibold text-emerald-200 mb-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div className="space-y-3 sm:space-y-4">
+                  <label htmlFor="userUrl" className="block text-base sm:text-lg font-semibold text-emerald-200 mb-2 sm:mb-3">
                     <span className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                       <span>Your Article URL</span>
@@ -684,7 +651,7 @@ export const CompetitorComparison: React.FC = () => {
                       id="userUrl"
                       value={userUrl}
                       onChange={(e) => setUserUrl(e.target.value)}
-                      className="w-full px-6 py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-lg shadow-lg"
+                      className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-base sm:text-lg shadow-lg"
                       placeholder="https://yourwebsite.com/article"
                       required
                     />
@@ -692,8 +659,8 @@ export const CompetitorComparison: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <label htmlFor="competitorUrl" className="block text-lg font-semibold text-emerald-200 mb-3">
+                <div className="space-y-3 sm:space-y-4">
+                  <label htmlFor="competitorUrl" className="block text-base sm:text-lg font-semibold text-emerald-200 mb-2 sm:mb-3">
                     <span className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-red-400 rounded-full"></div>
                       <span>Competitor's URL</span>
@@ -705,7 +672,7 @@ export const CompetitorComparison: React.FC = () => {
                       id="competitorUrl"
                       value={competitorUrl}
                       onChange={(e) => setCompetitorUrl(e.target.value)}
-                      className="w-full px-6 py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-lg shadow-lg"
+                      className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-base sm:text-lg shadow-lg"
                       placeholder="https://competitor.com/article"
                       required
                     />
@@ -715,9 +682,9 @@ export const CompetitorComparison: React.FC = () => {
               </div>
             ) : (
               // Keyword analysis form
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <label htmlFor="userUrl" className="block text-lg font-semibold text-emerald-200 mb-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div className="space-y-3 sm:space-y-4">
+                  <label htmlFor="userUrl" className="block text-base sm:text-lg font-semibold text-emerald-200 mb-2 sm:mb-3">
                     <span className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                       <span>Website URL</span>
@@ -729,7 +696,7 @@ export const CompetitorComparison: React.FC = () => {
                       id="userUrl"
                       value={userUrl}
                       onChange={(e) => setUserUrl(e.target.value)}
-                      className="w-full px-6 py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-lg shadow-lg"
+                      className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-base sm:text-lg shadow-lg"
                       placeholder="https://yourwebsite.com/article"
                       required
                     />
@@ -737,8 +704,8 @@ export const CompetitorComparison: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <label htmlFor="keyword" className="block text-lg font-semibold text-emerald-200 mb-3">
+                <div className="space-y-3 sm:space-y-4">
+                  <label htmlFor="keyword" className="block text-base sm:text-lg font-semibold text-emerald-200 mb-2 sm:mb-3">
                     <span className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                       <span>Target Keyword</span>
@@ -750,7 +717,7 @@ export const CompetitorComparison: React.FC = () => {
                       id="keyword"
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
-                      className="w-full px-6 py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-lg shadow-lg"
+                      className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gray-800/50 border border-emerald-500/30 rounded-2xl text-white placeholder-emerald-300/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-base sm:text-lg shadow-lg"
                       placeholder="e.g., health, fitness, technology"
                       required
                     />
@@ -771,31 +738,31 @@ export const CompetitorComparison: React.FC = () => {
               </div>
             )}
 
-            <div className="text-center pt-4">
+            <div className="text-center pt-3 sm:pt-4">
               <button
                 type="submit"
                 disabled={isAnalyzing || 
                   (analysisType === 'comparison' ? (!userUrl.trim() || !competitorUrl.trim()) : (!userUrl.trim() || !keyword.trim())) || 
                   (allowInfo ? !allowInfo.canProceed : false)}
-                className="relative group px-12 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                className="relative group px-8 sm:px-12 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-base sm:text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-emerald-600/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="relative flex items-center justify-center space-x-3">
+                <div className="relative flex items-center justify-center space-x-2 sm:space-x-3">
                   {isAnalyzing ? (
                     <>
-                      <div className="loading-spinner w-6 h-6" />
+                      <div className="loading-spinner w-5 h-5 sm:w-6 sm:h-6" />
                       <span>Analyzing...</span>
                     </>
                   ) : (
                     <>
                       {analysisType === 'comparison' ? (
                         <>
-                          <Target className="w-6 h-6" />
+                          <Target className="w-5 h-5 sm:w-6 sm:h-6" />
                           <span>Compare Now</span>
                         </>
                       ) : (
                         <>
-                          <Search className="w-6 h-6" />
+                          <Search className="w-5 h-5 sm:w-6 sm:h-6" />
                           <span>Analyze Content</span>
                         </>
                       )}
@@ -808,59 +775,59 @@ export const CompetitorComparison: React.FC = () => {
         </div>
       </div>
 
-      {/* Allowance banner */}
+      {/* Allowance banner - Responsive */}
       {allowInfo && (
-        <div className={`max-w-4xl mx-auto mb-8 ${
+        <div className={`max-w-4xl mx-auto mb-6 sm:mb-8 ${
           allowInfo.canProceed 
             ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-700/10 border-emerald-500/30' 
             : 'bg-gradient-to-r from-red-500/10 via-red-600/10 to-red-700/10 border-red-500/30'
-        } border rounded-2xl p-6 text-center shadow-2xl`}>
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+        } border rounded-2xl p-4 sm:p-6 text-center shadow-2xl`}>
+          <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+            <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center ${
               allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border border-emerald-500/40' 
                 : 'bg-red-500/20 border border-red-500/40'
             }`}>
-              <Target className={`w-5 h-5 ${
+              <Target className={`w-4 h-4 sm:w-5 sm:h-5 ${
                 allowInfo.canProceed ? 'text-emerald-400' : 'text-red-400'
               }`} />
             </div>
-            <span className={`font-semibold text-lg ${
+            <span className={`font-semibold text-base sm:text-lg ${
               allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
             }`}>
               Monthly Comparison Usage
             </span>
           </div>
           
-          <div className="grid grid-cols-2 gap-6 mb-4">
-            <div className={`text-center p-4 rounded-xl border ${
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 mb-3 sm:mb-4">
+            <div className={`text-center p-3 sm:p-4 rounded-xl border ${
               allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border-emerald-500/30' 
                 : 'bg-red-500/20 border-red-500/30'
             }`}>
-              <div className={`text-2xl font-bold mb-1 ${
+              <div className={`text-xl sm:text-2xl font-bold mb-1 ${
                 allowInfo.canProceed ? 'text-emerald-300' : 'text-red-300'
               }`}>
                 {allowInfo.remaining}
               </div>
-              <div className={`text-sm ${
+              <div className={`text-xs sm:text-sm ${
                 allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
               }`}>
                 Remaining
               </div>
             </div>
             
-            <div className={`text-center p-4 rounded-xl border ${
+            <div className={`text-center p-3 sm:p-4 rounded-xl border ${
               allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border-emerald-500/30' 
                 : 'bg-red-500/20 border-red-500/30'
             }`}>
-              <div className={`text-2xl font-bold mb-1 ${
+              <div className={`text-xl sm:text-2xl font-bold mb-1 ${
                 allowInfo.canProceed ? 'text-emerald-300' : 'text-red-300'
               }`}>
                 {allowInfo.limit || '∞'}
               </div>
-              <div className={`text-sm ${
+              <div className={`text-xs sm:text-sm ${
                 allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
               }`}>
                 Total Limit
@@ -869,10 +836,10 @@ export const CompetitorComparison: React.FC = () => {
           </div>
           
           {allowInfo.limit && (
-            <div className="mb-4">
-              <div className="w-full bg-gray-700/50 rounded-full h-3">
+            <div className="mb-3 sm:mb-4">
+              <div className="w-full bg-gray-700/50 rounded-full h-2 sm:h-3">
                 <div 
-                  className={`h-3 rounded-full transition-all duration-300 ${
+                  className={`h-2 sm:h-3 rounded-full transition-all duration-300 ${
                     allowInfo.canProceed === true 
                       ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' 
                       : 'bg-gradient-to-r from-red-400 to-red-600'
@@ -882,7 +849,7 @@ export const CompetitorComparison: React.FC = () => {
                   }}
                 ></div>
               </div>
-              <div className={`text-sm mt-2 ${
+              <div className={`text-xs sm:text-sm mt-2 ${
                 allowInfo.canProceed === true ? 'text-emerald-200' : 'text-red-200'
               }`}>
                 {allowInfo.limit - allowInfo.remaining} of {allowInfo.limit} used
@@ -891,13 +858,13 @@ export const CompetitorComparison: React.FC = () => {
           )}
           
           {allowInfo.canProceed === false && (
-            <div className="mt-4 p-4 bg-red-500/20 rounded-xl border border-red-500/30">
-              <div className="text-red-200 text-sm font-medium mb-3">
+            <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-red-500/20 rounded-xl border border-red-500/30">
+              <div className="text-red-200 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
                 Monthly comparison limit reached! Upgrade your plan for more comparisons.
               </div>
               <button 
                 onClick={() => window.dispatchEvent(new Event('open-pricing'))}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/25"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/25 text-sm sm:text-base"
               >
                 Upgrade Plan
               </button>
@@ -906,11 +873,11 @@ export const CompetitorComparison: React.FC = () => {
         </div>
       )}
 
-      {/* Comparison Results */}
+      {/* Comparison Results - Responsive */}
       {analysisType === 'comparison' && comparisonData && (
-        <div className="space-y-8 animate-fadeInUp">
+        <div className="space-y-6 sm:space-y-8 animate-fadeInUp">
           {/* Score Comparison Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <ScoreCard
               title="Readability"
               userScore={comparisonData.userArticle!.readability}
@@ -949,23 +916,23 @@ export const CompetitorComparison: React.FC = () => {
             />
           </div>
 
-          {/* Charts */}
-          <div className="grid lg:grid-cols-2 gap-8">
+          {/* Charts - Responsive */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Bar Chart Comparison */}
             <div className="card">
-              <h4 className="text-xl font-semibold text-primary mb-6">Side-by-Side Comparison</h4>
-              <div className="h-80">
+              <h4 className="text-lg sm:text-xl font-semibold text-primary mb-4 sm:mb-6">Side-by-Side Comparison</h4>
+              <div className="h-64 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                     <XAxis 
                       dataKey="metric" 
-                      tick={{ fill: '#b3b3b3', fontSize: 12 }}
+                      tick={{ fill: '#b3b3b3', fontSize: 10 }}
                       angle={-45}
                       textAnchor="end"
-                      height={80}
+                      height={60}
                     />
-                    <YAxis tick={{ fill: '#b3b3b3' }} />
+                    <YAxis tick={{ fill: '#b3b3b3', fontSize: 10 }} />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: '#1e1e1e', 
@@ -983,16 +950,16 @@ export const CompetitorComparison: React.FC = () => {
 
             {/* Radar Chart */}
             <div className="card">
-              <h4 className="text-xl font-semibold text-primary mb-6">Performance Radar</h4>
-              <div className="h-80">
+              <h4 className="text-lg sm:text-xl font-semibold text-primary mb-4 sm:mb-6">Performance Radar</h4>
+              <div className="h-64 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData}>
                     <PolarGrid stroke="#333" />
-                    <PolarAngleAxis tick={{ fill: '#b3b3b3', fontSize: 12 }} />
+                    <PolarAngleAxis tick={{ fill: '#b3b3b3', fontSize: 10 }} />
                     <PolarRadiusAxis 
                       angle={90} 
                       domain={[0, 100]} 
-                      tick={{ fill: '#b3b3b3', fontSize: 10 }}
+                      tick={{ fill: '#b3b3b3', fontSize: 8 }}
                     />
                     <Radar
                       name="Your Article"
@@ -1017,28 +984,28 @@ export const CompetitorComparison: React.FC = () => {
             </div>
           </div>
 
-          {/* AI Suggestions */}
-          <div className="bg-gradient-to-br from-accent-primary/10 to-info/10 border border-accent-primary/30 rounded-xl p-8">
-            <div className="flex items-center mb-6">
-              <div className="p-3 bg-gradient-to-r from-accent-primary to-info rounded-lg mr-4">
-                <Lightbulb className="w-6 h-6 text-white" />
+          {/* AI Suggestions - Responsive */}
+          <div className="bg-gradient-to-br from-accent-primary/10 to-info/10 border border-accent-primary/30 rounded-xl p-4 sm:p-6 lg:p-8">
+            <div className="flex items-center mb-4 sm:mb-6">
+              <div className="p-2 sm:p-3 bg-gradient-to-r from-accent-primary to-info rounded-lg mr-3 sm:mr-4">
+                <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-primary">
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">
                 Competitive Suggestions
               </h3>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {comparisonData.suggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className="flex items-start space-x-3 p-4 surface-primary rounded-lg border border-border-primary animate-fadeInLeft"
+                  className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 surface-primary rounded-lg border border-border-primary animate-fadeInLeft"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-accent-primary to-info rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-accent-primary to-info rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold">
                     {index + 1}
                   </div>
-                  <p className="text-secondary text-sm leading-relaxed">
+                  <p className="text-secondary text-xs sm:text-sm leading-relaxed">
                     {suggestion}
                   </p>
                 </div>
@@ -1046,22 +1013,22 @@ export const CompetitorComparison: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Wins */}
+          {/* Quick Wins - Responsive */}
           {comparisonData.quickWins && comparisonData.quickWins.length > 0 && (
             <div className="card">
-              <h3 className="text-xl font-bold text-primary mb-4">Quick Wins</h3>
-              <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold text-primary mb-3 sm:mb-4">Quick Wins</h3>
+              <div className="space-y-2 sm:space-y-3">
                 {comparisonData.quickWins.map((win, idx) => (
-                  <div key={idx} className="p-4 surface-secondary rounded-lg border border-primary">
-                    <div className="text-sm text-secondary">{win}</div>
+                  <div key={idx} className="p-3 sm:p-4 surface-secondary rounded-lg border border-primary">
+                    <div className="text-xs sm:text-sm text-secondary">{win}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Save to Project Button */}
-          <div className="text-center pt-6">
+          {/* Save to Project Button - Responsive */}
+          <div className="text-center pt-4 sm:pt-6">
             <button
               onClick={async () => {
                 if (user) {
@@ -1073,127 +1040,127 @@ export const CompetitorComparison: React.FC = () => {
                   setSaveOpen(true);
                 }
               }}
-              className="btn-primary px-8 py-3 text-lg"
+              className="btn-primary px-6 sm:px-8 py-2 sm:py-3 text-base sm:text-lg"
             >
-              <Folder className="w-5 h-5 mr-2" />
+              <Folder className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Save to Project
             </button>
           </div>
         </div>
       )}
 
-      {/* Keyword Analysis Results */}
+      {/* Keyword Analysis Results - Responsive */}
       {analysisType === 'keyword' && keywordAnalysisResult && (
-        <div className="space-y-8 animate-fadeInUp">
+        <div className="space-y-6 sm:space-y-8 animate-fadeInUp">
           {/* Summary Card */}
           <div className="card">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-accent-primary/30 to-info/30 rounded-xl flex items-center justify-center border border-accent-primary/40">
-                <Target className="w-6 h-6 text-accent-primary" />
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-accent-primary/30 to-info/30 rounded-xl flex items-center justify-center border border-accent-primary/40">
+                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-accent-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-primary">Analysis Summary</h2>
-                <p className="text-secondary">Keyword: <span className="text-accent-primary font-semibold">{keywordAnalysisResult?.keyword || 'N/A'}</span></p>
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">Analysis Summary</h2>
+                <p className="text-secondary text-sm sm:text-base">Keyword: <span className="text-accent-primary font-semibold">{keywordAnalysisResult?.keyword || 'N/A'}</span></p>
               </div>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="text-center p-4 surface-secondary rounded-xl border border-accent-primary/20">
-                <div className="text-3xl font-bold text-accent-primary mb-2">{keywordAnalysisResult?.missing_topics?.length || 0}</div>
-                <div className="text-sm text-secondary">Missing Topics</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+              <div className="text-center p-3 sm:p-4 surface-secondary rounded-xl border border-accent-primary/20">
+                <div className="text-2xl sm:text-3xl font-bold text-accent-primary mb-2">{keywordAnalysisResult?.missing_topics?.length || 0}</div>
+                <div className="text-xs sm:text-sm text-secondary">Missing Topics</div>
               </div>
-              <div className="text-center p-4 surface-secondary rounded-xl border border-info/20">
-                <div className="text-3xl font-bold text-info mb-2">{keywordAnalysisResult?.missing_entities?.length || 0}</div>
-                <div className="text-sm text-secondary">Missing Entities</div>
+              <div className="text-center p-3 sm:p-4 surface-secondary rounded-xl border border-info/20">
+                <div className="text-2xl sm:text-3xl font-bold text-info mb-2">{keywordAnalysisResult?.missing_entities?.length || 0}</div>
+                <div className="text-xs sm:text-sm text-secondary">Missing Entities</div>
               </div>
-              <div className="text-center p-4 surface-secondary rounded-xl border border-warning/20">
-                <div className="text-3xl font-bold text-warning mb-2">{keywordAnalysisResult?.seo_opportunities?.length || 0}</div>
-                <div className="text-sm text-secondary">SEO Opportunities</div>
+              <div className="text-center p-3 sm:p-4 surface-secondary rounded-xl border border-warning/20">
+                <div className="text-2xl sm:text-3xl font-bold text-warning mb-2">{keywordAnalysisResult?.seo_opportunities?.length || 0}</div>
+                <div className="text-xs sm:text-sm text-secondary">SEO Opportunities</div>
               </div>
             </div>
           </div>
 
-          {/* Missing Topics */}
+          {/* Missing Topics - Responsive */}
           <div className="card">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-error/30 to-error/60 rounded-xl flex items-center justify-center border border-error/40">
-                <XCircle className="w-5 h-5 text-error" />
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-error/30 to-error/60 rounded-xl flex items-center justify-center border border-error/40">
+                <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-error" />
               </div>
-              <h3 className="text-xl font-bold text-primary">Missing Topics</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-primary">Missing Topics</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {keywordAnalysisResult?.missing_topics?.map((topic, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 surface-secondary rounded-lg border border-error/20">
-                  <div className="w-2 h-2 bg-error rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-secondary text-sm">{topic}</p>
+                <div key={index} className="flex items-start space-x-2 sm:space-x-3 p-2 sm:p-3 surface-secondary rounded-lg border border-error/20">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-error rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-secondary text-xs sm:text-sm">{topic}</p>
                 </div>
               )) || (
-                <div className="text-center py-4 text-secondary">No missing topics found</div>
+                <div className="text-center py-3 sm:py-4 text-secondary text-sm">No missing topics found</div>
               )}
             </div>
           </div>
 
-          {/* Missing Entities */}
+          {/* Missing Entities - Responsive */}
           <div className="card">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-warning/30 to-warning/60 rounded-xl flex items-center justify-center border border-warning/40">
-                <AlertCircle className="w-5 h-5 text-warning" />
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-warning/30 to-warning/60 rounded-xl flex items-center justify-center border border-warning/40">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
               </div>
-              <h3 className="text-xl font-bold text-primary">Missing Entities</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-primary">Missing Entities</h3>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {keywordAnalysisResult?.missing_entities?.map((entity, index) => (
-                <span key={index} className="px-3 py-2 bg-warning/20 border border-warning/30 rounded-lg text-warning text-sm">
+                <span key={index} className="px-2 sm:px-3 py-1.5 sm:py-2 bg-warning/20 border border-warning/30 rounded-lg text-warning text-xs sm:text-sm">
                   {entity}
                 </span>
               )) || (
-                <div className="text-center py-4 text-secondary">No missing entities found</div>
+                <div className="text-center py-3 sm:py-4 text-secondary text-sm">No missing entities found</div>
               )}
             </div>
           </div>
 
-          {/* Content Gaps */}
+          {/* Content Gaps - Responsive */}
           <div className="card">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-warning/30 to-warning/60 rounded-xl flex items-center justify-center border border-warning/40">
-                <AlertCircle className="w-5 h-5 text-warning" />
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-warning/30 to-warning/60 rounded-xl flex items-center justify-center border border-warning/40">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
               </div>
-              <h3 className="text-xl font-bold text-primary">Content Gaps</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-primary">Content Gaps</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {keywordAnalysisResult?.content_gaps?.map((gap, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 surface-secondary rounded-lg border border-warning/20">
-                  <div className="w-2 h-2 bg-warning rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-secondary text-sm">{gap}</p>
+                <div key={index} className="flex items-start space-x-2 sm:space-x-3 p-2 sm:p-3 surface-secondary rounded-lg border border-warning/20">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-warning rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-secondary text-xs sm:text-sm">{gap}</p>
                 </div>
               )) || (
-                <div className="text-center py-4 text-secondary">No content gaps found</div>
+                <div className="text-center py-3 sm:py-4 text-secondary text-sm">No content gaps found</div>
               )}
             </div>
           </div>
 
-          {/* SEO Opportunities */}
+          {/* SEO Opportunities - Responsive */}
           <div className="card">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-accent-primary/30 to-accent-primary/60 rounded-xl flex items-center justify-center border border-accent-primary/40">
-                <Lightbulb className="w-5 h-5 text-accent-primary" />
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-accent-primary/30 to-accent-primary/60 rounded-xl flex items-center justify-center border border-accent-primary/40">
+                <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-accent-primary" />
               </div>
-              <h3 className="text-xl font-bold text-primary">SEO Opportunities</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-primary">SEO Opportunities</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {keywordAnalysisResult?.seo_opportunities?.map((opportunity, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 surface-secondary rounded-lg border border-accent-primary/20">
-                  <div className="w-2 h-2 bg-accent-primary rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-secondary text-sm">{opportunity}</p>
+                <div key={index} className="flex items-start space-x-2 sm:space-x-3 p-2 sm:p-3 surface-secondary rounded-lg border border-accent-primary/20">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-accent-primary rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-secondary text-xs sm:text-sm">{opportunity}</p>
                 </div>
               )) || (
-                <div className="text-center py-4 text-secondary">No SEO opportunities found</div>
+                <div className="text-center py-3 sm:py-4 text-secondary text-sm">No SEO opportunities found</div>
               )}
             </div>
           </div>
 
-          {/* Save to Project Button */}
-          <div className="text-center pt-6">
+          {/* Save to Project Button - Responsive */}
+          <div className="text-center pt-4 sm:pt-6">
             <button
               onClick={async () => {
                 if (user) {
@@ -1205,28 +1172,28 @@ export const CompetitorComparison: React.FC = () => {
                   setSaveOpen(true);
                 }
               }}
-              className="btn-primary px-8 py-3 text-lg"
+              className="btn-primary px-6 sm:px-8 py-2 sm:py-3 text-base sm:text-lg"
             >
-              <Folder className="w-5 h-5 mr-2" />
+              <Folder className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Save to Project
             </button>
           </div>
         </div>
       )}
 
-      {/* Save to project modal */}
+      {/* Save to project modal - Responsive */}
       {saveOpen && (comparisonData || keywordAnalysisResult) && (
         <div className="fixed inset-0 modal-backdrop z-[70]">
-          <div className="min-h-full flex items-center justify-center p-4">
+          <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
             <div className="card glass card-shadow max-w-md w-full relative animate-scaleIn">
-              <button className="absolute top-3 right-3 text-secondary hover:text-primary" onClick={() => setSaveOpen(false)}>✕</button>
-              <h4 className="text-xl font-semibold text-primary mb-4 text-center">Save comparison to a project</h4>
+              <button className="absolute top-2 sm:top-3 right-2 sm:right-3 text-secondary hover:text-primary text-base sm:text-lg" onClick={() => setSaveOpen(false)}>✕</button>
+              <h4 className="text-lg sm:text-xl font-semibold text-primary mb-3 sm:mb-4 text-center">Save comparison to a project</h4>
               {saveError && (
-                <div className="p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm mb-3">{saveError}</div>
+                <div className="p-2 sm:p-3 bg-error/10 border border-error/30 rounded-lg text-error text-xs sm:text-sm mb-2 sm:mb-3">{saveError}</div>
               )}
-              <div className="space-y-3">
-                <label className="text-sm text-secondary">Choose project</label>
-                <select className="input-primary select-custom" value={String(selectedProjectId)} onChange={(e) => {
+              <div className="space-y-2 sm:space-y-3">
+                <label className="text-xs sm:text-sm text-secondary">Choose project</label>
+                <select className="input-primary select-custom text-sm sm:text-base" value={String(selectedProjectId)} onChange={(e) => {
                   const v = e.target.value;
                   setSelectedProjectId(v === 'new' ? 'new' : Number(v));
                 }}>
@@ -1236,10 +1203,10 @@ export const CompetitorComparison: React.FC = () => {
                   <option value="new">Create new project</option>
                 </select>
                 {selectedProjectId === 'new' && (
-                  <input className="input-primary" placeholder="New project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
+                  <input className="input-primary text-sm sm:text-base" placeholder="New project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
                 )}
                 <button
-                  className={`btn-primary w-full ${saving ? 'opacity-70' : ''}`}
+                  className={`btn-primary w-full text-sm sm:text-base ${saving ? 'opacity-70' : ''}`}
                   disabled={saving}
                   onClick={async () => {
                     setSaveError(null);

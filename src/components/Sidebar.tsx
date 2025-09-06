@@ -72,12 +72,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button - Responsive */}
       <button
         onClick={onToggle}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-900/80 backdrop-blur-xl border border-emerald-500/30 rounded-xl shadow-2xl hover:bg-gray-800/80 transition-all duration-300"
+        className="lg:hidden fixed top-3 left-3 sm:top-4 sm:left-4 z-50 p-2 bg-gray-900/80 backdrop-blur-xl border border-emerald-500/30 rounded-xl shadow-2xl hover:bg-gray-800/80 transition-all duration-300"
       >
-        {isOpen ? <X className="w-6 h-6 text-emerald-300" /> : <Menu className="w-6 h-6 text-emerald-300" />}
+        {isOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" />}
       </button>
 
       {/* Overlay for mobile */}
@@ -88,9 +88,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Responsive */}
       <div className={`
-        fixed left-0 top-0 h-full w-64 bg-gray-900/95 backdrop-blur-xl border-r border-emerald-500/30 shadow-2xl z-40
+        fixed left-0 top-0 h-full w-64 sm:w-72 bg-gray-900/95 backdrop-blur-xl border-r border-emerald-500/30 shadow-2xl z-40
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:z-auto

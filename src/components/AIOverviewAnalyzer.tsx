@@ -219,62 +219,62 @@ export const AIOverviewAnalyzer: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Header with Gradient */}
-      <div className="text-center mb-12 animate-fadeInUp">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-6">
-          <BarChart3 className="w-10 h-10 text-emerald-300" />
+      {/* Enhanced Header with Gradient - Responsive */}
+      <div className="text-center mb-8 sm:mb-12 animate-fadeInUp">
+        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-400/30 via-emerald-500/40 to-emerald-600/30 rounded-3xl border border-emerald-500/40 shadow-2xl mb-4 sm:mb-6">
+          <BarChart3 className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-300" />
         </div>
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-4">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent mb-3 sm:mb-4">
           AI Content Analyzer
         </h1>
-        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+        <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto px-4">
           Analyze your content with advanced AI to get comprehensive insights on readability, factuality, structure, and more.
         </p>
       </div>
 
-      {/* Enhanced Usage Info */}
+      {/* Enhanced Usage Info - Responsive */}
       {allowInfo && (
-        <div className={`border rounded-2xl p-6 mb-8 text-center shadow-2xl ${
+        <div className={`border rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 text-center shadow-2xl ${
           allowInfo.canProceed 
             ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-700/10 border-emerald-500/30' 
             : 'bg-gradient-to-r from-red-500/10 via-red-600/10 to-red-700/10 border-red-500/30'
         }`}>
-          <div className="flex items-center justify-center space-x-3 mb-3">
-            <Database className={`w-6 h-6 ${allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'}`} />
-            <span className={`font-semibold text-lg ${allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'}`}>
+          <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-3">
+            <Database className={`w-5 h-5 sm:w-6 sm:h-6 ${allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'}`} />
+            <span className={`font-semibold text-base sm:text-lg ${allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'}`}>
               Monthly Usage
             </span>
           </div>
           
-          <div className="grid grid-cols-2 gap-6">
-            <div className={`text-center p-4 rounded-xl border ${
+          <div className="grid grid-cols-2 gap-3 sm:gap-6">
+            <div className={`text-center p-3 sm:p-4 rounded-xl border ${
               allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border-emerald-500/30' 
                 : 'bg-red-500/20 border-red-500/30'
             }`}>
-              <div className={`text-2xl font-bold mb-1 ${
+              <div className={`text-xl sm:text-2xl font-bold mb-1 ${
                 allowInfo.canProceed ? 'text-emerald-300' : 'text-red-300'
               }`}>
                 {allowInfo.remaining}
               </div>
-              <div className={`text-sm ${
+              <div className={`text-xs sm:text-sm ${
                 allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
               }`}>
                 Remaining
               </div>
             </div>
             
-            <div className={`text-center p-4 rounded-xl border ${
+            <div className={`text-center p-3 sm:p-4 rounded-xl border ${
               allowInfo.canProceed 
                 ? 'bg-emerald-500/20 border-emerald-500/30' 
                 : 'bg-red-500/20 border-red-500/30'
             }`}>
-              <div className={`text-2xl font-bold mb-1 ${
+              <div className={`text-xl sm:text-2xl font-bold mb-1 ${
                 allowInfo.canProceed ? 'text-emerald-300' : 'text-red-300'
               }`}>
                 {allowInfo.limit || '∞'}
               </div>
-              <div className={`text-sm ${
+              <div className={`text-xs sm:text-sm ${
                 allowInfo.canProceed ? 'text-emerald-200' : 'text-red-200'
               }`}>
                 Total Limit
@@ -320,12 +320,12 @@ export const AIOverviewAnalyzer: React.FC = () => {
         </div>
       )}
 
-      {/* Enhanced Input Form */}
-      <div className="max-w-4xl mx-auto mb-12">
-        <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-8 shadow-2xl">
-          <form onSubmit={handleAnalyze} className="space-y-6">
+      {/* Enhanced Input Form - Responsive */}
+      <div className="max-w-4xl mx-auto mb-8 sm:mb-12">
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl">
+          <form onSubmit={handleAnalyze} className="space-y-4 sm:space-y-6">
             <div>
-              <label htmlFor="url" className="block text-lg font-semibold text-emerald-200 mb-3">
+              <label htmlFor="url" className="block text-base sm:text-lg font-semibold text-emerald-200 mb-2 sm:mb-3">
                 Website URL to Analyze
               </label>
               <input
@@ -334,7 +334,7 @@ export const AIOverviewAnalyzer: React.FC = () => {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com/article"
-                className="w-full px-6 py-4 bg-gray-800/50 border border-emerald-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-lg"
+                className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gray-800/50 border border-emerald-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 text-base sm:text-lg"
                 required
               />
             </div>
@@ -342,16 +342,16 @@ export const AIOverviewAnalyzer: React.FC = () => {
             <button
               type="submit"
               disabled={isAnalyzing}
-              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/25 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-3 text-lg"
+              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/25 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2 sm:space-x-3 text-base sm:text-lg"
             >
               {isAnalyzing ? (
                 <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
                   <span>Analyzing Content...</span>
                 </>
               ) : (
                 <>
-                  <Search className="w-6 h-6" />
+                  <Search className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span>Analyze Content</span>
                 </>
               )}
@@ -375,23 +375,23 @@ export const AIOverviewAnalyzer: React.FC = () => {
       {/* Enhanced Results Section */}
       {result && (
         <div className="max-w-6xl mx-auto space-y-8">
-          {/* Enhanced Score Summary */}
-          <div className="bg-gray-900/50 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-8 shadow-2xl">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-white mb-4">Analysis Results</h2>
-              <p className="text-gray-300 text-lg">Your content performance across key metrics</p>
+          {/* Enhanced Score Summary - Responsive */}
+          <div className="bg-gray-900/50 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl">
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Analysis Results</h2>
+              <p className="text-gray-300 text-base sm:text-lg">Your content performance across key metrics</p>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
               {Object.entries(result).filter(([key]) => key !== 'suggestions').map(([key, value]) => (
-                <div key={key} className="text-center p-4 bg-gray-800/30 rounded-2xl border border-blue-500/20">
-                  <div className={`text-3xl font-bold mb-2 ${
+                <div key={key} className="text-center p-3 sm:p-4 bg-gray-800/30 rounded-2xl border border-blue-500/20">
+                  <div className={`text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 ${
                     value >= 80 ? 'text-emerald-400' : 
                     value >= 60 ? 'text-yellow-400' : 'text-red-400'
                   }`}>
                     {value}
                   </div>
-                  <div className="text-sm text-gray-300 font-medium capitalize">
+                  <div className="text-xs sm:text-sm text-gray-300 font-medium capitalize">
                     {key.replace('_', ' ')}
                   </div>
                 </div>
@@ -399,19 +399,19 @@ export const AIOverviewAnalyzer: React.FC = () => {
             </div>
           </div>
 
-          {/* Charts Grid */}
-          <div className="grid lg:grid-cols-2 gap-8">
+          {/* Charts Grid - Responsive */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Pie Chart */}
             <div className="card">
-              <h4 className="text-xl font-semibold text-primary mb-6">Score Distribution</h4>
-              <div className="h-80">
+              <h4 className="text-lg sm:text-xl font-semibold text-primary mb-4 sm:mb-6">Score Distribution</h4>
+              <div className="h-64 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      outerRadius={100}
+                      outerRadius={80}
                       dataKey="value"
                       label={({ name, value }) => `${name}: ${value}`}
                     >
@@ -427,19 +427,19 @@ export const AIOverviewAnalyzer: React.FC = () => {
 
             {/* Bar Chart */}
             <div className="card">
-              <h4 className="text-xl font-semibold text-primary mb-6">Detailed Scores</h4>
-              <div className="h-80">
+              <h4 className="text-lg sm:text-xl font-semibold text-primary mb-4 sm:mb-6">Detailed Scores</h4>
+              <div className="h-64 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                     <XAxis 
                       dataKey="name" 
-                      tick={{ fill: '#b3b3b3', fontSize: 12 }}
+                      tick={{ fill: '#b3b3b3', fontSize: 10 }}
                       angle={-45}
                       textAnchor="end"
-                      height={80}
+                      height={60}
                     />
-                    <YAxis tick={{ fill: '#b3b3b3' }} />
+                    <YAxis tick={{ fill: '#b3b3b3', fontSize: 10 }} />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: '#1e1e1e', 
@@ -454,8 +454,8 @@ export const AIOverviewAnalyzer: React.FC = () => {
             </div>
           </div>
 
-          {/* Detailed Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* Detailed Metrics - Responsive */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
             {[
               { name: 'Readability', score: result.readability, icon: FileText, description: 'Content clarity and accessibility' },
               { name: 'Factuality', score: result.factuality, icon: CheckCircle, description: 'Accuracy and credibility' },
@@ -471,39 +471,39 @@ export const AIOverviewAnalyzer: React.FC = () => {
                   className="card hover:scale-105 transition-transform duration-300"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="text-center">
-                    <Icon className="w-8 h-8 mx-auto mb-3 text-accent-primary" />
-                    <h4 className="font-semibold text-primary mb-2 text-sm">{metric.name}</h4>
+                  <div className="text-center p-3 sm:p-4">
+                    <Icon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 sm:mb-3 text-accent-primary" />
+                    <h4 className="font-semibold text-primary mb-2 text-xs sm:text-sm">{metric.name}</h4>
                     <div 
-                      className="text-3xl font-bold mb-2"
+                      className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2"
                       style={{ color: getScoreColor(metric.score) }}
                     >
                       {metric.score}
                     </div>
-                    <div className="text-xs text-secondary mb-2">
+                    <div className="text-xs text-secondary mb-1 sm:mb-2">
                       {getScoreLabel(metric.score)}
                     </div>
-                    <p className="text-xs text-tertiary leading-tight">{metric.description}</p>
+                    <p className="text-xs text-tertiary leading-tight hidden sm:block">{metric.description}</p>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Suggestions */}
+          {/* Suggestions - Responsive */}
           <div className="card">
-            <h4 className="text-xl font-semibold text-primary mb-6">AI-Powered Recommendations</h4>
-            <div className="space-y-4">
+            <h4 className="text-lg sm:text-xl font-semibold text-primary mb-4 sm:mb-6">AI-Powered Recommendations</h4>
+            <div className="space-y-3 sm:space-y-4">
               {result.suggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className="flex items-start space-x-4 p-4 surface-secondary rounded-lg animate-fadeInLeft"
+                  className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 surface-secondary rounded-lg animate-fadeInLeft"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-accent-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-accent-primary rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold">
                     {index + 1}
                   </div>
-                  <p className="text-secondary leading-relaxed">{suggestion}</p>
+                  <p className="text-secondary leading-relaxed text-sm sm:text-base">{suggestion}</p>
                 </div>
               ))}
             </div>
@@ -511,19 +511,19 @@ export const AIOverviewAnalyzer: React.FC = () => {
         </div>
       )}
 
-      {/* Save to project modal */}
+      {/* Save to project modal - Responsive */}
       {saveOpen && (
         <div className="fixed inset-0 modal-backdrop z-[70]">
           <div className="min-h-full flex items-center justify-center p-4">
             <div className="card glass card-shadow max-w-md w-full relative animate-scaleIn">
-              <button className="absolute top-3 right-3 text-secondary hover:text-primary" onClick={() => setSaveOpen(false)}>✕</button>
-              <h4 className="text-xl font-semibold text-primary mb-4 text-center">Save analysis to a project</h4>
+              <button className="absolute top-3 right-3 text-secondary hover:text-primary text-lg" onClick={() => setSaveOpen(false)}>✕</button>
+              <h4 className="text-lg sm:text-xl font-semibold text-primary mb-4 text-center">Save analysis to a project</h4>
               {saveError && (
                 <div className="p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm mb-3">{saveError}</div>
               )}
               <div className="space-y-3">
                 <label className="text-sm text-secondary">Choose project</label>
-                <select className="input-primary select-custom" value={String(selectedProjectId)} onChange={(e) => {
+                <select className="input-primary select-custom w-full" value={String(selectedProjectId)} onChange={(e) => {
                   const v = e.target.value;
                   setSelectedProjectId(v === 'new' ? 'new' : Number(v));
                 }}>
@@ -533,7 +533,7 @@ export const AIOverviewAnalyzer: React.FC = () => {
                   <option value="new">Create new project</option>
                 </select>
                 {selectedProjectId === 'new' && (
-                  <input className="input-primary" placeholder="New project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
+                  <input className="input-primary w-full" placeholder="New project name" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} />
                 )}
                 <button
                   className={`btn-primary w-full ${saving ? 'opacity-70' : ''}`}
